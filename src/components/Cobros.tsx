@@ -20,19 +20,43 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
   const sedes: string[] = Array.from(new Set(data.map(item => item.sede)));
 
   const getCobroStatus = (item: InventoryItem) => {
-    const diff = item.variacionStock;
-    const unit = (item.unidad || '').toLowerCase();
+    const diff = Number(item.variacionStock || 0);
+    const unit = (item.unidad || '').toUpperCase();
     
+    // Solo se cobra cuando hay faltante (diferencia negativa)
     if (diff >= 0) return "NO COBRA";
 
     const absDiff = Math.abs(diff);
-    if (unit.includes('gramo') || unit === 'g') {
+    
+    // Reglas de cobro por unidad
+    if (unit.includes('GRAMO') || unit === 'G' || unit === 'GR') {
       return absDiff > 1000 ? "COBRA" : "NO COBRA";
     }
-    if (unit.includes('onz') || unit === 'oz') {
+    if (unit.includes('ONZ') || unit === 'OZ') {
       return absDiff > 5 ? "COBRA" : "NO COBRA";
     }
+    // Por defecto (UNIDADES u otros)
     return absDiff > 1 ? "COBRA" : "NO COBRA";
+  };
+
+  const calculateTotalCobro = (item: InventoryItem) => {
+    const status = getCobroStatus(item);
+    const costeLinea = Number(item.costeLinea || 0);
+    const diff = Number(item.variacionStock || 0);
+    
+    if (status === "COBRA") {
+      return Math.abs(diff) * costeLinea;
+    }
+    return 0;
+  };
+
+  const formatCurrencyCOP = (value: number) => {
+    return value.toLocaleString("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
   };
 
   const exportExcel = () => {
@@ -45,7 +69,7 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
         Diferencia: item.variacionStock,
         Estado: getCobroStatus(item),
         'Coste Línea': item.costeLinea,
-        'Total Cobro': Math.abs(item.variacionStock) * item.costeLinea
+        'Total Cobro': calculateTotalCobro(item)
       }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -68,7 +92,7 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
         item.unidad,
         formatNumber(item.variacionStock, item.unidad),
         item.costeLinea.toFixed(2),
-        (Math.abs(item.variacionStock) * item.costeLinea).toFixed(2)
+        calculateTotalCobro(item).toFixed(2)
       ]);
 
     (doc as any).autoTable({
@@ -118,11 +142,27 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
             {sedes.map(sede => {
               const itemsSede = data.filter(item => item.sede === sede);
               const totalSede = itemsSede.reduce((acc, item) => {
-                if (getCobroStatus(item) === "COBRA") {
-                  return acc + (Math.abs(item.variacionStock) * item.costeLinea);
+                const itemTotal = calculateTotalCobro(item);
+                // Debugging log for each item
+                if (itemTotal > 0) {
+                  console.log("Item Cobrable:", {
+                    articulo: item.articulo,
+                    unidad: item.unidad,
+                    diferenciaNeta: item.variacionStock,
+                    costeLinea: item.costeLinea,
+                    estado: getCobroStatus(item),
+                    totalCobro: itemTotal
+                  });
                 }
-                return acc;
+                return acc + itemTotal;
               }, 0);
+
+              // Debugging log for each sede
+              console.log("Sede Total:", {
+                sede,
+                totalCobroSede: totalSede
+              });
+
               const isExpanded = expandedSedes[sede];
 
               return (
@@ -140,15 +180,23 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
                     <td className="px-4 py-3"></td>
                     <td className="px-4 py-3"></td>
                     <td className="px-4 py-3 text-right font-bold text-brand-primary">
-                      ${formatCurrency(totalSede)}
+                      {formatCurrencyCOP(totalSede)}
                     </td>
                   </tr>
                   {isExpanded && itemsSede.map((item, idx) => {
                     const status = getCobroStatus(item);
-                    const totalCobro = status === "COBRA" ? Math.abs(item.variacionStock) * item.costeLinea : 0;
+                    const totalCobro = calculateTotalCobro(item);
+                    const isCobra = status === "COBRA";
+                    
                     return (
-                      <tr key={`${sede}-${idx}`} className="hover:bg-brand-table-hover transition-colors">
-                        <td className="px-4 py-3 pl-10 text-gray-700">{item.articulo}</td>
+                      <tr key={`${sede}-${idx}`} className={cn(
+                        "hover:bg-brand-table-hover transition-colors",
+                        isCobra && "bg-red-50/30"
+                      )}>
+                        <td className={cn(
+                          "px-4 py-3 pl-10 text-gray-700",
+                          isCobra && "font-bold text-gray-900"
+                        )}>{item.articulo}</td>
                         <td className="px-4 py-3 text-gray-500">{item.unidad}</td>
                         <td className={cn(
                           "px-4 py-3 text-right font-bold",
@@ -159,14 +207,19 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
                         <td className="px-4 py-3 text-center">
                           <span className={cn(
                             "px-2 py-1 rounded-full text-[10px] font-bold uppercase",
-                            status === "COBRA" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"
+                            isCobra ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"
                           )}>
                             {status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right">${formatCurrency(item.costeLinea)}</td>
-                        <td className="px-4 py-3 text-right font-bold">
-                          {totalCobro > 0 ? `$${formatCurrency(totalCobro)}` : "-"}
+                        <td className="px-4 py-3 text-right">
+                          {formatCurrencyCOP(Number(item.costeLinea || 0))}
+                        </td>
+                        <td className={cn(
+                          "px-4 py-3 text-right font-bold",
+                          isCobra ? "text-red-700" : "text-gray-400"
+                        )}>
+                          {formatCurrencyCOP(totalCobro)}
                         </td>
                       </tr>
                     );
