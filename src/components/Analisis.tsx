@@ -21,19 +21,37 @@ export const Analisis: React.FC<AnalisisProps> = ({ data }) => {
   const subfamilias = useMemo(() => Array.from(new Set(data.map(item => item.subfamilia))), [data]);
 
   const filteredData = useMemo(() => {
-    return data.filter(item => {
+    const rawFiltered = data.filter(item => {
       const matchSede = !filters.sede || item.sede === filters.sede;
       const matchCC = !filters.cc || item.cc === filters.cc;
       const matchSubfamilia = !filters.subfamilia || item.subfamilia === filters.subfamilia;
       const matchArticulo = !filters.articulo || item.articulo.toLowerCase().includes(filters.articulo.toLowerCase());
-      
+      return matchSede && matchCC && matchSubfamilia && matchArticulo;
+    });
+
+    // Grouping by Sede + CC + Articulo + Unidad
+    const groups: Record<string, InventoryItem & { latestDate: string }> = {};
+    
+    rawFiltered.forEach(item => {
+      const key = `${item.sede}-${item.cc}-${item.articulo}-${item.unidad}`;
+      if (!groups[key]) {
+        groups[key] = { ...item, latestDate: item.fechaDoc || '' };
+      } else {
+        groups[key].variacionStock += Number(item.variacionStock || 0);
+        if (item.fechaDoc && item.fechaDoc >= groups[key].latestDate && item.costeLinea > 0) {
+          groups[key].latestDate = item.fechaDoc;
+          groups[key].costeLinea = item.costeLinea;
+        }
+      }
+    });
+
+    return Object.values(groups).filter(item => {
       const impacto = Math.abs(item.variacionStock) * item.costeLinea;
       let matchRiesgo = true;
       if (filters.riesgo === 'ALTO') matchRiesgo = impacto > 100000;
       if (filters.riesgo === 'MEDIO') matchRiesgo = impacto > 20000 && impacto <= 100000;
       if (filters.riesgo === 'BAJO') matchRiesgo = impacto <= 20000;
-
-      return matchSede && matchCC && matchSubfamilia && matchArticulo && matchRiesgo;
+      return matchRiesgo;
     });
   }, [data, filters]);
 

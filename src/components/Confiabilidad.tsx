@@ -43,20 +43,82 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
     const key = viewType === 'sede' ? 'sede' : 'cc';
     const groupItems = data.filter(item => item[key as keyof InventoryItem] === selectedGroup);
     
-    const total = groupItems.length;
-    const sinDiferencia = groupItems.filter(item => item.variacionStock === 0).length;
-    const conDiferencia = groupItems.filter(item => item.variacionStock !== 0).length;
+    // Group by article + CC to ensure we show unique articles per CC with their best cost
+    const articleGroups: Record<string, {
+      articulo: string;
+      cc: string;
+      unidad: string;
+      variacionStock: number;
+      costeLinea: number;
+      allCosts: number[];
+      latestDate: string;
+    }> = {};
+
+    groupItems.forEach(item => {
+      const groupKey = `${item.articulo}-${item.cc}-${item.unidad}`;
+      if (!articleGroups[groupKey]) {
+        articleGroups[groupKey] = {
+          articulo: item.articulo,
+          cc: item.cc || 'Sin CC',
+          unidad: item.unidad || 'UN',
+          variacionStock: 0,
+          costeLinea: 0,
+          allCosts: [],
+          latestDate: ''
+        };
+      }
+      const group = articleGroups[groupKey];
+      // SUMA REAL DE Variación Stock (Precisión completa desde registros crudos)
+      group.variacionStock += Number(item.variacionStock || 0);
+      
+      if (item.costeLinea > 0) {
+        group.allCosts.push(item.costeLinea);
+        // Simple date comparison if fechaDoc exists
+        if (!group.latestDate || (item.fechaDoc && item.fechaDoc >= group.latestDate)) {
+          group.latestDate = item.fechaDoc;
+          group.costeLinea = item.costeLinea;
+        }
+      }
+    });
+
+    const processedItems = Object.values(articleGroups).map(group => {
+      // If no cost was picked by date, use first valid or average
+      if (group.costeLinea === 0 && group.allCosts.length > 0) {
+        group.costeLinea = group.allCosts[0];
+      }
+
+      // VALIDACIÓN DE CÁLCULO (Debug log)
+      console.log(`Validación Total General - ${group.articulo}:`, {
+        totalCrudo: group.variacionStock,
+        cc: group.cc,
+        sede: selectedGroup
+      });
+
+      return {
+        articulo: group.articulo,
+        cc: group.cc,
+        unidad: group.unidad,
+        variacionStock: group.variacionStock,
+        costeLinea: group.costeLinea,
+        impactoEconomico: Math.abs(group.variacionStock) * group.costeLinea
+      };
+    });
+
+    const total = processedItems.length;
+    const sinDiferencia = processedItems.filter(item => item.variacionStock === 0).length;
+    const conDiferencia = processedItems.filter(item => item.variacionStock !== 0).length;
+    const totalGroupItems = groupItems.length; // Original count for stats if needed
     const confiabilidad = total > 0 ? (sinDiferencia / total) * 100 : 0;
 
-    const criticalItems = [...groupItems]
-      .sort((a, b) => (Math.abs(b.variacionStock) * b.costeLinea) - (Math.abs(a.variacionStock) * a.costeLinea))
+    const criticalItems = [...processedItems]
+      .sort((a, b) => b.impactoEconomico - a.impactoEconomico)
       .slice(0, 10);
 
-    const reliableItems = groupItems
+    const reliableItems = processedItems
       .filter(item => item.variacionStock === 0)
       .slice(0, 10);
 
-    const filteredTableItems = groupItems.filter(item => {
+    const filteredTableItems = processedItems.filter(item => {
       if (detailFilter === 'faltantes') return item.variacionStock < 0;
       if (detailFilter === 'sobrantes') return item.variacionStock > 0;
       if (detailFilter === 'ok') return item.variacionStock === 0;
@@ -75,6 +137,15 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
     };
   }, [data, selectedGroup, viewType, detailFilter]);
 
+  const formatCurrencyCOP = (value: number) => {
+    return value.toLocaleString("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   const exportDetailPDF = () => {
     if (!detailData) return;
     const doc = new jsPDF();
@@ -85,13 +156,15 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
 
     const tableData = detailData.tableItems.map(item => [
       item.articulo,
+      item.cc,
       item.unidad,
       formatNumber(item.variacionStock, item.unidad),
-      (Math.abs(item.variacionStock) * item.costeLinea).toFixed(2)
+      formatCurrencyCOP(item.costeLinea),
+      formatCurrencyCOP(item.impactoEconomico)
     ]);
 
     (doc as any).autoTable({
-      head: [['Artículo', 'Unidad', 'Variación', 'Impacto Econ.']],
+      head: [['Artículo', 'Centro Costos', 'Unidad', 'Variación', 'Valor Unitario', 'Impacto Econ.']],
       body: tableData,
       startY: 35,
       theme: 'grid',
@@ -197,24 +270,48 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card title="Top 10 Artículos Críticos (Mayor Impacto)">
-                  <div className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-400 uppercase pb-1 border-b border-brand-border">
+                      <div className="col-span-6">Artículo</div>
+                      <div className="col-span-2">Unidad</div>
+                      <div className="col-span-2 text-right">Var.</div>
+                      <div className="col-span-2 text-right">Total</div>
+                    </div>
                     {detailData.criticalItems.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm border-b border-brand-border pb-2">
-                        <span className="font-medium truncate max-w-[200px]">{item.articulo}</span>
-                        <div className="text-right">
-                          <p className="font-bold text-red-600">{formatNumber(item.variacionStock, item.unidad)} {item.unidad}</p>
-                          <p className="text-xs text-gray-500">${formatCurrency(Math.abs(item.variacionStock) * item.costeLinea)}</p>
+                      <div key={i} className="grid grid-cols-12 gap-2 items-center text-xs border-b border-brand-border/50 pb-2 last:border-0">
+                        <div className="col-span-6 font-medium truncate" title={item.articulo}>{item.articulo}</div>
+                        <div className="col-span-2 text-[10px] text-gray-500 truncate">{item.unidad}</div>
+                        <div className={cn(
+                          "col-span-2 text-right font-bold",
+                          item.variacionStock < 0 ? "text-red-600" : item.variacionStock > 0 ? "text-green-600" : "text-gray-400"
+                        )}>
+                          {formatNumber(item.variacionStock, item.unidad)}
+                        </div>
+                        <div className="col-span-2 text-right font-bold text-brand-text">
+                          {formatCurrencyCOP(item.impactoEconomico)}
                         </div>
                       </div>
                     ))}
                   </div>
                 </Card>
                 <Card title="Top 10 Artículos Confiables">
-                  <div className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-400 uppercase pb-1 border-b border-brand-border">
+                      <div className="col-span-6">Artículo</div>
+                      <div className="col-span-2">Unidad</div>
+                      <div className="col-span-2 text-right">Var.</div>
+                      <div className="col-span-2 text-right">Estado</div>
+                    </div>
                     {detailData.reliableItems.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm border-b border-brand-border pb-2">
-                        <span className="font-medium truncate max-w-[200px]">{item.articulo}</span>
-                        <span className="font-bold text-green-600">SIN DIFERENCIA</span>
+                      <div key={i} className="grid grid-cols-12 gap-2 items-center text-xs border-b border-brand-border/50 pb-2 last:border-0">
+                        <div className="col-span-6 font-medium truncate" title={item.articulo}>{item.articulo}</div>
+                        <div className="col-span-2 text-[10px] text-gray-500 truncate">{item.unidad}</div>
+                        <div className="col-span-2 text-right font-bold text-gray-400">
+                          {formatNumber(item.variacionStock, item.unidad)}
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">OK</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -264,8 +361,10 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
                     <thead className="bg-brand-table-header text-brand-text uppercase text-xs font-bold">
                       <tr>
                         <th className="px-4 py-3 border-b border-brand-border">Artículo</th>
+                        <th className="px-4 py-3 border-b border-brand-border">Centro Costos</th>
                         <th className="px-4 py-3 border-b border-brand-border">Unidad</th>
                         <th className="px-4 py-3 border-b border-brand-border text-right">Variación</th>
+                        <th className="px-4 py-3 border-b border-brand-border text-right">Valor Unitario</th>
                         <th className="px-4 py-3 border-b border-brand-border text-right">Impacto Económico</th>
                       </tr>
                     </thead>
@@ -273,6 +372,7 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
                       {detailData.tableItems.map((item, idx) => (
                         <tr key={idx} className="hover:bg-brand-table-hover transition-colors">
                           <td className="px-4 py-3">{item.articulo}</td>
+                          <td className="px-4 py-3 text-gray-500">{item.cc}</td>
                           <td className="px-4 py-3 text-gray-500">{item.unidad}</td>
                           <td className={cn(
                             "px-4 py-3 text-right font-bold",
@@ -280,8 +380,11 @@ export const Confiabilidad: React.FC<ConfiabilidadProps> = ({ data }) => {
                           )}>
                             {formatNumber(item.variacionStock, item.unidad)}
                           </td>
+                          <td className="px-4 py-3 text-right text-gray-600">
+                            {formatCurrencyCOP(item.costeLinea)}
+                          </td>
                           <td className="px-4 py-3 text-right font-bold">
-                            ${formatCurrency(Math.abs(item.variacionStock) * item.costeLinea)}
+                            {formatCurrencyCOP(item.impactoEconomico)}
                           </td>
                         </tr>
                       ))}

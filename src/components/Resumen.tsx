@@ -10,9 +10,29 @@ interface ResumenProps {
 
 export const Resumen: React.FC<ResumenProps> = ({ data }) => {
   const sedes = Array.from(new Set(data.map(item => item.sede)));
+  
+  // Grouping logic to calculate net impact per unique item
+  const getNetImpact = (items: InventoryItem[]) => {
+    const groups: Record<string, { variacion: number; coste: number; latestDate: string }> = {};
+    
+    items.forEach(item => {
+      const key = `${item.articulo}-${item.cc}-${item.unidad}`;
+      if (!groups[key]) {
+        groups[key] = { variacion: 0, coste: item.costeLinea, latestDate: item.fechaDoc || '' };
+      }
+      groups[key].variacion += Number(item.variacionStock || 0);
+      if (item.fechaDoc && item.fechaDoc >= groups[key].latestDate && item.costeLinea > 0) {
+        groups[key].latestDate = item.fechaDoc;
+        groups[key].coste = item.costeLinea;
+      }
+    });
+
+    return Object.values(groups).reduce((acc, g) => acc + (Math.abs(g.variacion) * g.coste), 0);
+  };
+
   const totalArticulos = data.length;
   const totalDiferencias = data.filter(item => item.variacionStock !== 0).length;
-  const impactoTotal = data.reduce((acc, item) => acc + (Math.abs(item.variacionStock) * item.costeLinea), 0);
+  const impactoTotal = getNetImpact(data);
   
   const articulosSinDiferencia = data.filter(item => item.variacionStock === 0).length;
   const confiabilidadPromedio = totalArticulos > 0 ? (articulosSinDiferencia / totalArticulos) * 100 : 0;
@@ -22,7 +42,7 @@ export const Resumen: React.FC<ResumenProps> = ({ data }) => {
     const sedeTotal = sedeData.length;
     const sedeSinDiferencia = sedeData.filter(item => item.variacionStock === 0).length;
     const sedeDiferencias = sedeData.filter(item => item.variacionStock !== 0).length;
-    const sedeImpacto = sedeData.reduce((acc, item) => acc + (Math.abs(item.variacionStock) * item.costeLinea), 0);
+    const sedeImpacto = getNetImpact(sedeData);
     const sedeConfiabilidad = sedeTotal > 0 ? (sedeSinDiferencia / sedeTotal) * 100 : 0;
 
     return {

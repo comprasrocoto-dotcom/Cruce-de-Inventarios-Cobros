@@ -42,19 +42,26 @@ export default function App() {
           else if (upperUnidad === 'GR') unidad = 'GRAMOS';
           else if (upperUnidad === 'OZ') unidad = 'ONZAS';
 
+          // Mapping for Coste Línea with fallback and encoding variants
+          const costeLinea = Number(row['Coste Línea'] || row['Coste Linea'] || row['Coste LÃnea'] || 0);
+
+          // Mapping for CC with fallback variants
+          const cc = row['CC'] || row['Cc'] || row['Centro de Costos'] || row['Centro Costos'] || row['C.C.'] || row['CENTRO COSTOS'] || '';
+          const ccValue = cc ? String(cc).trim() : 'Sin CC';
+
           return {
             fechaDoc: row['Fecha Doc'] || '',
             serieNumero: row['Serie / Número'] || '',
             sede: row['Sede'] || 'Sin Sede',
-            cc: row['CC'] || 'Sin CC',
+            cc: ccValue,
             subfamilia: row['Subfamilia'] || '',
             articulo: articulo,
             codBarras: row['Cód. Barras'] || '',
             subarticulo: row['Subartículo'] || row['Subarticulo'] || row['SubartÃculo'] || '',
-            costeLinea: Number(row['Coste Línea']) || 0,
-            stockFecha: Number(row['Stock a Fecha']) || 0,
-            variacionStock: Number(row['Variación Stock']) || 0,
-            stockInventario: Number(row['Stock Inventario']) || 0,
+            costeLinea: costeLinea,
+            stockFecha: Number(row['Stock a Fecha'] || 0),
+            variacionStock: Number(row['Variación Stock'] || 0),
+            stockInventario: Number(row['Stock Inventario'] || 0),
             unidad: unidad
           };
         });
@@ -66,7 +73,8 @@ export default function App() {
             cc: mappedData[0].cc,
             articulo: mappedData[0].articulo,
             unidad: mappedData[0].unidad,
-            variacion: mappedData[0].variacionStock
+            variacion: mappedData[0].variacionStock,
+            coste: mappedData[0].costeLinea
           });
         }
 

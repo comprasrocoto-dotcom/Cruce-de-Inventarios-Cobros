@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from './Card';
 import { InventoryItem, formatNumber, formatCurrency, cn } from '../utils';
 import { Download, FileSpreadsheet, FileText, ChevronRight, ChevronDown } from 'lucide-react';
@@ -19,11 +19,53 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
 
   const sedes: string[] = Array.from(new Set(data.map(item => item.sede)));
 
-  const getCobroStatus = (item: InventoryItem) => {
-    const diff = Number(item.variacionStock || 0);
-    const unit = (item.unidad || '').toUpperCase();
+  const groupedData = useMemo(() => {
+    const groups: Record<string, {
+      sede: string;
+      articulo: string;
+      cc: string;
+      unidad: string;
+      variacionStock: number;
+      costeLinea: number;
+      latestDate: string;
+    }> = {};
+
+    data.forEach(item => {
+      // Grouping by Sede + Articulo + CC + Unidad to ensure unique items
+      const key = `${item.sede}-${item.articulo}-${item.cc}-${item.unidad}`;
+      if (!groups[key]) {
+        groups[key] = {
+          sede: item.sede,
+          articulo: item.articulo,
+          cc: item.cc,
+          unidad: item.unidad,
+          variacionStock: 0,
+          costeLinea: item.costeLinea,
+          latestDate: item.fechaDoc || ''
+        };
+      }
+      
+      const group = groups[key];
+      // SUMA REAL DE Variación Stock (Precisión completa)
+      group.variacionStock += Number(item.variacionStock || 0);
+      
+      // Keep the most recent cost if available
+      if (item.fechaDoc && item.fechaDoc >= group.latestDate) {
+        group.latestDate = item.fechaDoc;
+        if (item.costeLinea > 0) {
+          group.costeLinea = item.costeLinea;
+        }
+      }
+    });
+
+    return Object.values(groups);
+  }, [data]);
+
+  const getCobroStatus = (variacionStock: number, unidad: string) => {
+    const diff = variacionStock;
+    const unit = (unidad || '').toUpperCase();
     
-    // Solo se cobra cuando hay faltante (diferencia negativa)
+    // Solo se cobra cuando hay faltante (diferencia neta negativa)
     if (diff >= 0) return "NO COBRA";
 
     const absDiff = Math.abs(diff);
@@ -39,13 +81,11 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
     return absDiff > 1 ? "COBRA" : "NO COBRA";
   };
 
-  const calculateTotalCobro = (item: InventoryItem) => {
-    const status = getCobroStatus(item);
-    const costeLinea = Number(item.costeLinea || 0);
-    const diff = Number(item.variacionStock || 0);
-    
+  const calculateTotalCobro = (variacionStock: number, costeLinea: number, unidad: string) => {
+    const status = getCobroStatus(variacionStock, unidad);
     if (status === "COBRA") {
-      return Math.abs(diff) * costeLinea;
+      // Total Cobro = ABS(Total General) * Coste Línea
+      return Math.abs(variacionStock) * costeLinea;
     }
     return 0;
   };
@@ -54,23 +94,35 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
     return value.toLocaleString("es-CO", {
       style: "currency",
       currency: "COP",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
   };
 
   const exportExcel = () => {
-    const exportData = data
-      .filter(item => getCobroStatus(item) === "COBRA")
-      .map(item => ({
-        Sede: item.sede,
-        Artículo: item.articulo,
-        Unidad: item.unidad,
-        Diferencia: item.variacionStock,
-        Estado: getCobroStatus(item),
-        'Coste Línea': item.costeLinea,
-        'Total Cobro': calculateTotalCobro(item)
-      }));
+    const exportData = groupedData
+      .filter(item => getCobroStatus(item.variacionStock, item.unidad) === "COBRA")
+      .map(item => {
+        const totalCobro = calculateTotalCobro(item.variacionStock, item.costeLinea, item.unidad);
+        
+        // Debugging log for verification
+        console.log(`Validación Artículo: ${item.articulo}`, {
+          totalBase: item.variacionStock,
+          coste: item.costeLinea,
+          totalCobro: totalCobro
+        });
+
+        return {
+          Sede: item.sede,
+          Artículo: item.articulo,
+          'Centro Costos': item.cc,
+          Unidad: item.unidad,
+          'Total General (Diferencia)': item.variacionStock,
+          Estado: getCobroStatus(item.variacionStock, item.unidad),
+          'Coste Línea': item.costeLinea,
+          'Total Cobro': totalCobro
+        };
+      });
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
@@ -84,19 +136,20 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
     doc.setFontSize(10);
     doc.text(`Fecha Generación: ${new Date().toLocaleString()}`, 14, 22);
 
-    const tableData = data
-      .filter(item => getCobroStatus(item) === "COBRA")
+    const tableData = groupedData
+      .filter(item => getCobroStatus(item.variacionStock, item.unidad) === "COBRA")
       .map(item => [
         item.sede,
         item.articulo,
+        item.cc,
         item.unidad,
         formatNumber(item.variacionStock, item.unidad),
         item.costeLinea.toFixed(2),
-        calculateTotalCobro(item).toFixed(2)
+        calculateTotalCobro(item.variacionStock, item.costeLinea, item.unidad).toFixed(2)
       ]);
 
     (doc as any).autoTable({
-      head: [['Sede', 'Artículo', 'Unidad', 'Diferencia', 'Coste', 'Total Cobro']],
+      head: [['Sede', 'Artículo', 'CC', 'Unidad', 'Diferencia', 'Coste', 'Total Cobro']],
       body: tableData,
       startY: 30,
       theme: 'grid',
@@ -140,28 +193,11 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
           </thead>
           <tbody className="divide-y divide-brand-border">
             {sedes.map(sede => {
-              const itemsSede = data.filter(item => item.sede === sede);
+              const itemsSede = groupedData.filter(item => item.sede === sede);
               const totalSede = itemsSede.reduce((acc, item) => {
-                const itemTotal = calculateTotalCobro(item);
-                // Debugging log for each item
-                if (itemTotal > 0) {
-                  console.log("Item Cobrable:", {
-                    articulo: item.articulo,
-                    unidad: item.unidad,
-                    diferenciaNeta: item.variacionStock,
-                    costeLinea: item.costeLinea,
-                    estado: getCobroStatus(item),
-                    totalCobro: itemTotal
-                  });
-                }
+                const itemTotal = calculateTotalCobro(item.variacionStock, item.costeLinea, item.unidad);
                 return acc + itemTotal;
               }, 0);
-
-              // Debugging log for each sede
-              console.log("Sede Total:", {
-                sede,
-                totalCobroSede: totalSede
-              });
 
               const isExpanded = expandedSedes[sede];
 
@@ -184,8 +220,8 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
                     </td>
                   </tr>
                   {isExpanded && itemsSede.map((item, idx) => {
-                    const status = getCobroStatus(item);
-                    const totalCobro = calculateTotalCobro(item);
+                    const status = getCobroStatus(item.variacionStock, item.unidad);
+                    const totalCobro = calculateTotalCobro(item.variacionStock, item.costeLinea, item.unidad);
                     const isCobra = status === "COBRA";
                     
                     return (
@@ -196,7 +232,12 @@ export const Cobros: React.FC<CobrosProps> = ({ data }) => {
                         <td className={cn(
                           "px-4 py-3 pl-10 text-gray-700",
                           isCobra && "font-bold text-gray-900"
-                        )}>{item.articulo}</td>
+                        )}>
+                          <div className="flex flex-col">
+                            <span>{item.articulo}</span>
+                            <span className="text-[10px] text-gray-400 font-normal">{item.cc}</span>
+                          </div>
+                        </td>
                         <td className="px-4 py-3 text-gray-500">{item.unidad}</td>
                         <td className={cn(
                           "px-4 py-3 text-right font-bold",
