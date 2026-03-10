@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #2E7BCF;
+  --color-brand-hover: #1F5FA6;
+  --color-brand-sidebar: #1E1E1E;
+  --color-brand-topbar: #2F2F2F;
+  --color-brand-bg: #F3F5F7;
+  --color-brand-card: #FFFFFF;
+  --color-brand-border: #DCE3EA;
+  --color-brand-table-header: #AFC8E0;
+  --color-brand-table-hover: #EEF4FB;
+  --color-brand-input-border: #CED6E0;
+  --color-brand-text: #111111;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-bg text-brand-text font-sans;
+  }
+}
+
+.circular-progress {
+  --size: 60px;
+  --half-size: calc(var(--size) / 2);
+  --stroke-width: 6px;
+  --radius: calc(var(--half-size) - (var(--stroke-width) / 2));
+  --circumference: calc(2 * 3.14159 * var(--radius));
+  width: var(--size);
+  height: var(--size);
+}
+
+.circular-progress circle {
+  cx: var(--half-size);
+  cy: var(--half-size);
+  r: var(--radius);
+  stroke-width: var(--stroke-width);
+  fill: none;
+  stroke-linecap: round;
+}
+
+.circular-progress circle.bg {
+  stroke: #e5e7eb;
+}
+
+.circular-progress circle.fg {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: var(--half-size) var(--half-size);
+}
