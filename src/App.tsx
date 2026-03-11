@@ -62,11 +62,17 @@ export default function App() {
   const renderContent = () => {
     if (articles.length === 0) {
       return (
-        <FileUpload 
-          onDataLoaded={(data) => setArticles(data)} 
-          onReset={() => setArticles([])}
-          hasData={false}
-        />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+          <div className="bg-blue-50 p-8 rounded-full">
+            <Package className="w-16 h-16 text-[#2F80ED] opacity-20" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-[#1F3A5F] mb-2">No hay datos cargados</h2>
+            <p className="text-slate-500 max-w-md mx-auto">
+              Utiliza el botón <span className="font-bold text-[#2F80ED]">Cargar Excel</span> en la esquina superior derecha para comenzar el análisis de inventarios.
+            </p>
+          </div>
+        </div>
       );
     }
 
@@ -197,31 +203,33 @@ export default function App() {
       {/* Top Bar */}
       <header className="bg-primary text-white px-6 py-4 flex justify-between items-center shadow-lg z-10">
         <div className="flex items-center gap-3">
-          <div className="bg-secondary p-2 rounded-lg">
+          <div className="bg-[#5DADE2] p-2 rounded-lg">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight leading-none">Cruces de Inventario</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-blue-200 font-bold">Auditoría y Cobros por Sede</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#5DADE2] font-bold">Auditoría y Cobros por Sede</p>
           </div>
         </div>
         
-        {articles.length > 0 && (
-          <div className="flex items-center gap-6">
-            <FileUpload 
-              onDataLoaded={(data) => setArticles(data)} 
-              onReset={() => setArticles([])}
-              hasData={true}
-            />
-            <div className="h-8 w-px bg-white/10"></div>
-            <div className="text-right">
-              <p className="text-xs font-bold text-blue-200 uppercase">Estado</p>
-              <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Activo
-              </p>
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-6">
+          <FileUpload 
+            onDataLoaded={(data) => setArticles(data)} 
+            onReset={() => setArticles([])}
+            hasData={articles.length > 0}
+          />
+          {articles.length > 0 && (
+            <>
+              <div className="h-8 w-px bg-white/10"></div>
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-[#5DADE2] uppercase">Estado</p>
+                <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Activo
+                </p>
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Navigation Tabs */}

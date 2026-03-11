@@ -15,15 +15,15 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card p-6 rounded-2xl flex items-start space-x-4"
+      className="bg-white p-6 rounded-[14px] shadow-sm border border-brand-border flex items-start space-x-4"
     >
-      <div className={`p-3 rounded-xl ${color}`}>
-        <Icon className="w-6 h-6 text-white" />
+      <div className={`p-3 rounded-xl ${color} bg-opacity-10`}>
+        <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
       </div>
       <div>
-        <p className="text-sm font-medium text-text-secondary uppercase tracking-wider">{title}</p>
-        <h3 className="text-2xl font-bold text-text-main mt-1">{value}</h3>
-        {description && <p className="text-xs text-text-secondary mt-1">{description}</p>}
+        <p className="text-[11px] font-bold text-brand-text-secondary uppercase tracking-widest">{title}</p>
+        <h3 className="text-2xl font-black text-brand-text mt-1">{value}</h3>
+        {description && <p className="text-[10px] text-brand-text-secondary mt-1 font-medium">{description}</p>}
       </div>
     </motion.div>
   );

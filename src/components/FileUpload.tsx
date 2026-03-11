@@ -12,7 +12,6 @@ interface FileUploadProps {
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, hasData }) => {
-  const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<{ name: string, sheet: string, rows: number } | null>(null);
@@ -26,7 +25,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
       
-      // Look for "BASE DE DATOS" sheet, otherwise use the first one
       let sheetName = workbook.SheetNames.find(name => 
         name.toUpperCase().includes("BASE DE DATOS")
       ) || workbook.SheetNames[0];
@@ -36,7 +34,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
       }
 
       const worksheet = workbook.Sheets[sheetName];
-      // Use raw: true to get real types (Dates, numbers)
       const json = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
       
       if (json.length === 0) {
@@ -66,103 +63,65 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
     }
   };
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
-      handleFile(file);
-    } else {
-      setError("Formato no permitido, sube un archivo Excel (.xlsx o .xls)");
-    }
-  };
-
   const handleReset = () => {
     setFileInfo(null);
     setError(null);
     onReset();
   };
 
-  if (hasData && fileInfo) {
-    return (
-      <div className="flex items-center justify-between bg-white border border-brand-border px-4 py-2 rounded-xl shadow-sm mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="bg-emerald-50 p-2 rounded-lg">
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-brand-text truncate max-w-[200px]">{fileInfo.name}</h3>
-            <p className="text-[10px] text-brand-text-secondary font-medium">{fileInfo.rows.toLocaleString()} registros</p>
-          </div>
-        </div>
-        <button 
-          onClick={handleReset}
-          className="flex items-center space-x-1 px-3 py-1.5 bg-brand-bg hover:bg-slate-200 text-brand-text-secondary rounded-lg text-[10px] font-bold transition-all border border-brand-border"
-        >
-          <X className="w-3 h-3" />
-          <span>Cambiar base</span>
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="mb-8">
-      <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={onDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`
-          relative border-2 border-dashed rounded-3xl p-12 transition-all duration-300 text-center cursor-pointer
-          ${isDragging ? 'border-brand-secondary bg-blue-50 scale-[1.01]' : 'border-brand-border bg-white hover:border-brand-secondary hover:bg-slate-50'}
-          ${loading ? 'pointer-events-none opacity-60' : ''}
-        `}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-          className="hidden"
-        />
-        
-        <div className="flex flex-col items-center">
-          {loading ? (
-            <div className="bg-brand-secondary p-4 rounded-2xl shadow-lg shadow-blue-100 mb-4 animate-pulse">
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-            </div>
-          ) : (
-            <div className="bg-brand-secondary p-4 rounded-2xl shadow-lg shadow-blue-100 mb-4">
-              <Upload className="w-8 h-8 text-white" />
-            </div>
-          )}
-          
-          <h3 className="text-xl font-bold text-brand-text mb-2">
-            {loading ? 'Procesando archivo...' : 'Cargar base de inventarios'}
-          </h3>
-          <p className="text-brand-text-secondary max-w-xs mx-auto text-sm">
-            {loading 
-              ? 'Estamos normalizando las columnas y analizando los datos...' 
-              : 'Arrastra tu archivo Excel (.xlsx) aquí o haz clic para seleccionarlo.'}
-          </p>
-          
-          <div className="mt-6 flex items-center space-x-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            <span className="flex items-center"><FileSpreadsheet className="w-3 h-3 mr-1" /> Excel (.xlsx, .xls)</span>
-            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <span>Hoja: BASE DE DATOS</span>
+    <div className="relative">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+        className="hidden"
+      />
+      
+      <div className="flex items-center gap-3">
+        {hasData && fileInfo && (
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg border border-white/10">
+            <FileSpreadsheet className="w-3.5 h-3.5 text-blue-200" />
+            <span className="text-[10px] font-bold text-white truncate max-w-[120px]">{fileInfo.name}</span>
+            <button 
+              onClick={handleReset}
+              className="p-1 hover:bg-white/20 rounded-md transition-colors"
+              title="Cambiar archivo"
+            >
+              <X className="w-3 h-3 text-white" />
+            </button>
           </div>
-        </div>
+        )}
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          className={`
+            flex items-center gap-2 px-3.5 py-2 bg-[#2F80ED] hover:bg-[#1C6DD0] text-white rounded-lg text-[13px] font-bold transition-all shadow-sm
+            ${loading ? 'opacity-70 cursor-not-allowed' : ''}
+          `}
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          <span>{loading ? 'Cargando...' : 'Cargar Excel'}</span>
+        </button>
       </div>
 
       {error && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 flex items-center space-x-2 bg-rose-50 border border-rose-100 p-4 rounded-2xl text-rose-700"
+          className="absolute top-full right-0 mt-2 w-64 z-50 flex items-center space-x-2 bg-rose-50 border border-rose-100 p-3 rounded-xl text-rose-700 shadow-xl"
         >
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p className="text-sm font-medium">{error}</p>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <p className="text-[10px] font-bold leading-tight">{error}</p>
+          <button onClick={() => setError(null)} className="p-1 hover:bg-rose-100 rounded">
+            <X className="w-3 h-3" />
+          </button>
         </motion.div>
       )}
     </div>

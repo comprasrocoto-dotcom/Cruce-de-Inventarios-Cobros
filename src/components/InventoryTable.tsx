@@ -53,7 +53,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
 
       <div className="overflow-x-auto card rounded-2xl">
         <table className="w-full text-left border-collapse">
-          <thead className="table-header text-[10px] uppercase tracking-widest">
+          <thead className="bg-[#1F3A5F] text-white text-[10px] uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4 font-bold rounded-tl-2xl">Sede / Artículo</th>
               <th className="px-6 py-4 font-bold">Unidad</th>
@@ -68,18 +68,18 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
               <React.Fragment key={sede}>
                 {/* Sede Header Row */}
                 <tr 
-                  className="bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors border-b border-brand-border"
+                  className="bg-[#F7F9FC] cursor-pointer hover:bg-[#EEF3FB] transition-colors border-b border-brand-border"
                   onClick={() => toggleSede(sede)}
                 >
                   <td colSpan={6} className="px-6 py-3">
-                    <div className="flex items-center font-black text-text-main uppercase tracking-tight">
+                    <div className="flex items-center font-black text-[#1F3A5F] uppercase tracking-tight">
                       {expandedSedes[sede] ? (
-                        <ChevronDown className="w-5 h-5 mr-2 text-secondary" />
+                        <ChevronDown className="w-5 h-5 mr-2 text-[#2F80ED]" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 mr-2 text-text-secondary" />
+                        <ChevronRight className="w-5 h-5 mr-2 text-slate-400" />
                       )}
                       <span>SEDE: {sede}</span>
-                      <span className="ml-3 px-2 py-0.5 bg-blue-50 text-secondary rounded text-[10px] font-bold border border-blue-100">
+                      <span className="ml-3 px-2 py-0.5 bg-blue-50 text-[#2F80ED] rounded text-[10px] font-bold border border-blue-100">
                         {articles.length} ARTÍCULOS
                       </span>
                     </div>
@@ -87,7 +87,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                 </tr>
 
                 {/* Articles within Sede */}
-                {expandedSedes[sede] && articles.map((art) => {
+                {expandedSedes[sede] && articles.map((art, artIdx) => {
                   const artKey = `${sede}-${art.articulo}`;
                   const isExpanded = expandedArticles[artKey];
                   
@@ -95,8 +95,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                     <React.Fragment key={artKey}>
                       <tr 
                         className={clsx(
-                          "border-b border-slate-50 hover:bg-brand-table-hover transition-colors cursor-pointer",
-                          isExpanded && "bg-brand-table-selected"
+                          "border-b border-slate-50 transition-colors cursor-pointer",
+                          artIdx % 2 === 0 ? "bg-white" : "bg-[#F7F9FC]",
+                          "hover:bg-[#EEF3FB]",
+                          isExpanded && "bg-[#EAF2FB]"
                         )}
                         onClick={() => toggleArticle(artKey)}
                       >

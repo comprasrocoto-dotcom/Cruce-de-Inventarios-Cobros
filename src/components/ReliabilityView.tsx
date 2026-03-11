@@ -152,7 +152,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
     // Header
     doc.setFontSize(18);
-    doc.setTextColor(31, 42, 68); // #1F2A44 (brand-primary)
+    doc.setTextColor(31, 58, 95); // #1F3A5F
     doc.text(`Detalle de Confiabilidad - ${sede.sede}`, 14, 22);
 
     doc.setFontSize(10);
@@ -162,7 +162,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
     // KPIs
     doc.setFontSize(12);
-    doc.setTextColor(31, 42, 68);
+    doc.setTextColor(31, 58, 95);
     doc.text(`Confiabilidad: ${Math.round(sede.confiabilidad)}%`, 14, 45);
     doc.text(`Evaluados: ${sede.articulosEvaluados}`, 14, 52);
     doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 45);
@@ -192,7 +192,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         formatCurrency(a.impacto)
       ]),
       theme: 'striped',
-      headStyles: { fillColor: [229, 72, 77] }, // #E5484D (status-faltante)
+      headStyles: { fillColor: [235, 87, 87] }, // #EB5757 (Rojo alerta)
     });
 
     // Table Reliable
@@ -208,7 +208,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         formatCurrency(a.impacto)
       ]),
       theme: 'striped',
-      headStyles: { fillColor: [31, 185, 128] }, // #1FB980 (status-sobrante)
+      headStyles: { fillColor: [39, 174, 96] }, // #27AE60 (Verde positivo)
     });
 
     // Footer
@@ -237,13 +237,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           <div className="bg-brand-bg p-1 rounded-xl flex mr-4">
             <button
               onClick={() => setViewMode('sede')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-white text-brand-secondary shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-white text-[#2F80ED] shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
             >
               Por Sede
             </button>
             <button
               onClick={() => setViewMode('cc')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-white text-brand-secondary shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-white text-[#2F80ED] shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
             >
               Por Centro de Costos
             </button>
@@ -657,7 +657,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                     </h4>
                     <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
                       <table className="w-full text-left text-sm">
-                        <thead className="bg-[#1F2A44] text-white">
+                        <thead className="bg-[#1F3A5F] text-white">
                           <tr>
                             <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
                             <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
@@ -711,7 +711,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                     </h4>
                     <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
                       <table className="w-full text-left text-sm">
-                        <thead className="bg-[#1F2A44] text-white">
+                        <thead className="bg-[#1F3A5F] text-white">
                           <tr>
                             <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
                             <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>

@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1F2A44;
-  --color-primary-hover: #2F3B5C;
-  --color-secondary: #3A7AFE;
-  --color-secondary-hover: #2F6BE0;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-background: #F5F7FA;
+  --color-primary: #1F3A5F;
+  --color-primary-hover: #2F80ED;
+  --color-secondary: #2F80ED;
+  --color-secondary-hover: #1C6DD0;
+  --color-success: #27AE60;
+  --color-warning: #F2994A;
+  --color-danger: #EB5757;
+  --color-background: #F4F6F8;
   --color-card: #FFFFFF;
-  --color-border: #E4E8EE;
-  --color-text-main: #111827;
+  --color-border: #E1E5EB;
+  --color-text-main: #1F3A5F;
   --color-text-secondary: #6B7280;
 
   /* Compatibility with existing brand classes */
@@ -26,18 +26,18 @@
   --color-status-sobrante: var(--color-success);
   --color-status-faltante: var(--color-danger);
   --color-status-sin-diferencia: #9AA4B2;
-  --color-status-cobra: #D93025;
+  --color-status-cobra: #EB5757;
   --color-status-sin-cobra: var(--color-text-secondary);
 
   /* KPI Colors */
-  --color-kpi-revisados: #6366F1;
-  --color-kpi-faltantes: var(--color-warning);
-  --color-kpi-cobrables: var(--color-danger);
-  --color-kpi-valor: var(--color-success);
+  --color-kpi-revisados: #2F80ED;
+  --color-kpi-faltantes: #F2994A;
+  --color-kpi-cobrables: #EB5757;
+  --color-kpi-valor: #27AE60;
 
   /* Table Row Colors */
-  --color-brand-table-hover: #F2F6FF;
-  --color-brand-table-selected: #E8F0FF;
+  --color-brand-table-hover: #EEF3FB;
+  --color-brand-table-selected: #EAF2FB;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
