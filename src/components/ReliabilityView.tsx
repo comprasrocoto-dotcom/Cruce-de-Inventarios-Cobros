@@ -20,7 +20,8 @@ import {
   FileDown,
   X,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -251,41 +252,67 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     }));
   }, [summary]);
 
-  const downloadPDF = (sede: ReliabilityStats) => {
+  const getStatusColor = (p: number) => {
+    if (p >= 85) return '#27AE60';
+    if (p >= 70) return '#F2C94C';
+    return '#EB5757';
+  };
+
+  const downloadGeneralPDF = (sede: ReliabilityStats) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const dateStr = new Date().toLocaleString();
-
-    // Get all items for this sede
     const sedeItems = data.filter(a => a.sede === sede.sede);
 
     // Header
     doc.setFontSize(18);
-    doc.setTextColor(31, 58, 95); // #1F3A5F
+    doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Detalle de Confiabilidad - ${sede.sede}`, 14, 22);
+    doc.text(`Reporte de Confiabilidad - ${sede.sede}`, 14, 22);
 
     doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128); // gray-500
+    doc.setTextColor(107, 114, 128);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generado por: Sistema de Auditoría de Inventarios`, 14, 30);
-    doc.text(`Fecha: ${dateStr}`, 14, 35);
+    doc.text(`Sistema de Auditoría de Inventarios`, 14, 28);
+    doc.text(`Fecha: ${dateStr}`, 14, 33);
 
-    // 1. RESUMEN GENERAL
+    // Indicadores Rápidos (Tarjetas Horizontales Compactas)
+    let currentY = 40;
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(14, currentY, pageWidth - 28, 22, 3, 3, 'F');
+    
+    const colWidth = (pageWidth - 28) / 5;
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONFIABILIDAD', 20, currentY + 7);
+    doc.text('EVALUADOS', 20 + colWidth, currentY + 7);
+    doc.text('DIFERENCIAS', 20 + colWidth * 2, currentY + 7);
+    doc.text('IMPACTO TOTAL', 20 + colWidth * 3, currentY + 7);
+    doc.text('RIESGO', 20 + colWidth * 4, currentY + 7);
+
+    doc.setFontSize(11);
+    doc.setTextColor(getStatusColor(sede.confiabilidad));
+    doc.text(`${Math.round(sede.confiabilidad)}%`, 20, currentY + 15);
+    
+    doc.setTextColor(31, 58, 95);
+    doc.text(`${sede.articulosEvaluados}`, 20 + colWidth, currentY + 15);
+    doc.text(`${sede.articulosConDiferencia}`, 20 + colWidth * 2, currentY + 15);
+    doc.text(formatCurrency(sede.impactoEconomico), 20 + colWidth * 3, currentY + 15);
+    
+    const riskLevel = sede.confiabilidad >= 85 ? 'BAJO' : sede.confiabilidad >= 70 ? 'MEDIO' : 'ALTO';
+    doc.setTextColor(getStatusColor(sede.confiabilidad));
+    doc.text(riskLevel, 20 + colWidth * 4, currentY + 15);
+
+    currentY += 32;
+
+    // 1. CONFIABILIDAD POR CENTRO DE COSTOS
     doc.setFontSize(12);
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
-    doc.text('1. RESUMEN GENERAL DE SEDE', 14, 45);
-    doc.setFont('helvetica', 'normal');
-    
-    doc.setFontSize(10);
-    doc.text(`Confiabilidad General: ${Math.round(sede.confiabilidad)}%`, 14, 52);
-    doc.text(`Evaluados: ${sede.articulosEvaluados}`, 14, 58);
-    doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 52);
-    doc.text(`Con diferencia: ${sede.articulosConDiferencia}`, 70, 58);
-    doc.text(`Impacto Económico Total: ${formatCurrency(sede.impactoEconomico)}`, 130, 52);
+    doc.text('1. CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
+    currentY += 6;
 
-    // Analysis by CC
     const ccStatsMap = new Map<string, {
       evaluados: number;
       sinDiferencia: number;
@@ -322,16 +349,6 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       };
     }).sort((a, b) => a.confiabilidad - b.confiabilidad);
 
-    let currentY = 70;
-
-    // 2. CONFIABILIDAD POR CENTRO DE COSTOS
-    doc.setFontSize(12);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
-    doc.text('2. CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
-    doc.setFont('helvetica', 'normal');
-    currentY += 6;
-
     autoTable(doc, {
       startY: currentY,
       head: [['Centro de Costos', 'Evaluados', 'Sin Dif.', 'Con Dif.', 'Impacto $', 'Confiabilidad', 'Estado']],
@@ -341,45 +358,87 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         c.sinDiferencia,
         c.conDiferencia,
         formatCurrency(c.impacto),
-        `${Math.round(c.confiabilidad)}%`,
+        { content: `${Math.round(c.confiabilidad)}%`, styles: { textColor: getStatusColor(c.confiabilidad), fontStyle: 'bold' } },
         `${c.emoji} ${c.estado}`
       ]),
       theme: 'striped',
       headStyles: { fillColor: [31, 58, 95] },
       styles: { fontSize: 8 },
       columnStyles: {
-        1: { halign: 'center' },
-        2: { halign: 'center' },
-        3: { halign: 'center' },
         4: { halign: 'right' },
-        5: { halign: 'center', fontStyle: 'bold' },
-        6: { halign: 'left' }
+        5: { halign: 'center' }
       }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 15;
+    // 2. DETALLE DE ARTÍCULOS
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(14);
+    doc.text('2. DETALLE DE ARTÍCULOS EVALUADOS', 14, currentY);
+    currentY += 10;
 
-    // 3. TOP 10 PÉRDIDAS POR CENTRO DE COSTOS
-    if (currentY > 240) { doc.addPage(); currentY = 20; }
-    doc.setFontSize(12);
-    doc.setTextColor(31, 58, 95);
+    ccStatsArray.forEach((ccData) => {
+      if (currentY > 240) { doc.addPage(); currentY = 20; }
+      doc.setFontSize(11);
+      doc.setTextColor(31, 58, 95);
+      doc.text(`CENTRO DE COSTOS: ${ccData.cc.toUpperCase()}`, 14, currentY);
+      currentY += 5;
+
+      const items = ccData.items.sort((a, b) => Math.abs(b.totalDiferencia) - Math.abs(a.totalDiferencia));
+      
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
+        body: items.map(a => [
+          a.articulo,
+          a.subarticulo,
+          formatVariation(a.totalDiferencia, a.subarticulo),
+          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [107, 114, 128] },
+        styles: { fontSize: 7 },
+        columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 10;
+    });
+
+    addFooter(doc, pageWidth);
+    doc.save(`Reporte_General_${sede.sede}.pdf`);
+  };
+
+  const downloadLossesPDF = (sede: ReliabilityStats) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const sedeItems = data.filter(a => a.sede === sede.sede);
+
+    doc.setFontSize(18);
+    doc.setTextColor(235, 87, 87);
     doc.setFont('helvetica', 'bold');
-    doc.text('3. TOP 10 PÉRDIDAS POR CENTRO DE COSTOS', 14, currentY);
-    currentY += 8;
+    doc.text(`TOP 10 PÉRDIDAS - ${sede.sede}`, 14, 22);
 
-    ccStatsArray.forEach(ccData => {
-      const losses = ccData.items
-        .filter(a => a.totalDiferencia < -0.0001)
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Análisis detallado de faltantes críticos por centro de costos.', 14, 28);
+
+    let currentY = 40;
+    const ccs = Array.from(new Set(sedeItems.map(a => a.cc || 'SIN CC')));
+
+    ccs.forEach(cc => {
+      const ccStr = String(cc);
+      const losses = sedeItems
+        .filter(a => (a.cc || 'SIN CC') === ccStr && a.totalDiferencia < -0.0001)
         .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)))
         .slice(0, 10);
 
       if (losses.length > 0) {
         if (currentY > 240) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(10);
-        doc.setTextColor(235, 87, 87); // #EB5757
+        doc.setFontSize(12);
+        doc.setTextColor(235, 87, 87);
         doc.setFont('helvetica', 'bold');
-        doc.text(`TOP PÉRDIDAS ${ccData.cc.toUpperCase()}`, 14, currentY);
-        currentY += 4;
+        doc.text(`TOP PÉRDIDAS ${ccStr.toUpperCase()}`, 14, currentY);
+        currentY += 5;
 
         autoTable(doc, {
           startY: currentY,
@@ -392,175 +451,138 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           theme: 'striped',
           headStyles: { fillColor: [235, 87, 87] },
           styles: { fontSize: 8 },
-          columnStyles: {
-            1: { halign: 'right', textColor: [235, 87, 87], fontStyle: 'bold' },
-            2: { halign: 'right' }
-          }
+          columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right', fontStyle: 'bold' } }
         });
-        currentY = (doc as any).lastAutoTable.finalY + 10;
+        currentY = (doc as any).lastAutoTable.finalY + 15;
       }
     });
 
-    // 4. TOP 10 SOBRANTES POR CENTRO DE COSTOS
-    if (currentY > 240) { doc.addPage(); currentY = 20; }
-    doc.setFontSize(12);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
-    doc.text('4. TOP 10 SOBRANTES POR CENTRO DE COSTOS', 14, currentY);
-    currentY += 8;
+    addFooter(doc, pageWidth);
+    doc.save(`Top_Perdidas_${sede.sede}.pdf`);
+  };
 
-    ccStatsArray.forEach(ccData => {
-      const surpluses = ccData.items
-        .filter(a => a.totalDiferencia > 0.0001)
+  const downloadGainsPDF = (sede: ReliabilityStats) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const sedeItems = data.filter(a => a.sede === sede.sede);
+
+    doc.setFontSize(18);
+    doc.setTextColor(39, 174, 96);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`TOP 10 GANANCIAS (SOBRANTES) - ${sede.sede}`, 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Análisis de sobrantes encontrados en los conteos físicos.', 14, 28);
+
+    let currentY = 40;
+    const ccs = Array.from(new Set(sedeItems.map(a => a.cc || 'SIN CC')));
+
+    ccs.forEach(cc => {
+      const ccStr = String(cc);
+      const gains = sedeItems
+        .filter(a => (a.cc || 'SIN CC') === ccStr && a.totalDiferencia > 0.0001)
         .sort((a, b) => (b.totalDiferencia * (b.ultimoCoste || b.costePromedio)) - (a.totalDiferencia * (a.ultimoCoste || a.costePromedio)))
         .slice(0, 10);
 
-      if (surpluses.length > 0) {
+      if (gains.length > 0) {
         if (currentY > 240) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(10);
-        doc.setTextColor(39, 174, 96); // #27AE60
+        doc.setFontSize(12);
+        doc.setTextColor(39, 174, 96);
         doc.setFont('helvetica', 'bold');
-        doc.text(`TOP SOBRANTES ${ccData.cc.toUpperCase()}`, 14, currentY);
-        currentY += 4;
+        doc.text(`TOP GANANCIAS ${ccStr.toUpperCase()}`, 14, currentY);
+        currentY += 5;
 
         autoTable(doc, {
           startY: currentY,
-          head: [['Artículo', 'Variación', 'Impacto Económico']],
-          body: surpluses.map(a => [
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          body: gains.map(a => [
             a.articulo,
+            a.subarticulo,
             `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
             formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
           ]),
           theme: 'striped',
           headStyles: { fillColor: [39, 174, 96] },
           styles: { fontSize: 8 },
-          columnStyles: {
-            1: { halign: 'right', textColor: [39, 174, 96], fontStyle: 'bold' },
-            2: { halign: 'right' }
-          }
-        });
-        currentY = (doc as any).lastAutoTable.finalY + 10;
-      }
-    });
-
-    // 5. DETALLE COMPLETO POR CENTRO DE COSTOS
-    doc.addPage();
-    currentY = 20;
-    doc.setFontSize(12);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
-    doc.text('5. DETALLE COMPLETO POR CENTRO DE COSTOS', 14, currentY);
-    currentY += 10;
-
-    ccStatsArray.forEach((ccData) => {
-      if (currentY > 230) { doc.addPage(); currentY = 20; }
-
-      // CC Header Separator
-      doc.setFillColor(245, 247, 250); // #F5F7FA
-      doc.rect(14, currentY, pageWidth - 28, 12, 'F');
-      doc.setDrawColor(214, 222, 230); // #D6DEE6
-      doc.line(14, currentY, pageWidth - 14, currentY);
-      doc.line(14, currentY + 12, pageWidth - 14, currentY + 12);
-      
-      doc.setFontSize(11);
-      doc.setTextColor(31, 58, 95);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`CENTRO DE COSTOS: ${ccData.cc.toUpperCase()}`, pageWidth / 2, currentY + 8, { align: 'center' });
-      currentY += 18;
-
-      const faltantes = ccData.items.filter(a => a.totalDiferencia < -0.0001)
-        .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)));
-      
-      const sobrantes = ccData.items.filter(a => a.totalDiferencia > 0.0001)
-        .sort((a, b) => b.totalDiferencia - a.totalDiferencia);
-      
-      const sinDiferencia = ccData.items.filter(a => Math.abs(a.totalDiferencia) < 0.0001)
-        .sort((a, b) => a.articulo.localeCompare(b.articulo));
-
-      if (faltantes.length > 0) {
-        if (currentY > 250) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(10);
-        doc.setTextColor(235, 87, 87);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Faltantes - ${ccData.cc}`, 14, currentY);
-        currentY += 5;
-        autoTable(doc, {
-          startY: currentY,
-          head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
-          body: faltantes.map(a => [
-            a.articulo,
-            a.subarticulo,
-            formatVariation(a.totalDiferencia, a.subarticulo),
-            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
-          ]),
-          theme: 'striped',
-          headStyles: { fillColor: [235, 87, 87] },
-          styles: { fontSize: 7 },
-          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
-        });
-        currentY = (doc as any).lastAutoTable.finalY + 10;
-      }
-
-      if (sobrantes.length > 0) {
-        if (currentY > 250) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(10);
-        doc.setTextColor(39, 174, 96);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Sobrantes - ${ccData.cc}`, 14, currentY);
-        currentY += 5;
-        autoTable(doc, {
-          startY: currentY,
-          head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
-          body: sobrantes.map(a => [
-            a.articulo,
-            a.subarticulo,
-            `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
-            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
-          ]),
-          theme: 'striped',
-          headStyles: { fillColor: [39, 174, 96] },
-          styles: { fontSize: 7 },
-          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
-        });
-        currentY = (doc as any).lastAutoTable.finalY + 10;
-      }
-
-      if (sinDiferencia.length > 0) {
-        if (currentY > 250) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(10);
-        doc.setTextColor(75, 85, 99);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Sin Diferencia - ${ccData.cc}`, 14, currentY);
-        currentY += 5;
-        autoTable(doc, {
-          startY: currentY,
-          head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
-          body: sinDiferencia.map(a => [
-            a.articulo,
-            a.subarticulo,
-            '0',
-            '$0'
-          ]),
-          theme: 'striped',
-          headStyles: { fillColor: [107, 114, 128] },
-          styles: { fontSize: 7 },
-          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
+          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } }
         });
         currentY = (doc as any).lastAutoTable.finalY + 15;
       }
     });
 
-    // Footer
+    addFooter(doc, pageWidth);
+    doc.save(`Top_Ganancias_${sede.sede}.pdf`);
+  };
+
+  const downloadProblematicPDF = (sede: ReliabilityStats) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const sedeItems = data.filter(a => a.sede === sede.sede);
+
+    doc.setFontSize(18);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`PRODUCTOS DE MAYOR RIESGO - ${sede.sede}`, 14, 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Artículos con mayor impacto y frecuencia de errores.', 14, 28);
+
+    const problemItems = sedeItems.map(a => {
+      const impacto = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);
+      const variacionAbs = Math.abs(a.totalDiferencia);
+      const frecuencia = a.movements ? a.movements.filter(m => Math.abs(m.variacion) > 0.0001).length : 1;
+      return { ...a, impacto, variacionAbs, frecuencia };
+    });
+
+    const maxImpacto = Math.max(...problemItems.map(i => i.impacto), 1);
+    const maxVariacion = Math.max(...problemItems.map(i => i.variacionAbs), 1);
+    const maxFrecuencia = Math.max(...problemItems.map(i => i.frecuencia), 1);
+
+    const scoredItems = problemItems.map(i => {
+      const score = ((i.impacto / maxImpacto * 0.6) + (i.variacionAbs / maxVariacion * 0.3) + (i.frecuencia / maxFrecuencia * 0.1)) * 100;
+      let nivel = score >= 80 ? 'CRÍTICO' : score >= 50 ? 'MEDIO' : 'BAJO';
+      let emoji = score >= 80 ? '🔴' : score >= 50 ? '🟠' : '🟢';
+      return { ...i, score, nivel, emoji };
+    }).sort((a, b) => b.score - a.score).slice(0, 10);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Ranking', 'Artículo', 'CC', 'Impacto $', 'Err.', 'Riesgo']],
+      body: scoredItems.map((a, idx) => [
+        idx + 1,
+        a.articulo,
+        a.cc || 'SIN CC',
+        formatCurrency(a.impacto),
+        a.frecuencia,
+        `${a.emoji} ${a.nivel}`
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 8 },
+      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'center' } }
+    });
+
+    addFooter(doc, pageWidth);
+    doc.save(`Riesgo_Operativo_${sede.sede}.pdf`);
+  };
+
+  const addFooter = (doc: jsPDF, pageWidth: number) => {
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184); // slate-400
+      doc.setTextColor(148, 163, 184);
       doc.text(`Página ${i} de ${totalPages}`, pageWidth - 25, doc.internal.pageSize.getHeight() - 10);
       doc.text('Sistema de Auditoría de Inventarios - Reporte generado automáticamente', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
     }
+  };
 
-    doc.save(`Confiabilidad_${sede.sede}_${new Date().toISOString().split('T')[0]}.pdf`);
+  const downloadPDF = (sede: ReliabilityStats) => {
+    downloadGeneralPDF(sede);
   };
 
   return (
@@ -1040,13 +1062,40 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => downloadPDF(selectedSede)}
-                    className="flex items-center space-x-2 bg-[#EB5757] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#C0392B] transition-all shadow-sm"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>Descargar PDF</span>
-                  </button>
+                  <div className="flex bg-white p-1 rounded-[6px] border border-[#D6DEE6]">
+                    <button 
+                      onClick={() => downloadGeneralPDF(selectedSede)}
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#1F3A5F] hover:bg-slate-50 transition-all border-r border-[#D6DEE6]"
+                      title="Reporte General"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>General</span>
+                    </button>
+                    <button 
+                      onClick={() => downloadLossesPDF(selectedSede)}
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#EB5757] hover:bg-rose-50 transition-all border-r border-[#D6DEE6]"
+                      title="Top Pérdidas"
+                    >
+                      <TrendingDown className="w-3 h-3" />
+                      <span>Pérdidas</span>
+                    </button>
+                    <button 
+                      onClick={() => downloadGainsPDF(selectedSede)}
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#27AE60] hover:bg-emerald-50 transition-all border-r border-[#D6DEE6]"
+                      title="Top Ganancias"
+                    >
+                      <TrendingUp className="w-3 h-3" />
+                      <span>Ganancias</span>
+                    </button>
+                    <button 
+                      onClick={() => downloadProblematicPDF(selectedSede)}
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#2F80ED] hover:bg-blue-50 transition-all"
+                      title="Riesgo Operativo"
+                    >
+                      <ShieldAlert className="w-3 h-3" />
+                      <span>Riesgo</span>
+                    </button>
+                  </div>
                   <button 
                     onClick={() => {
                       setSelectedSede(null);
