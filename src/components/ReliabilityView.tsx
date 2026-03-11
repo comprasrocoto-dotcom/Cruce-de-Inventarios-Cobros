@@ -52,6 +52,46 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
   const summary = useMemo(() => getReliabilitySummary(data, viewMode), [data, viewMode]);
 
+  const allItemsForSede = useMemo(() => {
+    if (!selectedSede) return [];
+    return data.filter(a => {
+      const key = viewMode === 'sede' ? a.sede : (a.cc || 'SIN CC');
+      return key === selectedSede.sede;
+    });
+  }, [data, selectedSede, viewMode]);
+
+  const filteredItems = useMemo(() => {
+    let items = [...allItemsForSede].filter(a => {
+      if (showOnlyFaltantes) return a.totalDiferencia < -0.0001;
+      if (modalFilter === 'Faltantes') return a.totalDiferencia < -0.0001;
+      if (modalFilter === 'Sobrantes') return a.totalDiferencia > 0.0001;
+      if (modalFilter === 'Sin diferencia') return Math.abs(a.totalDiferencia) < 0.0001;
+      return true;
+    });
+
+    // Sorting
+    if (modalFilter === 'Faltantes' || showOnlyFaltantes) {
+      items.sort((a, b) => a.totalDiferencia - b.totalDiferencia); // More negative first
+    } else if (modalFilter === 'Sobrantes') {
+      items.sort((a, b) => b.totalDiferencia - a.totalDiferencia); // More positive first
+    } else if (modalFilter === 'Sin diferencia') {
+      items.sort((a, b) => a.articulo.localeCompare(b.articulo));
+    } else {
+      // "Todos" - sort by absolute difference descending
+      items.sort((a, b) => Math.abs(b.totalDiferencia) - Math.abs(a.totalDiferencia));
+    }
+
+    return items;
+  }, [allItemsForSede, modalFilter, showOnlyFaltantes]);
+
+  React.useEffect(() => {
+    if (selectedSede) {
+      console.log("totalItemsSede", allItemsForSede.length);
+      console.log("filteredItems", filteredItems.length);
+      console.log("sampleFiltered", filteredItems.slice(0, 5));
+    }
+  }, [selectedSede, allItemsForSede, filteredItems]);
+
   const entityLabel = viewMode === 'sede' ? 'Sede' : 'Centro de Costos';
   const entitiesLabel = viewMode === 'sede' ? 'Sedes' : 'Centros de Costos';
   const reportTitle = viewMode === 'sede' ? 'Confiabilidad por Sede' : 'Confiabilidad por Centro de Costos';
@@ -168,55 +208,117 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 45);
     doc.text(`Con diferencia: ${sede.articulosConDiferencia}`, 70, 52);
 
-    // Filtered Lists
-    const filterFn = (a: { variacion: number }) => {
-      if (showOnlyFaltantes) return a.variacion < -0.0001;
-      if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-      if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-      if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-      return true;
-    };
+    // Data Segregation
+    const faltantes = allItemsForSede.filter(a => a.totalDiferencia < -0.0001)
+      .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)));
+    
+    const sobrantes = allItemsForSede.filter(a => a.totalDiferencia > 0.0001)
+      .sort((a, b) => b.totalDiferencia - a.totalDiferencia);
+    
+    const sinDiferencia = allItemsForSede.filter(a => Math.abs(a.totalDiferencia) < 0.0001)
+      .sort((a, b) => a.articulo.localeCompare(b.articulo));
 
-    const filteredCritical = sede.topArticulosCriticos.filter(filterFn);
-    const filteredReliable = sede.topArticulosConfiables.filter(filterFn);
+    let currentY = 65;
 
-    // Table Critical
-    doc.setFontSize(14);
-    doc.text('Artículos Críticos', 14, 65);
+    // SECTION 1: ARTÍCULOS FALTANTES
+    if (faltantes.length > 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(235, 87, 87); // #EB5757 Rojo alerta
+      doc.text('ARTÍCULOS FALTANTES', 14, currentY);
+      currentY += 6;
+      doc.setFontSize(10);
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Total artículos faltantes: ${faltantes.length}`, 14, currentY);
+      currentY += 4;
+
       autoTable(doc, {
-      startY: 70,
-      head: [['Artículo', 'Variación', 'Impacto Económico']],
-      body: filteredCritical.map(a => [
-        a.articulo,
-        showOnlyFaltantes ? formatVariation(Math.abs(a.variacion), a.unidad) : formatVariation(a.variacion, a.unidad),
-        formatCurrency(a.impacto)
-      ]),
-      theme: 'striped',
-      headStyles: { fillColor: [235, 87, 87] }, // #EB5757 (Rojo alerta)
-    });
+        startY: currentY,
+        head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+        body: faltantes.map(a => [
+          a.articulo,
+          a.subarticulo,
+          formatVariation(a.totalDiferencia, a.subarticulo),
+          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
+        styles: { fontSize: 8 },
+        columnStyles: {
+          2: { textColor: [235, 87, 87], fontStyle: 'bold', halign: 'right' },
+          3: { halign: 'right' }
+        },
+        didDrawPage: (data) => {
+          currentY = data.cursor?.y || currentY;
+        }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+    }
 
-    // Table Reliable
-    const finalY = (doc as any).lastAutoTable.finalY || 70;
-    doc.setFontSize(14);
-    doc.text('Artículos Confiables', 14, finalY + 15);
+    // SECTION 2: ARTÍCULOS SOBRANTES
+    if (sobrantes.length > 0) {
+      if (currentY > 250) { doc.addPage(); currentY = 20; }
+      doc.setFontSize(14);
+      doc.setTextColor(39, 174, 96); // #27AE60 Verde positivo
+      doc.text('ARTÍCULOS SOBRANTES', 14, currentY);
+      currentY += 6;
+      doc.setFontSize(10);
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Total artículos sobrantes: ${sobrantes.length}`, 14, currentY);
+      currentY += 4;
+
       autoTable(doc, {
-      startY: finalY + 20,
-      head: [['Artículo', 'Variación', 'Impacto Económico']],
-      body: filteredReliable.map(a => [
-        a.articulo,
-        showOnlyFaltantes ? formatVariation(Math.abs(a.variacion), a.unidad) : formatVariation(a.variacion, a.unidad),
-        formatCurrency(a.impacto)
-      ]),
-      theme: 'striped',
-      headStyles: { fillColor: [39, 174, 96] }, // #27AE60 (Verde positivo)
-    });
+        startY: currentY,
+        head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+        body: sobrantes.map(a => [
+          a.articulo,
+          a.subarticulo,
+          `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
+          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
+        styles: { fontSize: 8 },
+        columnStyles: {
+          2: { textColor: [39, 174, 96], fontStyle: 'bold', halign: 'right' },
+          3: { halign: 'right' }
+        }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // SECTION 3: ARTÍCULOS SIN DIFERENCIA
+    if (sinDiferencia.length > 0) {
+      if (currentY > 250) { doc.addPage(); currentY = 20; }
+      doc.setFontSize(14);
+      doc.setTextColor(75, 85, 99); // gray-600
+      doc.text('ARTÍCULOS SIN DIFERENCIA', 14, currentY);
+      currentY += 6;
+      doc.setFontSize(10);
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Total artículos sin diferencia: ${sinDiferencia.length}`, 14, currentY);
+      currentY += 4;
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+        body: sinDiferencia.map(a => [
+          a.articulo,
+          a.subarticulo,
+          '0',
+          '$0'
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
+        styles: { fontSize: 8 },
+        columnStyles: {
+          2: { halign: 'right' },
+          3: { halign: 'right' }
+        }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+    }
 
     // Footer
-    const lastY = (doc as any).lastAutoTable.finalY || finalY + 20;
-    doc.setFontSize(12);
-    doc.setTextColor(225, 29, 72); // rose-600
-    doc.text(`Impacto Total ${entityLabel}: ${formatCurrency(sede.impactoEconomico)}`, 14, lastY + 15);
-
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184); // slate-400
     doc.text('Sistema de Auditoría de Inventarios - Reporte generado automáticamente', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
@@ -648,113 +750,49 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                 </div>
 
                 {/* Tables Section */}
-                <div className="space-y-8">
-                  {/* ARTÍCULOS CRÍTICOS */}
-                  <div>
-                    <h4 className="text-xs font-black text-rose-600 uppercase tracking-widest mb-4 flex items-center">
-                      <TrendingDown className="w-4 h-4 mr-2" />
-                      ARTÍCULOS CRÍTICOS
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Listado de Referencias
                     </h4>
-                    <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-[#1F3A5F] text-white">
-                          <tr>
-                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
-                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
-                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {[...selectedSede.topArticulosCriticos]
-                            .filter(a => {
-                              if (showOnlyFaltantes) return a.variacion < -0.0001;
-                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                              return true;
-                            })
-                            .sort((a, b) => Math.abs(b.impacto) - Math.abs(a.impacto))
-                            .map((a, i) => (
-                            <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F3F4F6] transition-colors`}>
-                              <td className="px-6 py-3 font-medium text-slate-700">{a.articulo}</td>
-                              <td className={`px-6 py-3 text-right font-bold ${a.variacion < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                {a.variacion > 0 ? '+' : ''}{formatVariation(a.variacion, a.unidad)}
-                              </td>
-                              <td className={`px-6 py-3 text-right font-black ${a.impacto < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                                {formatCurrency(a.impacto)}
-                              </td>
-                            </tr>
-                          ))}
-                          {selectedSede.topArticulosCriticos.filter(a => {
-                              if (showOnlyFaltantes) return a.variacion < -0.0001;
-                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                              return true;
-                            }).length === 0 && (
-                            <tr>
-                              <td colSpan={3} className="px-6 py-10 text-center text-slate-400 italic bg-slate-50">
-                                No hay artículos críticos que coincidan con el filtro
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                      Referencias encontradas: {filteredItems.length}
+                    </span>
                   </div>
-
-                  {/* ARTÍCULOS CONFIABLES */}
-                  <div>
-                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-4 flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      ARTÍCULOS CONFIABLES
-                    </h4>
-                    <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-[#1F3A5F] text-white">
-                          <tr>
-                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
-                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
-                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
+                  
+                  <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-[#1F3A5F] text-white">
+                        <tr>
+                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
+                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">UNIDAD</th>
+                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
+                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredItems.map((a, i) => (
+                          <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F3F4F6] transition-colors`}>
+                            <td className="px-6 py-3 font-medium text-slate-700">{a.articulo}</td>
+                            <td className="px-6 py-3 text-slate-500 text-[10px] font-bold">{a.subarticulo}</td>
+                            <td className={`px-6 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-rose-600' : a.totalDiferencia > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                              {a.totalDiferencia > 0 ? '+' : ''}{showOnlyFaltantes ? formatVariation(Math.abs(a.totalDiferencia), a.subarticulo) : formatVariation(a.totalDiferencia, a.subarticulo)}
+                            </td>
+                            <td className={`px-6 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                              {formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {[...selectedSede.topArticulosConfiables]
-                            .filter(a => {
-                              if (showOnlyFaltantes) return a.variacion < -0.0001;
-                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                              return true;
-                            })
-                            .sort((a, b) => a.articulo.localeCompare(b.articulo))
-                            .map((a, i) => (
-                            <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F3F4F6] transition-colors`}>
-                              <td className="px-6 py-3 font-medium text-emerald-700">{a.articulo}</td>
-                              <td className="px-6 py-3 text-right font-bold text-emerald-600">
-                                {formatVariation(a.variacion, a.unidad)}
-                              </td>
-                              <td className="px-6 py-3 text-right font-black text-emerald-600">
-                                {formatCurrency(a.impacto)}
-                              </td>
-                            </tr>
-                          ))}
-                          {selectedSede.topArticulosConfiables.filter(a => {
-                              if (showOnlyFaltantes) return a.variacion < -0.0001;
-                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                              return true;
-                            }).length === 0 && (
-                            <tr>
-                              <td colSpan={3} className="px-6 py-10 text-center text-slate-400 italic bg-slate-50">
-                                No hay artículos confiables que coincidan con el filtro
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                        {filteredItems.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="px-6 py-10 text-center text-slate-400 italic bg-slate-50">
+                              No hay artículos que coincidan con el filtro
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
