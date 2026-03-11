@@ -320,10 +320,9 @@ export function getReliabilitySummary(articles: ArticleSummary[], groupBy: 'sede
     const variacionTotal = arts.reduce((acc, a) => acc + a.totalDiferencia, 0);
     const impactoEconomico = arts.reduce((acc, a) => acc + (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)), 0);
 
-    let nivel: ReliabilityStats['nivel'] = 'Crítica';
-    if (confiabilidad >= 90) nivel = 'Alta';
-    else if (confiabilidad >= 75) nivel = 'Media';
-    else if (confiabilidad >= 60) nivel = 'Baja';
+    let nivel: ReliabilityStats['nivel'] = 'Crítico';
+    if (confiabilidad >= 85) nivel = 'Confiable';
+    else if (confiabilidad >= 70) nivel = 'Alerta';
 
     const sortedByImpact = [...arts].sort((a, b) => {
       const impactA = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);

@@ -43,6 +43,7 @@ interface ReliabilityViewProps {
 export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<'sede' | 'cc'>('sede');
   const [selectedSede, setSelectedSede] = useState<ReliabilityStats | null>(null);
+  const [selectedCCFilter, setSelectedCCFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
 
@@ -55,10 +56,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
   const allItemsForSede = useMemo(() => {
     if (!selectedSede) return [];
     return data.filter(a => {
+      if (selectedCCFilter) {
+        return a.sede === selectedSede.sede && (a.cc || 'SIN CC') === selectedCCFilter;
+      }
       const key = viewMode === 'sede' ? a.sede : (a.cc || 'SIN CC');
       return key === selectedSede.sede;
     });
-  }, [data, selectedSede, viewMode]);
+  }, [data, selectedSede, viewMode, selectedCCFilter]);
 
   const filteredItems = useMemo(() => {
     let items = [...allItemsForSede].filter(a => {
@@ -91,6 +95,54 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       console.log("sampleFiltered", filteredItems.slice(0, 5));
     }
   }, [selectedSede, allItemsForSede, filteredItems]);
+
+  const heatmapData = useMemo(() => {
+    const sedes: string[] = Array.from(new Set<string>(data.map(a => a.sede))).sort();
+    const ccs: string[] = Array.from(new Set<string>(data.map(a => a.cc || 'SIN CC'))).sort();
+
+    const matrix = sedes.map(sede => {
+      const row: any = { sede };
+      ccs.forEach(cc => {
+        const items = data.filter(a => a.sede === sede && (a.cc || 'SIN CC') === cc);
+        if (items.length === 0) {
+          row[cc] = null;
+        } else {
+          const sinDif = items.filter(a => Math.abs(a.totalDiferencia) < 0.0001).length;
+          const reliability = (sinDif / items.length) * 100;
+          row[cc] = {
+            reliability,
+            count: items.length,
+            sinDif
+          };
+        }
+      });
+      return row;
+    });
+
+    return { sedes, ccs, matrix };
+  }, [data]);
+
+  const getHeatmapCellColor = (reliability: number | null) => {
+    if (reliability === null) return 'bg-slate-50 text-slate-300';
+    if (reliability >= 85) return 'bg-[#27AE60] text-white';
+    if (reliability >= 70) return 'bg-[#F2C94C] text-black';
+    return 'bg-[#EB5757] text-white';
+  };
+
+  const handleHeatmapCellClick = (sedeName: string, ccName: string, reliabilityData: any) => {
+    if (!reliabilityData) return;
+    
+    // Find the ReliabilityStats for this sede to open the modal
+    // We use the 'sede' view summary to get the base stats
+    const sedeStatsSummary = getReliabilitySummary(data, 'sede');
+    const sedeStats = sedeStatsSummary.sedesStats.find(s => s.sede === sedeName);
+    
+    if (sedeStats) {
+      setViewMode('sede');
+      setSelectedSede(sedeStats);
+      setSelectedCCFilter(ccName);
+    }
+  };
 
   const entityLabel = viewMode === 'sede' ? 'Sede' : 'Centro de Costos';
   const entitiesLabel = viewMode === 'sede' ? 'Sedes' : 'Centros de Costos';
@@ -136,19 +188,30 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
   const getLevelColor = (nivel: string) => {
     switch (nivel) {
-      case 'Alta': return 'text-status-sobrante bg-emerald-50 border-emerald-100';
-      case 'Media': return 'text-amber-600 bg-amber-50 border-amber-100';
-      case 'Baja': return 'text-orange-600 bg-orange-50 border-orange-100';
-      case 'Crítica': return 'text-status-faltante bg-rose-50 border-rose-100';
+      case 'Confiable': return 'text-[#27AE60] bg-emerald-50 border-emerald-100';
+      case 'Alerta': return 'text-[#F2C94C] bg-amber-50 border-amber-100';
+      case 'Crítico': return 'text-[#EB5757] bg-rose-50 border-rose-100';
       default: return 'text-brand-text-secondary bg-slate-50 border-brand-border';
     }
   };
 
+  const getSemaphoreEmoji = (p: number) => {
+    if (p >= 85) return '🟢';
+    if (p >= 70) return '🟡';
+    return '🔴';
+  };
+
+  const getStatusLabel = (p: number) => {
+    if (p >= 85) return 'Confiable';
+    if (p >= 70) return 'Alerta';
+    return 'Crítico';
+  };
+
   const ReliabilityBar = ({ percentage }: { percentage: number }) => {
     const getColor = (p: number) => {
-      if (p >= 85) return '#10B981';
-      if (p >= 70) return '#F59E0B';
-      return '#EF4444';
+      if (p >= 85) return '#27AE60';
+      if (p >= 70) return '#F2C94C';
+      return '#EB5757';
     };
 
     return (
@@ -167,13 +230,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
   };
 
   const distributionData = useMemo(() => {
-    const counts = { Alta: 0, Media: 0, Baja: 0, Crítica: 0 };
-    summary.sedesStats.forEach(s => counts[s.nivel]++);
+    const counts = { Confiable: 0, Alerta: 0, Crítico: 0 };
+    summary.sedesStats.forEach(s => {
+      if (counts.hasOwnProperty(s.nivel)) {
+        counts[s.nivel as keyof typeof counts]++;
+      }
+    });
     return [
-      { name: 'Alta', value: counts.Alta, color: '#1FB980' }, // status-sobrante
-      { name: 'Media', value: counts.Media, color: '#f59e0b' },
-      { name: 'Baja', value: counts.Baja, color: '#f97316' },
-      { name: 'Crítica', value: counts.Crítica, color: '#E5484D' }, // status-faltante
+      { name: 'Confiable', value: counts.Confiable, color: '#27AE60' },
+      { name: 'Alerta', value: counts.Alerta, color: '#F2C94C' },
+      { name: 'Crítico', value: counts.Crítico, color: '#EB5757' },
     ].filter(d => d.value > 0);
   }, [summary]);
 
@@ -208,6 +274,84 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 45);
     doc.text(`Con diferencia: ${sede.articulosConDiferencia}`, 70, 52);
 
+    // CC Analysis
+    const ccStatsMap = new Map<string, {
+      evaluados: number;
+      sinDiferencia: number;
+      conDiferencia: number;
+      impacto: number;
+    }>();
+
+    allItemsForSede.forEach(a => {
+      const cc = a.cc || 'SIN CC';
+      if (!ccStatsMap.has(cc)) {
+        ccStatsMap.set(cc, { evaluados: 0, sinDiferencia: 0, conDiferencia: 0, impacto: 0 });
+      }
+      const stats = ccStatsMap.get(cc)!;
+      stats.evaluados++;
+      const diff = Math.abs(a.totalDiferencia);
+      if (diff < 0.0001) {
+        stats.sinDiferencia++;
+      } else {
+        stats.conDiferencia++;
+      }
+      stats.impacto += diff * (a.ultimoCoste || a.costePromedio);
+    });
+
+    const ccStatsArray = Array.from(ccStatsMap.entries()).map(([cc, stats]) => {
+      const confiabilidad = stats.evaluados > 0 ? (stats.sinDiferencia / stats.evaluados) * 100 : 0;
+      return {
+        cc,
+        ...stats,
+        confiabilidad,
+        estado: getStatusLabel(confiabilidad),
+        emoji: getSemaphoreEmoji(confiabilidad)
+      };
+    }).sort((a, b) => a.confiabilidad - b.confiabilidad);
+
+    let currentY = 65;
+
+    // SECTION: CONFIABILIDAD POR CENTRO DE COSTOS
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.text('CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
+    currentY += 6;
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Centro de Costos', 'Evaluados', 'Sin Dif.', 'Con Dif.', 'Impacto $', 'Confiabilidad', 'Estado']],
+      body: ccStatsArray.map(c => [
+        c.cc,
+        c.evaluados,
+        c.sinDiferencia,
+        c.conDiferencia,
+        formatCurrency(c.impacto),
+        `${Math.round(c.confiabilidad)}%`,
+        `${c.emoji} ${c.estado}`
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 8 },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'right' },
+        5: { halign: 'center', fontStyle: 'bold' },
+        6: { halign: 'left' }
+      }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFontSize(11);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Confiabilidad General (Sede): ${Math.round(sede.confiabilidad)}%`, 14, currentY);
+    doc.text(`${getSemaphoreEmoji(sede.confiabilidad)} ${getStatusLabel(sede.confiabilidad)}`, 14, currentY + 6);
+    doc.setFont('helvetica', 'normal');
+    
+    currentY += 12;
+
     // Data Segregation
     const faltantes = allItemsForSede.filter(a => a.totalDiferencia < -0.0001)
       .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)));
@@ -218,9 +362,6 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     const sinDiferencia = allItemsForSede.filter(a => Math.abs(a.totalDiferencia) < 0.0001)
       .sort((a, b) => a.articulo.localeCompare(b.articulo));
 
-    let currentY = 65;
-
-    // SECTION 1: ARTÍCULOS FALTANTES
     if (faltantes.length > 0) {
       doc.setFontSize(14);
       doc.setTextColor(235, 87, 87); // #EB5757 Rojo alerta
@@ -408,6 +549,33 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       </div>
 
       {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl card border-l-4 border-[#27AE60]">
+          <div className="flex items-center justify-between mb-2">
+            <CheckCircle2 className="w-5 h-5 text-[#27AE60]" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Confiables</span>
+          </div>
+          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
+          <p className="text-sm text-text-secondary mt-1">{entitiesLabel} con precisión alta</p>
+        </div>
+        <div className="bg-white p-6 rounded-2xl card border-l-4 border-[#F2C94C]">
+          <div className="flex items-center justify-between mb-2">
+            <AlertTriangle className="w-5 h-5 text-[#F2C94C]" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">En Alerta</span>
+          </div>
+          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
+          <p className="text-sm text-text-secondary mt-1">{entitiesLabel} con descuadres medios</p>
+        </div>
+        <div className="bg-white p-6 rounded-2xl card border-l-4 border-[#EB5757]">
+          <div className="flex items-center justify-between mb-2">
+            <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Críticos</span>
+          </div>
+          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
+          <p className="text-sm text-text-secondary mt-1">{entitiesLabel} con descuadres graves</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl card">
           <div className="flex items-center justify-between mb-2">
@@ -462,7 +630,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                 />
                 <Bar dataKey="confiabilidad" radius={[0, 4, 4, 0]} barSize={20}>
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.confiabilidad >= 90 ? '#1FB980' : entry.confiabilidad >= 75 ? '#f59e0b' : entry.confiabilidad >= 60 ? '#f97316' : '#E5484D'} />
+                    <Cell key={`cell-${index}`} fill={entry.confiabilidad >= 85 ? '#27AE60' : entry.confiabilidad >= 70 ? '#F2C94C' : '#EB5757'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -523,10 +691,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
               className="bg-slate-50 border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
             >
               <option value="all">Todos los niveles</option>
-              <option value="Alta">Alta Confiabilidad</option>
-              <option value="Media">Media Confiabilidad</option>
-              <option value="Baja">Baja Confiabilidad</option>
-              <option value="Crítica">Crítica</option>
+              <option value="Confiable">Confiable</option>
+              <option value="Alerta">Alerta</option>
+              <option value="Crítico">Crítico</option>
             </select>
           </div>
         </div>
@@ -549,6 +716,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                 </h4>
                 {/* DEBAJO DEL NOMBRE: Etiqueta de estado */}
                 <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(sede.nivel)}`}>
+                  <span className="mr-1">{getSemaphoreEmoji(sede.confiabilidad)}</span>
                   {sede.nivel}
                 </div>
               </div>
@@ -589,6 +757,81 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         ))}
       </div>
 
+      {/* Heatmap Section */}
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="flex items-center space-x-2 mb-8 text-slate-400">
+          <PieChart className="w-5 h-5" />
+          <span className="text-xs font-bold uppercase tracking-widest">Mapa de Calor de Confiabilidad (Sede vs Centro de Costos)</span>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="p-4 bg-slate-50 border border-slate-200 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 z-10 min-w-[180px]">
+                  Sede / Centro
+                </th>
+                {heatmapData.ccs.map(cc => (
+                  <th key={cc} className="p-4 bg-slate-50 border border-slate-200 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest min-w-[120px]">
+                    {cc}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {heatmapData.matrix.map((row) => (
+                <tr key={row.sede}>
+                  <td className="p-4 bg-white border border-slate-200 font-bold text-slate-700 text-sm sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                    {row.sede}
+                  </td>
+                  {heatmapData.ccs.map(cc => {
+                    const cell = row[cc];
+                    return (
+                      <td 
+                        key={cc} 
+                        className={`p-0 border border-slate-200 transition-all ${cell ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}
+                        onClick={() => handleHeatmapCellClick(row.sede, cc, cell)}
+                      >
+                        <div className={`w-full h-full min-h-[60px] flex flex-col items-center justify-center p-2 ${getHeatmapCellColor(cell?.reliability ?? null)}`}>
+                          {cell ? (
+                            <>
+                              <span className="text-lg font-black leading-none">{Math.round(cell.reliability)}%</span>
+                              <span className="text-[10px] font-bold opacity-80 mt-1 uppercase tracking-tighter">
+                                {getStatusLabel(cell.reliability)}
+                              </span>
+                              <span className="text-[9px] opacity-60 mt-0.5">
+                                {cell.sinDif}/{cell.count} art.
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[10px] font-medium opacity-40 italic">N/A</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="mt-6 flex flex-wrap items-center gap-6 justify-center text-[11px] font-bold uppercase tracking-widest">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-[#27AE60]"></div>
+            <span className="text-slate-500">Confiable (≥85%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-[#F2C94C]"></div>
+            <span className="text-slate-500">Alerta (70-84%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-[#EB5757]"></div>
+            <span className="text-slate-500">Crítico ({'<'}70%)</span>
+          </div>
+        </div>
+      </div>
+
       {/* Ranking Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-50 flex items-center justify-between">
@@ -623,7 +866,17 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                   </td>
                   <td className="px-6 py-4 font-bold text-slate-700">{s.sede}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className="font-black text-slate-900">{Math.round(s.confiabilidad)}%</span>
+                    <div className="flex flex-col items-center">
+                      <span className="font-black text-slate-900">{Math.round(s.confiabilidad)}%</span>
+                      <span className="text-[10px] font-bold flex items-center gap-1">
+                        <span>{getSemaphoreEmoji(s.confiabilidad)}</span>
+                        <span className={
+                          s.confiabilidad >= 85 ? 'text-[#27AE60]' : 
+                          s.confiabilidad >= 70 ? 'text-[#F2C94C]' : 
+                          'text-[#EB5757]'
+                        }>{getStatusLabel(s.confiabilidad)}</span>
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center text-slate-600">{s.articulosEvaluados}</td>
                   <td className="px-6 py-4 text-center text-emerald-600 font-medium">{s.articulosSinDiferencia}</td>
@@ -671,8 +924,23 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">Detalle de Confiabilidad - {selectedSede.sede}</h3>
-                  <div className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(selectedSede.nivel)}`}>
-                    Nivel {selectedSede.nivel}
+                  {selectedCCFilter && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Filtrado por:</span>
+                      <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase border border-indigo-100">
+                        {selectedCCFilter}
+                      </span>
+                      <button 
+                        onClick={() => setSelectedCCFilter(null)}
+                        className="text-slate-400 hover:text-rose-500 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(selectedSede.nivel)}`}>
+                    <span className="mr-1">{getSemaphoreEmoji(selectedSede.confiabilidad)}</span>
+                    Estado {selectedSede.nivel}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -686,6 +954,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                   <button 
                     onClick={() => {
                       setSelectedSede(null);
+                      setSelectedCCFilter(null);
                       setModalFilter('Todos');
                       setShowOnlyFaltantes(false);
                     }}

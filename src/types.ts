@@ -44,7 +44,7 @@ export interface DashboardStats {
 export interface ReliabilityStats {
   sede: string;
   confiabilidad: number;
-  nivel: 'Alta' | 'Media' | 'Baja' | 'Crítica';
+  nivel: 'Confiable' | 'Alerta' | 'Crítico';
   articulosEvaluados: number;
   articulosSinDiferencia: number;
   articulosConDiferencia: number;
