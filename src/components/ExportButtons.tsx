@@ -207,7 +207,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
       head: [['Sede', 'Artículo', 'Unidad', 'Diferencia Total', 'Estado', 'Costo', 'Total Cobro']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [30, 41, 59] }, // slate-800
+      headStyles: { fillColor: [31, 42, 68] }, // #1F2A44 (brand-primary)
       styles: { fontSize: 8 },
       columnStyles: {
         3: { halign: 'right' },
@@ -223,14 +223,14 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
     <div className="flex flex-wrap gap-3">
       <button
         onClick={exportToExcel}
-        className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-100"
+        className="flex items-center space-x-2 bg-status-sobrante hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-100"
       >
         <FileDown className="w-4 h-4" />
         <span>Excel Jerárquico</span>
       </button>
       <button
         onClick={exportToPDF}
-        className="flex items-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-rose-100"
+        className="flex items-center space-x-2 bg-status-cobra hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-rose-100"
       >
         <FileText className="w-4 h-4" />
         <span>PDF Cobros</span>

@@ -51,16 +51,16 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
         <span>Artículos filtrados: {data.length}</span>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-slate-100">
+      <div className="overflow-x-auto card rounded-2xl">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-800 text-white text-[10px] uppercase tracking-widest">
+          <thead className="table-header text-[10px] uppercase tracking-widest">
             <tr>
-              <th className="px-6 py-4 font-bold">Sede / Artículo</th>
+              <th className="px-6 py-4 font-bold rounded-tl-2xl">Sede / Artículo</th>
               <th className="px-6 py-4 font-bold">Unidad</th>
               <th className="px-6 py-4 font-bold text-right">Diferencia Neta</th>
               <th className="px-6 py-4 font-bold text-center">Estado</th>
               <th className="px-6 py-4 font-bold text-right">Coste Línea</th>
-              <th className="px-6 py-4 font-bold text-right">Total Cobro</th>
+              <th className="px-6 py-4 font-bold text-right rounded-tr-2xl">Total Cobro</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -68,18 +68,18 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
               <React.Fragment key={sede}>
                 {/* Sede Header Row */}
                 <tr 
-                  className="bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors border-b border-slate-200"
+                  className="bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors border-b border-brand-border"
                   onClick={() => toggleSede(sede)}
                 >
                   <td colSpan={6} className="px-6 py-3">
-                    <div className="flex items-center font-black text-slate-800 uppercase tracking-tight">
+                    <div className="flex items-center font-black text-text-main uppercase tracking-tight">
                       {expandedSedes[sede] ? (
-                        <ChevronDown className="w-5 h-5 mr-2 text-indigo-500" />
+                        <ChevronDown className="w-5 h-5 mr-2 text-secondary" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 mr-2 text-slate-400" />
+                        <ChevronRight className="w-5 h-5 mr-2 text-text-secondary" />
                       )}
                       <span>SEDE: {sede}</span>
-                      <span className="ml-3 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold">
+                      <span className="ml-3 px-2 py-0.5 bg-blue-50 text-secondary rounded text-[10px] font-bold border border-blue-100">
                         {articles.length} ARTÍCULOS
                       </span>
                     </div>
@@ -95,43 +95,43 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                     <React.Fragment key={artKey}>
                       <tr 
                         className={clsx(
-                          "border-b border-slate-50 hover:bg-indigo-50/30 transition-colors cursor-pointer",
-                          isExpanded && "bg-indigo-50/20"
+                          "border-b border-slate-50 hover:bg-brand-table-hover transition-colors cursor-pointer",
+                          isExpanded && "bg-brand-table-selected"
                         )}
                         onClick={() => toggleArticle(artKey)}
                       >
                         <td className="px-6 py-4 pl-12">
                           <div className="flex items-center">
                             {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 mr-2 text-indigo-400" />
+                              <ChevronDown className="w-4 h-4 mr-2 text-secondary" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 mr-2 text-slate-300" />
+                              <ChevronRight className="w-4 h-4 mr-2 text-text-secondary" />
                             )}
-                            <span className="font-bold text-slate-900">{art.articulo}</span>
+                            <span className="font-bold text-text-main">{art.articulo}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 font-medium">{art.subarticulo}</td>
+                        <td className="px-6 py-4 text-text-secondary font-medium">{art.subarticulo}</td>
                         <td className={clsx(
                           "px-6 py-4 text-right font-black",
-                          art.totalDiferencia < 0 ? "text-rose-600" : "text-emerald-600"
+                          art.totalDiferencia < 0 ? "text-status-faltante" : "text-status-sobrante"
                         )}>
                           {art.totalDiferencia.toLocaleString()}
                         </td>
                         <td className="px-6 py-4 text-center">
                           {art.debeCobrar ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-status-cobra border border-rose-100">
                               <AlertCircle className="w-3 h-3 mr-1" /> Cobra
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-50 text-status-sin-cobra border border-brand-border">
                               <CheckCircle2 className="w-3 h-3 mr-1" /> No cobra
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-right text-slate-600 font-medium">
+                        <td className="px-6 py-4 text-right text-text-secondary font-medium">
                           {formatCurrency(art.ultimoCoste || art.costePromedio)}
                         </td>
-                        <td className="px-6 py-4 text-right font-black text-slate-900">
+                        <td className="px-6 py-4 text-right font-black text-text-main">
                           {art.totalCobro > 0 ? formatCurrency(art.totalCobro) : '-'}
                         </td>
                       </tr>
@@ -147,23 +147,23 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                                 exit={{ opacity: 0, height: 0 }}
                                 className="overflow-hidden"
                               >
-                                <div className="ml-8 border-l-4 border-indigo-200 pl-6 py-2">
-                                  <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Detalle de movimientos por fecha</h4>
+                                 <div className="ml-8 border-l-4 border-secondary/30 pl-6 py-2">
+                                  <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Detalle de movimientos por fecha</h4>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {art.movements.map((m, idx) => (
-                                      <div key={idx} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                                      <div key={idx} className="bg-white p-3 rounded-xl border border-border shadow-sm flex justify-between items-center">
                                         <div>
-                                          <p className="text-[10px] font-bold text-slate-400 uppercase">{format(m.fecha, 'MMMM yyyy', { locale: es })}</p>
-                                          <p className="text-xs font-bold text-slate-700">{format(m.fecha, 'dd MMM yyyy', { locale: es })}</p>
+                                          <p className="text-[10px] font-bold text-text-secondary uppercase">{format(m.fecha, 'MMMM yyyy', { locale: es })}</p>
+                                          <p className="text-xs font-bold text-text-main">{format(m.fecha, 'dd MMM yyyy', { locale: es })}</p>
                                         </div>
                                         <div className="text-right">
                                           <p className={clsx(
                                             "text-sm font-black",
-                                            m.variacion < 0 ? "text-rose-500" : "text-emerald-500"
+                                            m.variacion < 0 ? "text-status-faltante" : "text-status-sobrante"
                                           )}>
                                             {m.variacion > 0 ? '+' : ''}{m.variacion.toLocaleString()}
                                           </p>
-                                          <p className="text-[10px] font-medium text-slate-400">{formatCurrency(m.costeLinea)}</p>
+                                          <p className="text-[10px] font-medium text-text-secondary">{formatCurrency(m.costeLinea)}</p>
                                         </div>
                                       </div>
                                     ))}

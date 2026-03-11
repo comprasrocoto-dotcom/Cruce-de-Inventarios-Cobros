@@ -85,29 +85,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
 
   if (hasData && fileInfo) {
     return (
-      <div className="space-y-4 mb-8">
-        <div className="flex items-center justify-between bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
-          <div className="flex items-center space-x-5">
-            <div className="bg-emerald-100 p-4 rounded-2xl">
-              <FileSpreadsheet className="w-8 h-8 text-emerald-600" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Archivo cargado correctamente</p>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mt-1">{fileInfo.name}</h3>
-              <p className="text-sm text-slate-500 font-medium">{fileInfo.rows.toLocaleString()} registros procesados con éxito</p>
-            </div>
+      <div className="flex items-center justify-between bg-white border border-brand-border px-4 py-2 rounded-xl shadow-sm mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="bg-emerald-50 p-2 rounded-lg">
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
           </div>
-          <button 
-            onClick={handleReset}
-            className="flex items-center space-x-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all border border-slate-200"
-          >
-            <X className="w-4 h-4" />
-            <span>Cargar otro</span>
-          </button>
+          <div>
+            <h3 className="text-xs font-bold text-brand-text truncate max-w-[200px]">{fileInfo.name}</h3>
+            <p className="text-[10px] text-brand-text-secondary font-medium">{fileInfo.rows.toLocaleString()} registros</p>
+          </div>
         </div>
+        <button 
+          onClick={handleReset}
+          className="flex items-center space-x-1 px-3 py-1.5 bg-brand-bg hover:bg-slate-200 text-brand-text-secondary rounded-lg text-[10px] font-bold transition-all border border-brand-border"
+        >
+          <X className="w-3 h-3" />
+          <span>Cambiar base</span>
+        </button>
       </div>
     );
   }
@@ -121,7 +115,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
         onClick={() => fileInputRef.current?.click()}
         className={`
           relative border-2 border-dashed rounded-3xl p-12 transition-all duration-300 text-center cursor-pointer
-          ${isDragging ? 'border-indigo-500 bg-indigo-50 scale-[1.01]' : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'}
+          ${isDragging ? 'border-brand-secondary bg-blue-50 scale-[1.01]' : 'border-brand-border bg-white hover:border-brand-secondary hover:bg-slate-50'}
           ${loading ? 'pointer-events-none opacity-60' : ''}
         `}
       >
@@ -135,19 +129,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
         
         <div className="flex flex-col items-center">
           {loading ? (
-            <div className="bg-indigo-500 p-4 rounded-2xl shadow-lg shadow-indigo-200 mb-4 animate-pulse">
+            <div className="bg-brand-secondary p-4 rounded-2xl shadow-lg shadow-blue-100 mb-4 animate-pulse">
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>
           ) : (
-            <div className="bg-indigo-500 p-4 rounded-2xl shadow-lg shadow-indigo-200 mb-4">
+            <div className="bg-brand-secondary p-4 rounded-2xl shadow-lg shadow-blue-100 mb-4">
               <Upload className="w-8 h-8 text-white" />
             </div>
           )}
           
-          <h3 className="text-xl font-bold text-slate-900 mb-2">
+          <h3 className="text-xl font-bold text-brand-text mb-2">
             {loading ? 'Procesando archivo...' : 'Cargar base de inventarios'}
           </h3>
-          <p className="text-slate-500 max-w-xs mx-auto text-sm">
+          <p className="text-brand-text-secondary max-w-xs mx-auto text-sm">
             {loading 
               ? 'Estamos normalizando las columnas y analizando los datos...' 
               : 'Arrastra tu archivo Excel (.xlsx) aquí o haz clic para seleccionarlo.'}

@@ -90,62 +90,37 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
   };
 
   const getVariationColor = (val: number) => {
-    if (Math.abs(val) < 0.01) return 'text-slate-400';
-    return val < 0 ? 'text-rose-600' : 'text-emerald-600';
+    if (Math.abs(val) < 0.01) return 'text-status-sin-diferencia';
+    return val < 0 ? 'text-status-faltante' : 'text-status-sobrante';
   };
 
   const getLevelColor = (nivel: string) => {
     switch (nivel) {
-      case 'Alta': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+      case 'Alta': return 'text-status-sobrante bg-emerald-50 border-emerald-100';
       case 'Media': return 'text-amber-600 bg-amber-50 border-amber-100';
       case 'Baja': return 'text-orange-600 bg-orange-50 border-orange-100';
-      case 'Crítica': return 'text-rose-600 bg-rose-50 border-rose-100';
-      default: return 'text-slate-600 bg-slate-50 border-slate-100';
+      case 'Crítica': return 'text-status-faltante bg-rose-50 border-rose-100';
+      default: return 'text-brand-text-secondary bg-slate-50 border-brand-border';
     }
   };
 
-  const getLevelProgressColor = (nivel: string) => {
-    switch (nivel) {
-      case 'Alta': return 'text-emerald-500';
-      case 'Media': return 'text-amber-500';
-      case 'Baja': return 'text-orange-500';
-      case 'Crítica': return 'text-rose-500';
-      default: return 'text-slate-500';
-    }
-  };
-
-  const CircularProgress = ({ percentage, nivel }: { percentage: number, nivel: string }) => {
-    const radius = 32;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (percentage / 100) * circumference;
-    const color = getLevelProgressColor(nivel);
+  const ReliabilityBar = ({ percentage }: { percentage: number }) => {
+    const getColor = (p: number) => {
+      if (p >= 85) return '#10B981';
+      if (p >= 70) return '#F59E0B';
+      return '#EF4444';
+    };
 
     return (
-      <div className="relative flex items-center justify-center">
-        <svg className="w-20 h-20 transform -rotate-90">
-          <circle
-            cx="40"
-            cy="40"
-            r={radius}
-            stroke="currentColor"
-            strokeWidth="6"
-            fill="transparent"
-            className="text-slate-100"
+      <div className="w-full mt-2">
+        <div className="w-full h-[10px] bg-[#E5E7EB] rounded-[8px] overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="h-full rounded-[8px]"
+            style={{ backgroundColor: getColor(percentage) }}
           />
-          <circle
-            cx="40"
-            cy="40"
-            r={radius}
-            stroke="currentColor"
-            strokeWidth="6"
-            fill="transparent"
-            strokeDasharray={circumference}
-            style={{ strokeDashoffset: offset }}
-            className={`${color} transition-all duration-1000 ease-out`}
-          />
-        </svg>
-        <div className="absolute flex flex-col items-center justify-center">
-          <span className="text-lg font-black text-slate-900 leading-none">{Math.round(percentage)}%</span>
         </div>
       </div>
     );
@@ -155,10 +130,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     const counts = { Alta: 0, Media: 0, Baja: 0, Crítica: 0 };
     summary.sedesStats.forEach(s => counts[s.nivel]++);
     return [
-      { name: 'Alta', value: counts.Alta, color: '#10b981' },
+      { name: 'Alta', value: counts.Alta, color: '#1FB980' }, // status-sobrante
       { name: 'Media', value: counts.Media, color: '#f59e0b' },
       { name: 'Baja', value: counts.Baja, color: '#f97316' },
-      { name: 'Crítica', value: counts.Crítica, color: '#f43f5e' },
+      { name: 'Crítica', value: counts.Crítica, color: '#E5484D' }, // status-faltante
     ].filter(d => d.value > 0);
   }, [summary]);
 
@@ -177,17 +152,17 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
     // Header
     doc.setFontSize(18);
-    doc.setTextColor(15, 23, 42); // slate-900
+    doc.setTextColor(31, 42, 68); // #1F2A44 (brand-primary)
     doc.text(`Detalle de Confiabilidad - ${sede.sede}`, 14, 22);
 
     doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139); // slate-500
+    doc.setTextColor(107, 114, 128); // gray-500
     doc.text(`Generado por: Sistema de Auditoría de Inventarios`, 14, 30);
     doc.text(`Fecha: ${dateStr}`, 14, 35);
 
     // KPIs
     doc.setFontSize(12);
-    doc.setTextColor(15, 23, 42);
+    doc.setTextColor(31, 42, 68);
     doc.text(`Confiabilidad: ${Math.round(sede.confiabilidad)}%`, 14, 45);
     doc.text(`Evaluados: ${sede.articulosEvaluados}`, 14, 52);
     doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 45);
@@ -208,7 +183,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     // Table Critical
     doc.setFontSize(14);
     doc.text('Artículos Críticos', 14, 65);
-    autoTable(doc, {
+      autoTable(doc, {
       startY: 70,
       head: [['Artículo', 'Variación', 'Impacto Económico']],
       body: filteredCritical.map(a => [
@@ -217,14 +192,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         formatCurrency(a.impacto)
       ]),
       theme: 'striped',
-      headStyles: { fillColor: [244, 63, 94] }, // rose-500
+      headStyles: { fillColor: [229, 72, 77] }, // #E5484D (status-faltante)
     });
 
     // Table Reliable
     const finalY = (doc as any).lastAutoTable.finalY || 70;
     doc.setFontSize(14);
     doc.text('Artículos Confiables', 14, finalY + 15);
-    autoTable(doc, {
+      autoTable(doc, {
       startY: finalY + 20,
       head: [['Artículo', 'Variación', 'Impacto Económico']],
       body: filteredReliable.map(a => [
@@ -233,7 +208,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         formatCurrency(a.impacto)
       ]),
       theme: 'striped',
-      headStyles: { fillColor: [16, 185, 129] }, // emerald-500
+      headStyles: { fillColor: [31, 185, 128] }, // #1FB980 (status-sobrante)
     });
 
     // Footer
@@ -254,30 +229,30 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">{reportTitle}</h2>
-          <p className="text-slate-500">Indicador de precisión y consistencia del inventario por {entityLabel.toLowerCase()}</p>
+          <h2 className="text-2xl font-bold text-brand-text">{reportTitle}</h2>
+          <p className="text-brand-text-secondary">Indicador de precisión y consistencia del inventario por {entityLabel.toLowerCase()}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* View Mode Selector */}
-          <div className="bg-slate-100 p-1 rounded-xl flex mr-4">
+          <div className="bg-brand-bg p-1 rounded-xl flex mr-4">
             <button
               onClick={() => setViewMode('sede')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-white text-brand-secondary shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
             >
               Por Sede
             </button>
             <button
               onClick={() => setViewMode('cc')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-white text-brand-secondary shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
             >
               Por Centro de Costos
             </button>
           </div>
-          <button className="flex items-center space-x-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all">
+          <button className="flex items-center space-x-2 bg-white border border-brand-border text-brand-text px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all">
             <FileDown className="w-4 h-4" />
             <span>Exportar Excel</span>
           </button>
-          <button className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+          <button className="flex items-center space-x-2 bg-brand-secondary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-secondary-hover transition-all shadow-lg shadow-blue-100">
             <FileDown className="w-4 h-4" />
             <span>Exportar PDF</span>
           </button>
@@ -285,46 +260,46 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       </div>
 
       {/* Main Findings Block */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
-        <div className="flex items-center space-x-2 mb-4 text-indigo-700">
+      <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6">
+        <div className="flex items-center space-x-2 mb-4 text-brand-secondary">
           <Target className="w-5 h-5" />
           <h3 className="font-bold uppercase tracking-wider text-sm">Hallazgos Principales</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="flex items-start space-x-3">
-            <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600 mt-1">
+            <div className="bg-emerald-50 p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-indigo-600 font-semibold uppercase">{entityLabel} más confiable</p>
-              <p className="text-lg font-bold text-slate-900">{summary.sedeMasConfiable}</p>
+              <p className="text-xs text-text-secondary font-semibold uppercase">{entityLabel} más confiable</p>
+              <p className="text-lg font-bold text-text-main">{summary.sedeMasConfiable}</p>
             </div>
           </div>
           <div className="flex items-start space-x-3">
-            <div className="bg-rose-100 p-2 rounded-lg text-rose-600 mt-1">
+            <div className="bg-rose-50 p-2 rounded-lg text-status-faltante mt-1 border border-rose-100">
               <TrendingDown className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-indigo-600 font-semibold uppercase">{entityLabel} menos confiable</p>
-              <p className="text-lg font-bold text-slate-900">{summary.sedeMenosConfiable}</p>
+              <p className="text-xs text-text-secondary font-semibold uppercase">{entityLabel} menos confiable</p>
+              <p className="text-lg font-bold text-text-main">{summary.sedeMenosConfiable}</p>
             </div>
           </div>
           <div className="flex items-start space-x-3">
-            <div className="bg-amber-100 p-2 rounded-lg text-amber-600 mt-1">
+            <div className="bg-amber-50 p-2 rounded-lg text-amber-600 mt-1 border border-amber-100">
               <DollarSign className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-indigo-600 font-semibold uppercase">Mayor Impacto Económico</p>
-              <p className="text-lg font-bold text-slate-900">{formatCurrency(summary.impactoEconomicoTotal)}</p>
+              <p className="text-xs text-text-secondary font-semibold uppercase">Mayor Impacto Económico</p>
+              <p className="text-lg font-bold text-text-main">{formatCurrency(summary.impactoEconomicoTotal)}</p>
             </div>
           </div>
           <div className="flex items-start space-x-3">
-            <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600 mt-1">
+            <div className="bg-blue-50 p-2 rounded-lg text-secondary mt-1 border border-blue-100">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-indigo-600 font-semibold uppercase">Diferencias Detectadas</p>
-              <p className="text-lg font-bold text-slate-900">{summary.totalDiferencias} artículos</p>
+              <p className="text-xs text-text-secondary font-semibold uppercase">Diferencias Detectadas</p>
+              <p className="text-lg font-bold text-text-main">{summary.totalDiferencias} artículos</p>
             </div>
           </div>
         </div>
@@ -332,44 +307,44 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl card">
           <div className="flex items-center justify-between mb-2">
-            <Building2 className="w-5 h-5 text-slate-400" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{entitiesLabel}</span>
+            <Building2 className="w-5 h-5 text-text-secondary" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">{entitiesLabel}</span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{summary.totalSedes}</p>
-          <p className="text-sm text-slate-500 mt-1">{entitiesLabel} evaluados</p>
+          <p className="text-3xl font-bold text-text-main">{summary.totalSedes}</p>
+          <p className="text-sm text-text-secondary mt-1">{entitiesLabel} evaluados</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl card">
           <div className="flex items-center justify-between mb-2">
-            <Target className="w-5 h-5 text-indigo-500" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Promedio</span>
+            <Target className="w-5 h-5 text-secondary" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Promedio</span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{Math.round(summary.promedioConfiabilidad)}%</p>
-          <p className="text-sm text-slate-500 mt-1">Confiabilidad general</p>
+          <p className="text-3xl font-bold text-text-main">{Math.round(summary.promedioConfiabilidad)}%</p>
+          <p className="text-sm text-text-secondary mt-1">Confiabilidad general</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl card">
           <div className="flex items-center justify-between mb-2">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Diferencias</span>
+            <AlertTriangle className="w-5 h-5 text-warning" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Diferencias</span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{summary.totalDiferencias}</p>
-          <p className="text-sm text-slate-500 mt-1">Artículos con descuadre</p>
+          <p className="text-3xl font-bold text-text-main">{summary.totalDiferencias}</p>
+          <p className="text-sm text-text-secondary mt-1">Artículos con descuadre</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl card">
           <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-5 h-5 text-emerald-500" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Impacto</span>
+            <DollarSign className="w-5 h-5 text-success" />
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Impacto</span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{formatCurrency(summary.impactoEconomicoTotal)}</p>
-          <p className="text-sm text-slate-500 mt-1">Valor total diferencias</p>
+          <p className="text-3xl font-bold text-text-main">{formatCurrency(summary.impactoEconomicoTotal)}</p>
+          <p className="text-sm text-text-secondary mt-1">Valor total diferencias</p>
         </div>
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center space-x-2 mb-6 text-slate-400">
+        <div className="bg-white p-6 rounded-2xl card">
+          <div className="flex items-center space-x-2 mb-6 text-text-secondary">
             <BarChart3 className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-widest">Confiabilidad por {entityLabel} (%)</span>
           </div>
@@ -385,7 +360,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                 />
                 <Bar dataKey="confiabilidad" radius={[0, 4, 4, 0]} barSize={20}>
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.confiabilidad >= 90 ? '#10b981' : entry.confiabilidad >= 75 ? '#f59e0b' : entry.confiabilidad >= 60 ? '#f97316' : '#f43f5e'} />
+                    <Cell key={`cell-${index}`} fill={entry.confiabilidad >= 90 ? '#1FB980' : entry.confiabilidad >= 75 ? '#f59e0b' : entry.confiabilidad >= 60 ? '#f97316' : '#E5484D'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -393,8 +368,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center space-x-2 mb-6 text-slate-400">
+        <div className="bg-white p-6 rounded-2xl card">
+          <div className="flex items-center space-x-2 mb-6 text-text-secondary">
             <PieChart className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-widest">Distribución por Nivel de Riesgo</span>
           </div>
@@ -423,27 +398,27 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       </div>
 
       {/* Filters Section */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-brand-border">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-2 text-slate-400">
+          <div className="flex items-center space-x-2 text-brand-text-secondary">
             <Filter className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-widest">Filtros de {entitiesLabel}</span>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-text-secondary" />
               <input 
                 type="text"
                 placeholder={`Buscar ${entityLabel.toLowerCase()}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-slate-50 border border-brand-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
               />
             </div>
             <select 
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="bg-slate-50 border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
             >
               <option value="all">Todos los niveles</option>
               <option value="Alta">Alta Confiabilidad</option>
@@ -464,7 +439,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
             onClick={() => setSelectedSede(sede)}
             className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
           >
-            {/* FILA SUPERIOR: Nombre (izq) + Gauge (der) */}
+            {/* FILA SUPERIOR: Nombre (izq) */}
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0 pr-4">
                 <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-lg line-clamp-2 leading-tight">
@@ -475,14 +450,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                   {sede.nivel}
                 </div>
               </div>
-              <CircularProgress percentage={sede.confiabilidad} nivel={sede.nivel} />
             </div>
 
-            {/* DEBAJO DEL BLOQUE SUPERIOR: Una sola línea horizontal de texto */}
+            {/* DEBAJO DEL BLOQUE SUPERIOR: Confiabilidad y Barra */}
             <div className="mb-6">
               <p className="text-sm font-bold text-slate-700">
                 Confiabilidad: <span className="text-indigo-600">{sede.confiabilidad.toFixed(1)}%</span>
               </p>
+              <ReliabilityBar percentage={sede.confiabilidad} />
             </div>
 
             {/* Bloques de Artículos, Diferencias, Impacto */}
@@ -672,86 +647,113 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                   </label>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Top Critical */}
+                {/* Tables Section */}
+                <div className="space-y-8">
+                  {/* ARTÍCULOS CRÍTICOS */}
                   <div>
-                    <div className="flex items-center space-x-2 mb-4 text-rose-600">
-                      <TrendingDown className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-widest">Artículos Críticos</span>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedSede.topArticulosCriticos
-                        .filter(a => {
-                          if (showOnlyFaltantes) return a.variacion < -0.0001;
-                          if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                          if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                          if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                          return true;
-                        })
-                        .map((a, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-slate-200 transition-all">
-                          <div className="flex-1 min-w-0 mr-4">
-                            <p className="text-sm font-bold text-slate-700 truncate">{a.articulo}</p>
-                            <p className={`text-[10px] font-bold ${getVariationColor(a.variacion)}`}>
-                              {showOnlyFaltantes ? `Faltante: ${formatVariation(Math.abs(a.variacion), a.unidad)}` : `Var: ${formatVariation(a.variacion, a.unidad)}`}
-                            </p>
-                          </div>
-                          <p className="text-sm font-bold text-rose-600 whitespace-nowrap">{formatCurrency(a.impacto)}</p>
-                        </div>
-                      ))}
-                      {selectedSede.topArticulosCriticos.filter(a => {
-                          if (showOnlyFaltantes) return a.variacion < -0.0001;
-                          if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                          if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                          if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                          return true;
-                        }).length === 0 && (
-                        <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                          <CheckCircle2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="text-xs text-slate-400 font-medium">No hay artículos que coincidan con el filtro</p>
-                        </div>
-                      )}
+                    <h4 className="text-xs font-black text-rose-600 uppercase tracking-widest mb-4 flex items-center">
+                      <TrendingDown className="w-4 h-4 mr-2" />
+                      ARTÍCULOS CRÍTICOS
+                    </h4>
+                    <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-[#1F2A44] text-white">
+                          <tr>
+                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
+                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
+                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {[...selectedSede.topArticulosCriticos]
+                            .filter(a => {
+                              if (showOnlyFaltantes) return a.variacion < -0.0001;
+                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
+                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
+                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
+                              return true;
+                            })
+                            .sort((a, b) => Math.abs(b.impacto) - Math.abs(a.impacto))
+                            .map((a, i) => (
+                            <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F3F4F6] transition-colors`}>
+                              <td className="px-6 py-3 font-medium text-slate-700">{a.articulo}</td>
+                              <td className={`px-6 py-3 text-right font-bold ${a.variacion < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                {a.variacion > 0 ? '+' : ''}{formatVariation(a.variacion, a.unidad)}
+                              </td>
+                              <td className={`px-6 py-3 text-right font-black ${a.impacto < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                                {formatCurrency(a.impacto)}
+                              </td>
+                            </tr>
+                          ))}
+                          {selectedSede.topArticulosCriticos.filter(a => {
+                              if (showOnlyFaltantes) return a.variacion < -0.0001;
+                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
+                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
+                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
+                              return true;
+                            }).length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="px-6 py-10 text-center text-slate-400 italic bg-slate-50">
+                                No hay artículos críticos que coincidan con el filtro
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
-                  {/* Top Reliable */}
+                  {/* ARTÍCULOS CONFIABLES */}
                   <div>
-                    <div className="flex items-center space-x-2 mb-4 text-emerald-600">
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-widest">Artículos Confiables</span>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedSede.topArticulosConfiables
-                        .filter(a => {
-                          if (showOnlyFaltantes) return a.variacion < -0.0001;
-                          if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                          if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                          if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                          return true;
-                        })
-                        .map((a, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-slate-200 transition-all">
-                          <div className="flex-1 min-w-0 mr-4">
-                            <p className="text-sm font-bold text-slate-700 truncate">{a.articulo}</p>
-                            <p className={`text-[10px] font-bold ${getVariationColor(a.variacion)}`}>
-                              {showOnlyFaltantes ? `Faltante: ${formatVariation(Math.abs(a.variacion), a.unidad)}` : `Var: ${formatVariation(a.variacion, a.unidad)}`}
-                            </p>
-                          </div>
-                          <p className="text-sm font-bold text-emerald-600 whitespace-nowrap">{formatCurrency(a.impacto)}</p>
-                        </div>
-                      ))}
-                      {selectedSede.topArticulosConfiables.filter(a => {
-                          if (showOnlyFaltantes) return a.variacion < -0.0001;
-                          if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
-                          if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
-                          if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
-                          return true;
-                        }).length === 0 && (
-                        <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                          <CheckCircle2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="text-xs text-slate-400 font-medium">No hay artículos que coincidan con el filtro</p>
-                        </div>
-                      )}
+                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-4 flex items-center">
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      ARTÍCULOS CONFIABLES
+                    </h4>
+                    <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-[#1F2A44] text-white">
+                          <tr>
+                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
+                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
+                            <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {[...selectedSede.topArticulosConfiables]
+                            .filter(a => {
+                              if (showOnlyFaltantes) return a.variacion < -0.0001;
+                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
+                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
+                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
+                              return true;
+                            })
+                            .sort((a, b) => a.articulo.localeCompare(b.articulo))
+                            .map((a, i) => (
+                            <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F3F4F6] transition-colors`}>
+                              <td className="px-6 py-3 font-medium text-emerald-700">{a.articulo}</td>
+                              <td className="px-6 py-3 text-right font-bold text-emerald-600">
+                                {formatVariation(a.variacion, a.unidad)}
+                              </td>
+                              <td className="px-6 py-3 text-right font-black text-emerald-600">
+                                {formatCurrency(a.impacto)}
+                              </td>
+                            </tr>
+                          ))}
+                          {selectedSede.topArticulosConfiables.filter(a => {
+                              if (showOnlyFaltantes) return a.variacion < -0.0001;
+                              if (modalFilter === 'Faltantes') return a.variacion < -0.0001;
+                              if (modalFilter === 'Sobrantes') return a.variacion > 0.0001;
+                              if (modalFilter === 'Sin diferencia') return Math.abs(a.variacion) < 0.0001;
+                              return true;
+                            }).length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="px-6 py-10 text-center text-slate-400 italic bg-slate-50">
+                                No hay artículos confiables que coincidan con el filtro
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -762,7 +764,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                 <div className="flex items-center space-x-4">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Impacto Total {entityLabel}</p>
-                    <p className="text-xl font-black text-rose-600">{formatCurrency(selectedSede.impactoEconomico)}</p>
+                    <p className="text-2xl font-black text-rose-700">{formatCurrency(selectedSede.impactoEconomico)}</p>
                   </div>
                 </div>
                 <button 

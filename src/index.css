@@ -1,23 +1,91 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-primary: #2E7BCF;
-  --color-brand-hover: #1F5FA6;
-  --color-brand-sidebar: #1E1E1E;
-  --color-brand-topbar: #2F2F2F;
-  --color-brand-bg: #F3F5F7;
-  --color-brand-card: #FFFFFF;
-  --color-brand-border: #DCE3EA;
-  --color-brand-table-header: #AFC8E0;
-  --color-brand-table-hover: #EEF4FB;
-  --color-brand-input-border: #CED6E0;
-  --color-brand-text: #111111;
+  --color-primary: #1F2A44;
+  --color-primary-hover: #2F3B5C;
+  --color-secondary: #3A7AFE;
+  --color-secondary-hover: #2F6BE0;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-background: #F5F7FA;
+  --color-card: #FFFFFF;
+  --color-border: #E4E8EE;
+  --color-text-main: #111827;
+  --color-text-secondary: #6B7280;
+
+  /* Compatibility with existing brand classes */
+  --color-brand-primary: var(--color-primary);
+  --color-brand-secondary: var(--color-secondary);
+  --color-brand-bg: var(--color-background);
+  --color-brand-border: var(--color-border);
+  --color-brand-text: var(--color-text-main);
+  --color-brand-text-secondary: var(--color-text-secondary);
+
+  /* Status Colors */
+  --color-status-sobrante: var(--color-success);
+  --color-status-faltante: var(--color-danger);
+  --color-status-sin-diferencia: #9AA4B2;
+  --color-status-cobra: #D93025;
+  --color-status-sin-cobra: var(--color-text-secondary);
+
+  /* KPI Colors */
+  --color-kpi-revisados: #6366F1;
+  --color-kpi-faltantes: var(--color-warning);
+  --color-kpi-cobrables: var(--color-danger);
+  --color-kpi-valor: var(--color-success);
+
+  /* Table Row Colors */
+  --color-brand-table-hover: #F2F6FF;
+  --color-brand-table-selected: #E8F0FF;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
   body {
-    @apply bg-brand-bg text-brand-text font-sans;
+    @apply bg-background text-text-main font-sans;
+  }
+}
+
+@layer components {
+  .table-header {
+    @apply bg-primary text-white;
+  }
+
+  .btn-primary {
+    @apply bg-secondary text-white transition-colors;
+  }
+
+  .btn-primary:hover {
+    @apply bg-secondary-hover;
+  }
+
+  .card {
+    @apply bg-card border border-border shadow-sm;
+  }
+
+  .status-success {
+    @apply text-success;
+  }
+
+  .status-warning {
+    @apply text-warning;
+  }
+
+  .status-danger {
+    @apply text-danger;
+  }
+
+  .sidebar {
+    @apply bg-[#111827];
+  }
+
+  .sidebar-icon-active {
+    @apply text-secondary;
+  }
+
+  .tab-active {
+    @apply bg-white border border-border text-primary;
   }
 }

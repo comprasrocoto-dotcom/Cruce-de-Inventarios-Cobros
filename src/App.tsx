@@ -72,12 +72,6 @@ export default function App() {
 
     return (
       <div className="space-y-8">
-        <FileUpload 
-          onDataLoaded={(data) => setArticles(data)} 
-          onReset={() => setArticles([])}
-          hasData={true}
-        />
-
         <Filters 
           sedes={uniqueSedes}
           ccs={uniqueCCs}
@@ -98,63 +92,63 @@ export default function App() {
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <StatsCard 
-                    title="Total Artículos" 
+                    title="Artículos Revisados" 
                     value={dashboardStats.totalArticulos} 
                     icon={Package} 
-                    color="bg-indigo-500" 
+                    color="bg-kpi-revisados" 
                     description="Artículos evaluados en el cruce"
                   />
                   <StatsCard 
-                    title="Faltantes" 
+                    title="Artículos Faltantes" 
                     value={dashboardStats.totalFaltantes} 
                     icon={AlertTriangle} 
-                    color="bg-rose-500" 
+                    color="bg-kpi-faltantes" 
                     description="Artículos con diferencia negativa"
                   />
                   <StatsCard 
-                    title="Cobrables" 
+                    title="Artículos Cobrables" 
                     value={dashboardStats.totalCobrables} 
                     icon={TrendingDown} 
-                    color="bg-orange-500" 
+                    color="bg-kpi-cobrables" 
                     description="Faltantes que superan el margen"
                   />
                   <StatsCard 
-                    title="Valor a Cobrar" 
+                    title="Valor Total a Cobrar" 
                     value={formatCurrency(dashboardStats.valorTotalCobro)} 
                     icon={DollarSign} 
-                    color="bg-emerald-500" 
+                    color="bg-kpi-valor" 
                     description="Impacto económico total"
                   />
                 </div>
                 
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-brand-border">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">Resumen por Sede</h3>
-                      <p className="text-sm text-slate-500">Distribución de cobros y faltantes por almacén</p>
+                      <h3 className="text-xl font-bold text-brand-text">Resumen por Sede</h3>
+                      <p className="text-sm text-brand-text-secondary">Distribución de cobros y faltantes por almacén</p>
                     </div>
                     <ExportButtons data={articles} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.sedes.map(sede => (
-                      <div key={sede.sede} className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50">
-                        <h4 className="font-bold text-slate-800 mb-3 uppercase tracking-tight">{sede.sede}</h4>
+                      <div key={sede.sede} className="p-5 rounded-2xl border border-brand-border bg-slate-50/50">
+                        <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">{sede.sede}</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500 font-medium">Artículos:</span>
-                            <span className="font-bold text-slate-700">{sede.totalArticulos}</span>
+                            <span className="text-brand-text-secondary font-medium">Artículos:</span>
+                            <span className="font-bold text-brand-text">{sede.totalArticulos}</span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500 font-medium">Faltantes:</span>
-                            <span className="font-bold text-rose-600">{sede.totalFaltantes}</span>
+                            <span className="text-brand-text-secondary font-medium">Faltantes:</span>
+                            <span className="font-bold text-status-faltante">{sede.totalFaltantes}</span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500 font-medium">Cobrables:</span>
-                            <span className="font-bold text-orange-600">{sede.totalCobrables}</span>
+                            <span className="text-brand-text-secondary font-medium">Cobrables:</span>
+                            <span className="font-bold text-status-cobra">{sede.totalCobrables}</span>
                           </div>
-                          <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-                            <span className="text-[10px] font-black text-slate-400 uppercase">Total Cobro</span>
-                            <span className="text-sm font-black text-emerald-600">{formatCurrency(sede.totalCobroSede)}</span>
+                          <div className="pt-2 border-t border-brand-border flex justify-between items-center">
+                            <span className="text-[10px] font-black text-brand-text-secondary uppercase">Total Cobro</span>
+                            <span className="text-sm font-black text-status-sobrante">{formatCurrency(sede.totalCobroSede)}</span>
                           </div>
                         </div>
                       </div>
@@ -168,8 +162,8 @@ export default function App() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">Detalle de Cobros</h3>
-                    <p className="text-sm text-slate-500">Listado jerárquico de artículos y variaciones</p>
+                    <h3 className="text-xl font-bold text-brand-text">Detalle de Cobros</h3>
+                    <p className="text-sm text-brand-text-secondary">Listado jerárquico de artículos y variaciones</p>
                   </div>
                   <ExportButtons data={filteredArticles} />
                 </div>
@@ -181,8 +175,8 @@ export default function App() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">Análisis de Variaciones</h3>
-                    <p className="text-sm text-slate-500">Exploración detallada de movimientos</p>
+                    <h3 className="text-xl font-bold text-brand-text">Análisis de Variaciones</h3>
+                    <p className="text-sm text-brand-text-secondary">Exploración detallada de movimientos</p>
                   </div>
                 </div>
                 <InventoryTable data={filteredArticles} />
@@ -199,25 +193,31 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-brand-bg">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <header className="bg-brand-topbar text-white px-6 py-4 flex justify-between items-center shadow-lg z-10">
+      <header className="bg-primary text-white px-6 py-4 flex justify-between items-center shadow-lg z-10">
         <div className="flex items-center gap-3">
-          <div className="bg-brand-primary p-2 rounded-lg">
+          <div className="bg-secondary p-2 rounded-lg">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight leading-none">Cruces de Inventario</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Auditoría y Cobros por Sede</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-blue-200 font-bold">Auditoría y Cobros por Sede</p>
           </div>
         </div>
         
         {articles.length > 0 && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <FileUpload 
+              onDataLoaded={(data) => setArticles(data)} 
+              onReset={() => setArticles([])}
+              hasData={true}
+            />
+            <div className="h-8 w-px bg-white/10"></div>
             <div className="text-right">
-              <p className="text-xs font-bold text-gray-400 uppercase">Estado</p>
-              <p className="text-xs font-bold text-green-400 flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> Sistema Activo
+              <p className="text-xs font-bold text-blue-200 uppercase">Estado</p>
+              <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Activo
               </p>
             </div>
           </div>
@@ -226,7 +226,7 @@ export default function App() {
 
       {/* Navigation Tabs */}
       {articles.length > 0 && (
-        <nav className="bg-white border-b border-brand-border px-6 flex items-center gap-8 shadow-sm">
+        <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm">
           {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
@@ -241,8 +241,8 @@ export default function App() {
                 onClick={() => setActiveTab(tab)}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
                   activeTab === tab 
-                    ? 'border-brand-primary text-brand-primary' 
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent text-text-secondary hover:text-text-main'
                 }`}
               >
                 <Icon className="w-4 h-4" />
