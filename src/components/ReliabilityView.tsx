@@ -256,34 +256,36 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const dateStr = new Date().toLocaleString();
 
-    // Get all items for this sede (ignoring UI filters for the full report)
+    // Get all items for this sede
     const sedeItems = data.filter(a => a.sede === sede.sede);
 
     // Header
     doc.setFontSize(18);
     doc.setTextColor(31, 58, 95); // #1F3A5F
+    doc.setFont('helvetica', 'bold');
     doc.text(`Detalle de Confiabilidad - ${sede.sede}`, 14, 22);
 
     doc.setFontSize(10);
     doc.setTextColor(107, 114, 128); // gray-500
+    doc.setFont('helvetica', 'normal');
     doc.text(`Generado por: Sistema de Auditoría de Inventarios`, 14, 30);
     doc.text(`Fecha: ${dateStr}`, 14, 35);
 
-    // KPIs Generales
+    // 1. RESUMEN GENERAL
     doc.setFontSize(12);
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN GENERAL DE SEDE', 14, 45);
+    doc.text('1. RESUMEN GENERAL DE SEDE', 14, 45);
     doc.setFont('helvetica', 'normal');
     
     doc.setFontSize(10);
-    doc.text(`Confiabilidad: ${Math.round(sede.confiabilidad)}%`, 14, 52);
+    doc.text(`Confiabilidad General: ${Math.round(sede.confiabilidad)}%`, 14, 52);
     doc.text(`Evaluados: ${sede.articulosEvaluados}`, 14, 58);
     doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 52);
     doc.text(`Con diferencia: ${sede.articulosConDiferencia}`, 70, 58);
-    doc.text(`Impacto Total: ${formatCurrency(sede.impactoEconomico)}`, 130, 52);
+    doc.text(`Impacto Económico Total: ${formatCurrency(sede.impactoEconomico)}`, 130, 52);
 
-    // Analysis by CC (Summary Table)
+    // Analysis by CC
     const ccStatsMap = new Map<string, {
       evaluados: number;
       sinDiferencia: number;
@@ -322,11 +324,11 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
     let currentY = 70;
 
-    // SECTION: TABLA RESUMEN POR CC
+    // 2. CONFIABILIDAD POR CENTRO DE COSTOS
     doc.setFontSize(12);
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
-    doc.text('CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
+    doc.text('2. CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
     doc.setFont('helvetica', 'normal');
     currentY += 6;
 
@@ -357,44 +359,115 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
-    // DETALLE POR CENTRO DE COSTOS
-    ccStatsArray.forEach((ccData, index) => {
-      // Check if we need a new page for the CC header
-      if (currentY > 230) {
-        doc.addPage();
-        currentY = 20;
-      }
+    // 3. TOP 10 PÉRDIDAS POR CENTRO DE COSTOS
+    if (currentY > 240) { doc.addPage(); currentY = 20; }
+    doc.setFontSize(12);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('3. TOP 10 PÉRDIDAS POR CENTRO DE COSTOS', 14, currentY);
+    currentY += 8;
 
-      // CC Separator
+    ccStatsArray.forEach(ccData => {
+      const losses = ccData.items
+        .filter(a => a.totalDiferencia < -0.0001)
+        .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)))
+        .slice(0, 10);
+
+      if (losses.length > 0) {
+        if (currentY > 240) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(10);
+        doc.setTextColor(235, 87, 87); // #EB5757
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOP PÉRDIDAS ${ccData.cc.toUpperCase()}`, 14, currentY);
+        currentY += 4;
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Artículo', 'Variación', 'Impacto Económico']],
+          body: losses.map(a => [
+            a.articulo,
+            formatVariation(a.totalDiferencia, a.subarticulo),
+            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [235, 87, 87] },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            1: { halign: 'right', textColor: [235, 87, 87], fontStyle: 'bold' },
+            2: { halign: 'right' }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      }
+    });
+
+    // 4. TOP 10 SOBRANTES POR CENTRO DE COSTOS
+    if (currentY > 240) { doc.addPage(); currentY = 20; }
+    doc.setFontSize(12);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('4. TOP 10 SOBRANTES POR CENTRO DE COSTOS', 14, currentY);
+    currentY += 8;
+
+    ccStatsArray.forEach(ccData => {
+      const surpluses = ccData.items
+        .filter(a => a.totalDiferencia > 0.0001)
+        .sort((a, b) => (b.totalDiferencia * (b.ultimoCoste || b.costePromedio)) - (a.totalDiferencia * (a.ultimoCoste || a.costePromedio)))
+        .slice(0, 10);
+
+      if (surpluses.length > 0) {
+        if (currentY > 240) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(10);
+        doc.setTextColor(39, 174, 96); // #27AE60
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOP SOBRANTES ${ccData.cc.toUpperCase()}`, 14, currentY);
+        currentY += 4;
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Artículo', 'Variación', 'Impacto Económico']],
+          body: surpluses.map(a => [
+            a.articulo,
+            `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
+            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [39, 174, 96] },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            1: { halign: 'right', textColor: [39, 174, 96], fontStyle: 'bold' },
+            2: { halign: 'right' }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      }
+    });
+
+    // 5. DETALLE COMPLETO POR CENTRO DE COSTOS
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(12);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('5. DETALLE COMPLETO POR CENTRO DE COSTOS', 14, currentY);
+    currentY += 10;
+
+    ccStatsArray.forEach((ccData) => {
+      if (currentY > 230) { doc.addPage(); currentY = 20; }
+
+      // CC Header Separator
       doc.setFillColor(245, 247, 250); // #F5F7FA
       doc.rect(14, currentY, pageWidth - 28, 12, 'F');
       doc.setDrawColor(214, 222, 230); // #D6DEE6
       doc.line(14, currentY, pageWidth - 14, currentY);
       doc.line(14, currentY + 12, pageWidth - 14, currentY + 12);
       
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setTextColor(31, 58, 95);
       doc.setFont('helvetica', 'bold');
       doc.text(`CENTRO DE COSTOS: ${ccData.cc.toUpperCase()}`, pageWidth / 2, currentY + 8, { align: 'center' });
       currentY += 18;
 
-      // CC Summary Mini-KPIs
-      doc.setFontSize(10);
-      doc.setTextColor(75, 85, 99);
-      doc.text(`Evaluados: ${ccData.evaluados}`, 14, currentY);
-      doc.text(`Sin diferencia: ${ccData.sinDiferencia}`, 55, currentY);
-      doc.text(`Con diferencia: ${ccData.conDiferencia}`, 100, currentY);
-      doc.text(`Impacto: ${formatCurrency(ccData.impacto)}`, 145, currentY);
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(ccData.confiabilidad >= 85 ? 39 : ccData.confiabilidad >= 70 ? 242 : 235, 
-                       ccData.confiabilidad >= 85 ? 174 : ccData.confiabilidad >= 70 ? 201 : 87, 
-                       ccData.confiabilidad >= 85 ? 96 : ccData.confiabilidad >= 70 ? 76 : 87);
-      doc.text(`Confiabilidad: ${Math.round(ccData.confiabilidad)}% (${ccData.estado})`, 14, currentY + 6);
-      doc.setFont('helvetica', 'normal');
-      currentY += 12;
-
-      // Data Segregation for this CC
       const faltantes = ccData.items.filter(a => a.totalDiferencia < -0.0001)
         .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)));
       
@@ -404,19 +477,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       const sinDiferencia = ccData.items.filter(a => Math.abs(a.totalDiferencia) < 0.0001)
         .sort((a, b) => a.articulo.localeCompare(b.articulo));
 
-      // Faltantes Table
       if (faltantes.length > 0) {
         if (currentY > 250) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(11);
-        doc.setTextColor(235, 87, 87); // #EB5757 Rojo
+        doc.setFontSize(10);
+        doc.setTextColor(235, 87, 87);
         doc.setFont('helvetica', 'bold');
-        doc.text('Artículos Faltantes', 14, currentY);
-        doc.setFont('helvetica', 'normal');
+        doc.text(`Faltantes - ${ccData.cc}`, 14, currentY);
         currentY += 5;
-
         autoTable(doc, {
           startY: currentY,
-          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
           body: faltantes.map(a => [
             a.articulo,
             a.subarticulo,
@@ -425,28 +495,22 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [235, 87, 87] },
-          styles: { fontSize: 8 },
-          columnStyles: {
-            2: { textColor: [235, 87, 87], fontStyle: 'bold', halign: 'right' },
-            3: { halign: 'right' }
-          }
+          styles: { fontSize: 7 },
+          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
         });
         currentY = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      // Sobrantes Table
       if (sobrantes.length > 0) {
         if (currentY > 250) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(11);
-        doc.setTextColor(39, 174, 96); // #27AE60 Verde
+        doc.setFontSize(10);
+        doc.setTextColor(39, 174, 96);
         doc.setFont('helvetica', 'bold');
-        doc.text('Artículos Sobrantes', 14, currentY);
-        doc.setFont('helvetica', 'normal');
+        doc.text(`Sobrantes - ${ccData.cc}`, 14, currentY);
         currentY += 5;
-
         autoTable(doc, {
           startY: currentY,
-          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
           body: sobrantes.map(a => [
             a.articulo,
             a.subarticulo,
@@ -455,28 +519,22 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [39, 174, 96] },
-          styles: { fontSize: 8 },
-          columnStyles: {
-            2: { textColor: [39, 174, 96], fontStyle: 'bold', halign: 'right' },
-            3: { halign: 'right' }
-          }
+          styles: { fontSize: 7 },
+          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
         });
         currentY = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      // Sin Diferencia Table
       if (sinDiferencia.length > 0) {
         if (currentY > 250) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(11);
-        doc.setTextColor(75, 85, 99); // gray-600
+        doc.setFontSize(10);
+        doc.setTextColor(75, 85, 99);
         doc.setFont('helvetica', 'bold');
-        doc.text('Artículos Sin Diferencia', 14, currentY);
-        doc.setFont('helvetica', 'normal');
+        doc.text(`Sin Diferencia - ${ccData.cc}`, 14, currentY);
         currentY += 5;
-
         autoTable(doc, {
           startY: currentY,
-          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
           body: sinDiferencia.map(a => [
             a.articulo,
             a.subarticulo,
@@ -485,11 +543,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [107, 114, 128] },
-          styles: { fontSize: 8 },
-          columnStyles: {
-            2: { halign: 'right' },
-            3: { halign: 'right' }
-          }
+          styles: { fontSize: 7 },
+          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
         });
         currentY = (doc as any).lastAutoTable.finalY + 15;
       }

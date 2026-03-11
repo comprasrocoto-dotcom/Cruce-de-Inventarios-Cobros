@@ -3,6 +3,7 @@ import { FileUpload } from './components/FileUpload';
 import { Filters } from './components/Filters';
 import { InventoryTable } from './components/InventoryTable';
 import { ReliabilityView } from './components/ReliabilityView';
+import { ManagementAnalysis } from './components/ManagementAnalysis';
 import { ExportButtons } from './components/ExportButtons';
 import { StatsCard } from './components/StatsCard';
 import { ArticleSummary } from './types';
@@ -15,11 +16,12 @@ import {
   Package, 
   AlertTriangle, 
   CheckCircle2, 
-  TrendingDown 
+  TrendingDown,
+  BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD';
+type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
@@ -192,6 +194,10 @@ export default function App() {
             {activeTab === 'CONFIABILIDAD' && (
               <ReliabilityView data={articles} />
             )}
+
+            {activeTab === 'GERENCIAL' && (
+              <ManagementAnalysis data={articles} />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -235,12 +241,13 @@ export default function App() {
       {/* Navigation Tabs */}
       {articles.length > 0 && (
         <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm">
-          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD'] as Tab[]).map((tab) => {
+          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
               ANÁLISIS: BarChart2,
               COBROS: DollarSign,
-              CONFIABILIDAD: ShieldCheck
+              CONFIABILIDAD: ShieldCheck,
+              GERENCIAL: BarChart3
             }[tab];
 
             return (
