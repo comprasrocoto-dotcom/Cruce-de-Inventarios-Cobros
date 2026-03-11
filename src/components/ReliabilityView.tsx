@@ -256,6 +256,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const dateStr = new Date().toLocaleString();
 
+    // Get all items for this sede (ignoring UI filters for the full report)
+    const sedeItems = data.filter(a => a.sede === sede.sede);
+
     // Header
     doc.setFontSize(18);
     doc.setTextColor(31, 58, 95); // #1F3A5F
@@ -266,29 +269,37 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     doc.text(`Generado por: Sistema de Auditoría de Inventarios`, 14, 30);
     doc.text(`Fecha: ${dateStr}`, 14, 35);
 
-    // KPIs
+    // KPIs Generales
     doc.setFontSize(12);
     doc.setTextColor(31, 58, 95);
-    doc.text(`Confiabilidad: ${Math.round(sede.confiabilidad)}%`, 14, 45);
-    doc.text(`Evaluados: ${sede.articulosEvaluados}`, 14, 52);
-    doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 45);
-    doc.text(`Con diferencia: ${sede.articulosConDiferencia}`, 70, 52);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUMEN GENERAL DE SEDE', 14, 45);
+    doc.setFont('helvetica', 'normal');
+    
+    doc.setFontSize(10);
+    doc.text(`Confiabilidad: ${Math.round(sede.confiabilidad)}%`, 14, 52);
+    doc.text(`Evaluados: ${sede.articulosEvaluados}`, 14, 58);
+    doc.text(`Sin diferencia: ${sede.articulosSinDiferencia}`, 70, 52);
+    doc.text(`Con diferencia: ${sede.articulosConDiferencia}`, 70, 58);
+    doc.text(`Impacto Total: ${formatCurrency(sede.impactoEconomico)}`, 130, 52);
 
-    // CC Analysis
+    // Analysis by CC (Summary Table)
     const ccStatsMap = new Map<string, {
       evaluados: number;
       sinDiferencia: number;
       conDiferencia: number;
       impacto: number;
+      items: ArticleSummary[];
     }>();
 
-    allItemsForSede.forEach(a => {
+    sedeItems.forEach(a => {
       const cc = a.cc || 'SIN CC';
       if (!ccStatsMap.has(cc)) {
-        ccStatsMap.set(cc, { evaluados: 0, sinDiferencia: 0, conDiferencia: 0, impacto: 0 });
+        ccStatsMap.set(cc, { evaluados: 0, sinDiferencia: 0, conDiferencia: 0, impacto: 0, items: [] });
       }
       const stats = ccStatsMap.get(cc)!;
       stats.evaluados++;
+      stats.items.push(a);
       const diff = Math.abs(a.totalDiferencia);
       if (diff < 0.0001) {
         stats.sinDiferencia++;
@@ -309,12 +320,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       };
     }).sort((a, b) => a.confiabilidad - b.confiabilidad);
 
-    let currentY = 65;
+    let currentY = 70;
 
-    // SECTION: CONFIABILIDAD POR CENTRO DE COSTOS
-    doc.setFontSize(14);
+    // SECTION: TABLA RESUMEN POR CC
+    doc.setFontSize(12);
     doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
     doc.text('CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
+    doc.setFont('helvetica', 'normal');
     currentY += 6;
 
     autoTable(doc, {
@@ -342,127 +355,155 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
       }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 8;
-    doc.setFontSize(11);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Confiabilidad General (Sede): ${Math.round(sede.confiabilidad)}%`, 14, currentY);
-    doc.text(`${getSemaphoreEmoji(sede.confiabilidad)} ${getStatusLabel(sede.confiabilidad)}`, 14, currentY + 6);
-    doc.setFont('helvetica', 'normal');
-    
-    currentY += 12;
+    currentY = (doc as any).lastAutoTable.finalY + 15;
 
-    // Data Segregation
-    const faltantes = allItemsForSede.filter(a => a.totalDiferencia < -0.0001)
-      .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)));
-    
-    const sobrantes = allItemsForSede.filter(a => a.totalDiferencia > 0.0001)
-      .sort((a, b) => b.totalDiferencia - a.totalDiferencia);
-    
-    const sinDiferencia = allItemsForSede.filter(a => Math.abs(a.totalDiferencia) < 0.0001)
-      .sort((a, b) => a.articulo.localeCompare(b.articulo));
+    // DETALLE POR CENTRO DE COSTOS
+    ccStatsArray.forEach((ccData, index) => {
+      // Check if we need a new page for the CC header
+      if (currentY > 230) {
+        doc.addPage();
+        currentY = 20;
+      }
 
-    if (faltantes.length > 0) {
-      doc.setFontSize(14);
-      doc.setTextColor(235, 87, 87); // #EB5757 Rojo alerta
-      doc.text('ARTÍCULOS FALTANTES', 14, currentY);
-      currentY += 6;
+      // CC Separator
+      doc.setFillColor(245, 247, 250); // #F5F7FA
+      doc.rect(14, currentY, pageWidth - 28, 12, 'F');
+      doc.setDrawColor(214, 222, 230); // #D6DEE6
+      doc.line(14, currentY, pageWidth - 14, currentY);
+      doc.line(14, currentY + 12, pageWidth - 14, currentY + 12);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(31, 58, 95);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`CENTRO DE COSTOS: ${ccData.cc.toUpperCase()}`, pageWidth / 2, currentY + 8, { align: 'center' });
+      currentY += 18;
+
+      // CC Summary Mini-KPIs
       doc.setFontSize(10);
-      doc.setTextColor(107, 114, 128);
-      doc.text(`Total artículos faltantes: ${faltantes.length}`, 14, currentY);
-      currentY += 4;
+      doc.setTextColor(75, 85, 99);
+      doc.text(`Evaluados: ${ccData.evaluados}`, 14, currentY);
+      doc.text(`Sin diferencia: ${ccData.sinDiferencia}`, 55, currentY);
+      doc.text(`Con diferencia: ${ccData.conDiferencia}`, 100, currentY);
+      doc.text(`Impacto: ${formatCurrency(ccData.impacto)}`, 145, currentY);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(ccData.confiabilidad >= 85 ? 39 : ccData.confiabilidad >= 70 ? 242 : 235, 
+                       ccData.confiabilidad >= 85 ? 174 : ccData.confiabilidad >= 70 ? 201 : 87, 
+                       ccData.confiabilidad >= 85 ? 96 : ccData.confiabilidad >= 70 ? 76 : 87);
+      doc.text(`Confiabilidad: ${Math.round(ccData.confiabilidad)}% (${ccData.estado})`, 14, currentY + 6);
+      doc.setFont('helvetica', 'normal');
+      currentY += 12;
 
-      autoTable(doc, {
-        startY: currentY,
-        head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
-        body: faltantes.map(a => [
-          a.articulo,
-          a.subarticulo,
-          formatVariation(a.totalDiferencia, a.subarticulo),
-          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
-        ]),
-        theme: 'striped',
-        headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
-        styles: { fontSize: 8 },
-        columnStyles: {
-          2: { textColor: [235, 87, 87], fontStyle: 'bold', halign: 'right' },
-          3: { halign: 'right' }
-        },
-        didDrawPage: (data) => {
-          currentY = data.cursor?.y || currentY;
-        }
-      });
-      currentY = (doc as any).lastAutoTable.finalY + 15;
-    }
+      // Data Segregation for this CC
+      const faltantes = ccData.items.filter(a => a.totalDiferencia < -0.0001)
+        .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)));
+      
+      const sobrantes = ccData.items.filter(a => a.totalDiferencia > 0.0001)
+        .sort((a, b) => b.totalDiferencia - a.totalDiferencia);
+      
+      const sinDiferencia = ccData.items.filter(a => Math.abs(a.totalDiferencia) < 0.0001)
+        .sort((a, b) => a.articulo.localeCompare(b.articulo));
 
-    // SECTION 2: ARTÍCULOS SOBRANTES
-    if (sobrantes.length > 0) {
-      if (currentY > 250) { doc.addPage(); currentY = 20; }
-      doc.setFontSize(14);
-      doc.setTextColor(39, 174, 96); // #27AE60 Verde positivo
-      doc.text('ARTÍCULOS SOBRANTES', 14, currentY);
-      currentY += 6;
-      doc.setFontSize(10);
-      doc.setTextColor(107, 114, 128);
-      doc.text(`Total artículos sobrantes: ${sobrantes.length}`, 14, currentY);
-      currentY += 4;
+      // Faltantes Table
+      if (faltantes.length > 0) {
+        if (currentY > 250) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(11);
+        doc.setTextColor(235, 87, 87); // #EB5757 Rojo
+        doc.setFont('helvetica', 'bold');
+        doc.text('Artículos Faltantes', 14, currentY);
+        doc.setFont('helvetica', 'normal');
+        currentY += 5;
 
-      autoTable(doc, {
-        startY: currentY,
-        head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
-        body: sobrantes.map(a => [
-          a.articulo,
-          a.subarticulo,
-          `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
-          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
-        ]),
-        theme: 'striped',
-        headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
-        styles: { fontSize: 8 },
-        columnStyles: {
-          2: { textColor: [39, 174, 96], fontStyle: 'bold', halign: 'right' },
-          3: { halign: 'right' }
-        }
-      });
-      currentY = (doc as any).lastAutoTable.finalY + 15;
-    }
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          body: faltantes.map(a => [
+            a.articulo,
+            a.subarticulo,
+            formatVariation(a.totalDiferencia, a.subarticulo),
+            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [235, 87, 87] },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            2: { textColor: [235, 87, 87], fontStyle: 'bold', halign: 'right' },
+            3: { halign: 'right' }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      }
 
-    // SECTION 3: ARTÍCULOS SIN DIFERENCIA
-    if (sinDiferencia.length > 0) {
-      if (currentY > 250) { doc.addPage(); currentY = 20; }
-      doc.setFontSize(14);
-      doc.setTextColor(75, 85, 99); // gray-600
-      doc.text('ARTÍCULOS SIN DIFERENCIA', 14, currentY);
-      currentY += 6;
-      doc.setFontSize(10);
-      doc.setTextColor(107, 114, 128);
-      doc.text(`Total artículos sin diferencia: ${sinDiferencia.length}`, 14, currentY);
-      currentY += 4;
+      // Sobrantes Table
+      if (sobrantes.length > 0) {
+        if (currentY > 250) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(11);
+        doc.setTextColor(39, 174, 96); // #27AE60 Verde
+        doc.setFont('helvetica', 'bold');
+        doc.text('Artículos Sobrantes', 14, currentY);
+        doc.setFont('helvetica', 'normal');
+        currentY += 5;
 
-      autoTable(doc, {
-        startY: currentY,
-        head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
-        body: sinDiferencia.map(a => [
-          a.articulo,
-          a.subarticulo,
-          '0',
-          '$0'
-        ]),
-        theme: 'striped',
-        headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
-        styles: { fontSize: 8 },
-        columnStyles: {
-          2: { halign: 'right' },
-          3: { halign: 'right' }
-        }
-      });
-      currentY = (doc as any).lastAutoTable.finalY + 15;
-    }
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          body: sobrantes.map(a => [
+            a.articulo,
+            a.subarticulo,
+            `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
+            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [39, 174, 96] },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            2: { textColor: [39, 174, 96], fontStyle: 'bold', halign: 'right' },
+            3: { halign: 'right' }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      // Sin Diferencia Table
+      if (sinDiferencia.length > 0) {
+        if (currentY > 250) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(11);
+        doc.setTextColor(75, 85, 99); // gray-600
+        doc.setFont('helvetica', 'bold');
+        doc.text('Artículos Sin Diferencia', 14, currentY);
+        doc.setFont('helvetica', 'normal');
+        currentY += 5;
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
+          body: sinDiferencia.map(a => [
+            a.articulo,
+            a.subarticulo,
+            '0',
+            '$0'
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [107, 114, 128] },
+          styles: { fontSize: 8 },
+          columnStyles: {
+            2: { halign: 'right' },
+            3: { halign: 'right' }
+          }
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 15;
+      }
+    });
 
     // Footer
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184); // slate-400
-    doc.text('Sistema de Auditoría de Inventarios - Reporte generado automáticamente', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text(`Página ${i} de ${totalPages}`, pageWidth - 25, doc.internal.pageSize.getHeight() - 10);
+      doc.text('Sistema de Auditoría de Inventarios - Reporte generado automáticamente', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
 
     doc.save(`Confiabilidad_${sede.sede}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
