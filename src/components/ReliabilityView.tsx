@@ -188,9 +188,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
   const getLevelColor = (nivel: string) => {
     switch (nivel) {
-      case 'Confiable': return 'text-[#27AE60] bg-emerald-50 border-emerald-100';
-      case 'Alerta': return 'text-[#F2C94C] bg-amber-50 border-amber-100';
-      case 'Crítico': return 'text-[#EB5757] bg-rose-50 border-rose-100';
+      case 'Confiable': return 'text-[#27AE60] bg-emerald-50 border-[#27AE60]/20';
+      case 'Alerta': return 'text-[#F2C94C] bg-amber-50 border-[#F2C94C]/20';
+      case 'Crítico': return 'text-[#EB5757] bg-rose-50 border-[#EB5757]/20';
       default: return 'text-brand-text-secondary bg-slate-50 border-brand-border';
     }
   };
@@ -477,25 +477,25 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* View Mode Selector */}
-          <div className="bg-brand-bg p-1 rounded-xl flex mr-4">
+          <div className="bg-brand-bg p-1 rounded-[6px] flex mr-4 border border-[#D6DEE6]">
             <button
               onClick={() => setViewMode('sede')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-white text-[#2F80ED] shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
             >
               Por Sede
             </button>
             <button
               onClick={() => setViewMode('cc')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-white text-[#2F80ED] shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
             >
               Por Centro de Costos
             </button>
           </div>
-          <button className="flex items-center space-x-2 bg-white border border-brand-border text-brand-text px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all">
+          <button className="flex items-center space-x-2 bg-white border border-[#D6DEE6] text-[#1F3A5F] px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-slate-50 transition-all">
             <FileDown className="w-4 h-4" />
             <span>Exportar Excel</span>
           </button>
-          <button className="flex items-center space-x-2 bg-brand-secondary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-secondary-hover transition-all shadow-lg shadow-blue-100">
+          <button className="flex items-center space-x-2 bg-[#2F80ED] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#1C6DD0] transition-all shadow-sm">
             <FileDown className="w-4 h-4" />
             <span>Exportar PDF</span>
           </button>
@@ -550,28 +550,28 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl card border-l-4 border-[#27AE60]">
+        <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#27AE60] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <CheckCircle2 className="w-5 h-5 text-[#27AE60]" />
             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Confiables</span>
           </div>
-          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
+          <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
           <p className="text-sm text-text-secondary mt-1">{entitiesLabel} con precisión alta</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl card border-l-4 border-[#F2C94C]">
+        <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#F2C94C] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#F2C94C]" />
             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">En Alerta</span>
           </div>
-          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
+          <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
           <p className="text-sm text-text-secondary mt-1">{entitiesLabel} con descuadres medios</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl card border-l-4 border-[#EB5757]">
+        <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#EB5757] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Críticos</span>
           </div>
-          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
+          <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
           <p className="text-sm text-text-secondary mt-1">{entitiesLabel} con descuadres graves</p>
         </div>
       </div>
@@ -706,16 +706,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
             key={sede.sede}
             layoutId={sede.sede}
             onClick={() => setSelectedSede(sede)}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
+            className="bg-white rounded-[12px] p-6 shadow-sm border border-[#D6DEE6] hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
           >
             {/* FILA SUPERIOR: Nombre (izq) */}
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0 pr-4">
-                <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-lg line-clamp-2 leading-tight">
+                <h4 className="font-bold text-[#1F3A5F] group-hover:text-[#2F80ED] transition-colors text-lg line-clamp-2 leading-tight">
                   {sede.sede}
                 </h4>
                 {/* DEBAJO DEL NOMBRE: Etiqueta de estado */}
-                <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(sede.nivel)}`}>
+                <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(sede.nivel)}`}>
                   <span className="mr-1">{getSemaphoreEmoji(sede.confiabilidad)}</span>
                   {sede.nivel}
                 </div>
@@ -733,25 +733,25 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
             {/* Bloques de Artículos, Diferencias, Impacto */}
             <div className="space-y-4 flex-1">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="bg-[#F5F7FA] p-3 rounded-[6px] border border-[#D6DEE6]">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Artículos</p>
-                  <p className="text-sm font-bold text-slate-700">{sede.articulosEvaluados}</p>
+                  <p className="text-sm font-bold text-[#1F3A5F]">{sede.articulosEvaluados}</p>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="bg-[#F5F7FA] p-3 rounded-[6px] border border-[#D6DEE6]">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Diferencias</p>
-                  <p className="text-sm font-bold text-slate-700">{sede.articulosConDiferencia}</p>
+                  <p className="text-sm font-bold text-[#1F3A5F]">{sede.articulosConDiferencia}</p>
                 </div>
-                <div className="col-span-2 bg-rose-50/50 p-3 rounded-xl border border-rose-100/50">
+                <div className="col-span-2 bg-rose-50/50 p-3 rounded-[6px] border border-rose-100/50">
                   <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Impacto Económico</p>
-                  <p className="text-lg font-black text-rose-600 leading-none mt-1">{formatCurrency(sede.impactoEconomico)}</p>
+                  <p className="text-lg font-bold text-rose-600 leading-none mt-1">{formatCurrency(sede.impactoEconomico)}</p>
                 </div>
               </div>
             </div>
 
             {/* Link: Ver detalle completo */}
-            <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-indigo-600 font-bold text-xs group-hover:translate-x-1 transition-transform">
+            <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[#2F80ED] font-bold text-xs group-hover:translate-x-1 transition-transform">
               <span>Ver detalle completo</span>
-              <ChevronRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </div>
           </motion.div>
         ))}
@@ -768,11 +768,11 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="p-4 bg-slate-50 border border-slate-200 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 z-10 min-w-[180px]">
+                <th className="p-4 bg-[#A7C4E0] border border-[#D6DEE6] text-left text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest sticky left-0 z-10 min-w-[180px]">
                   Sede / Centro
                 </th>
                 {heatmapData.ccs.map(cc => (
-                  <th key={cc} className="p-4 bg-slate-50 border border-slate-200 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest min-w-[120px]">
+                  <th key={cc} className="p-4 bg-[#A7C4E0] border border-[#D6DEE6] text-center text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest min-w-[120px]">
                     {cc}
                   </th>
                 ))}
@@ -843,17 +843,17 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pos</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{entityLabel}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Confiabilidad %</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Evaluados</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Sin Dif.</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Con Dif.</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Variación</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Impacto $</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nivel</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest"></th>
+              <tr className="bg-[#A7C4E0]">
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Pos</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">{entityLabel}</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad %</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Evaluados</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Sin Dif.</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Con Dif.</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Nivel</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -918,16 +918,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
             />
             <motion.div 
               layoutId={selectedSede.sede}
-              className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+              className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[12px] shadow-2xl overflow-hidden flex flex-col border border-[#D6DEE6]"
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="p-6 border-b border-[#D6DEE6] flex items-center justify-between bg-[#F5F7FA]">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Detalle de Confiabilidad - {selectedSede.sede}</h3>
+                  <h3 className="text-xl font-bold text-[#1F3A5F]">Detalle de Confiabilidad - {selectedSede.sede}</h3>
                   {selectedCCFilter && (
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Filtrado por:</span>
-                      <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase border border-indigo-100">
+                      <span className="bg-blue-50 text-[#2F80ED] px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase border border-blue-100">
                         {selectedCCFilter}
                       </span>
                       <button 
@@ -938,7 +938,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                       </button>
                     </div>
                   )}
-                  <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(selectedSede.nivel)}`}>
+                  <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(selectedSede.nivel)}`}>
                     <span className="mr-1">{getSemaphoreEmoji(selectedSede.confiabilidad)}</span>
                     Estado {selectedSede.nivel}
                   </div>
@@ -946,9 +946,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => downloadPDF(selectedSede)}
-                    className="flex items-center space-x-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all shadow-sm"
+                    className="flex items-center space-x-2 bg-[#EB5757] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#C0392B] transition-all shadow-sm"
                   >
-                    <FileText className="w-4 h-4 text-rose-500" />
+                    <FileText className="w-4 h-4" />
                     <span>Descargar PDF</span>
                   </button>
                   <button 
@@ -958,7 +958,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                       setModalFilter('Todos');
                       setShowOnlyFaltantes(false);
                     }}
-                    className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-slate-600 transition-all border border-transparent hover:border-slate-200"
+                    className="p-2 hover:bg-white rounded-[6px] text-slate-400 hover:text-slate-600 transition-all border border-transparent hover:border-[#D6DEE6]"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -969,34 +969,34 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
               <div className="p-6 overflow-y-auto flex-1 space-y-8">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="bg-[#F5F7FA] p-4 rounded-[8px] border border-[#D6DEE6]">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Confiabilidad</p>
-                    <p className="text-2xl font-black text-slate-900">{Math.round(selectedSede.confiabilidad)}%</p>
+                    <p className="text-2xl font-bold text-[#1F3A5F]">{Math.round(selectedSede.confiabilidad)}%</p>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="bg-[#F5F7FA] p-4 rounded-[8px] border border-[#D6DEE6]">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Evaluados</p>
-                    <p className="text-2xl font-black text-slate-900">{selectedSede.articulosEvaluados}</p>
+                    <p className="text-2xl font-bold text-[#1F3A5F]">{selectedSede.articulosEvaluados}</p>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="bg-[#F5F7FA] p-4 rounded-[8px] border border-[#D6DEE6]">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sin Diferencia</p>
-                    <p className="text-2xl font-black text-emerald-600">{selectedSede.articulosSinDiferencia}</p>
+                    <p className="text-2xl font-bold text-[#27AE60]">{selectedSede.articulosSinDiferencia}</p>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="bg-[#F5F7FA] p-4 rounded-[8px] border border-[#D6DEE6]">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Con Diferencia</p>
-                    <p className="text-2xl font-black text-rose-600">{selectedSede.articulosConDiferencia}</p>
+                    <p className="text-2xl font-bold text-[#EB5757]">{selectedSede.articulosConDiferencia}</p>
                   </div>
                 </div>
 
                 {/* Modal Filters */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#F5F7FA] p-4 rounded-[8px] border border-[#D6DEE6]">
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-slate-400" />
-                    <div className="flex bg-white p-1 rounded-lg border border-slate-200">
+                    <div className="flex bg-white p-1 rounded-[6px] border border-[#D6DEE6]">
                       {(['Todos', 'Faltantes', 'Sobrantes', 'Sin diferencia'] as const).map((f) => (
                         <button
                           key={f}
                           onClick={() => setModalFilter(f)}
-                          className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${modalFilter === f ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+                          className={`px-3 py-1 rounded-[4px] text-xs font-bold transition-all ${modalFilter === f ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
                         >
                           {f}
                         </button>
@@ -1011,10 +1011,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                         checked={showOnlyFaltantes}
                         onChange={(e) => setShowOnlyFaltantes(e.target.checked)}
                       />
-                      <div className={`w-10 h-5 rounded-full transition-colors ${showOnlyFaltantes ? 'bg-rose-500' : 'bg-slate-200'}`}></div>
+                      <div className={`w-10 h-5 rounded-full transition-colors ${showOnlyFaltantes ? 'bg-[#EB5757]' : 'bg-slate-200'}`}></div>
                       <div className={`absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform ${showOnlyFaltantes ? 'translate-x-5' : 'translate-x-0'}`}></div>
                     </div>
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Mostrar solo unidades faltantes</span>
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-[#1F3A5F] transition-colors">Mostrar solo unidades faltantes</span>
                   </label>
                 </div>
 
@@ -1030,9 +1030,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                     </span>
                   </div>
                   
-                  <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                  <div className="overflow-hidden rounded-[8px] border border-[#D6DEE6] shadow-sm">
                     <table className="w-full text-left text-sm">
-                      <thead className="bg-[#1F3A5F] text-white">
+                      <thead className="bg-[#A7C4E0] text-[#1F3A5F]">
                         <tr>
                           <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
                           <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">UNIDAD</th>
@@ -1040,15 +1040,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                           <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#D6DEE6]">
                         {filteredItems.map((a, i) => (
-                          <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F3F4F6] transition-colors`}>
-                            <td className="px-6 py-3 font-medium text-slate-700">{a.articulo}</td>
+                          <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F8]'} hover:bg-[#E5EDF5] transition-colors`}>
+                            <td className="px-6 py-3 font-bold text-[#1F3A5F]">{a.articulo}</td>
                             <td className="px-6 py-3 text-slate-500 text-[10px] font-bold">{a.subarticulo}</td>
-                            <td className={`px-6 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-rose-600' : a.totalDiferencia > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            <td className={`px-6 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EB5757]' : a.totalDiferencia > 0 ? 'text-[#27AE60]' : 'text-slate-400'}`}>
                               {a.totalDiferencia > 0 ? '+' : ''}{showOnlyFaltantes ? formatVariation(Math.abs(a.totalDiferencia), a.subarticulo) : formatVariation(a.totalDiferencia, a.subarticulo)}
                             </td>
-                            <td className={`px-6 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                            <td className={`px-6 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EB5757]' : 'text-[#1F3A5F]'}`}>
                               {formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))}
                             </td>
                           </tr>
@@ -1067,11 +1067,11 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <div className="p-6 bg-[#F5F7FA] border-t border-[#D6DEE6] flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Impacto Total {entityLabel}</p>
-                    <p className="text-2xl font-black text-rose-700">{formatCurrency(selectedSede.impactoEconomico)}</p>
+                    <p className="text-2xl font-bold text-[#EB5757]">{formatCurrency(selectedSede.impactoEconomico)}</p>
                   </div>
                 </div>
                 <button 
@@ -1080,7 +1080,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
                     setModalFilter('Todos');
                     setShowOnlyFaltantes(false);
                   }}
-                  className="bg-slate-900 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all"
+                  className="bg-[#1F3A5F] text-white px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#2F80ED] transition-all"
                 >
                   Cerrar Detalle
                 </button>

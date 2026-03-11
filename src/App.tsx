@@ -64,10 +64,10 @@ export default function App() {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
           <div className="bg-blue-50 p-8 rounded-full">
-            <Package className="w-16 h-16 text-[#2F80ED] opacity-20" />
+            <Package className="w-16 h-16 text-[#2F80ED] opacity-30" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-[#1F3A5F] mb-2">No hay datos cargados</h2>
+            <h2 className="text-2xl font-bold text-[#1F3A5F] mb-2">No hay datos cargados</h2>
             <p className="text-slate-500 max-w-md mx-auto">
               Utiliza el botón <span className="font-bold text-[#2F80ED]">Cargar Excel</span> en la esquina superior derecha para comenzar el análisis de inventarios.
             </p>
@@ -127,7 +127,7 @@ export default function App() {
                   />
                 </div>
                 
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-brand-border">
+                <div className="bg-white p-8 rounded-[12px] shadow-sm border border-brand-border">
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-brand-text">Resumen por Sede</h3>
@@ -137,7 +137,7 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.sedes.map(sede => (
-                      <div key={sede.sede} className="p-5 rounded-2xl border border-brand-border bg-slate-50/50">
+                      <div key={sede.sede} className="p-5 rounded-[8px] border border-brand-border bg-[#F5F7FA]">
                         <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">{sede.sede}</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
@@ -153,8 +153,8 @@ export default function App() {
                             <span className="font-bold text-status-cobra">{sede.totalCobrables}</span>
                           </div>
                           <div className="pt-2 border-t border-brand-border flex justify-between items-center">
-                            <span className="text-[10px] font-black text-brand-text-secondary uppercase">Total Cobro</span>
-                            <span className="text-sm font-black text-status-sobrante">{formatCurrency(sede.totalCobroSede)}</span>
+                            <span className="text-[10px] font-bold text-brand-text-secondary uppercase">Total Cobro</span>
+                            <span className="text-sm font-bold text-status-sobrante">{formatCurrency(sede.totalCobroSede)}</span>
                           </div>
                         </div>
                       </div>
@@ -201,14 +201,14 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <header className="bg-primary text-white px-6 py-4 flex justify-between items-center shadow-lg z-10">
+      <header className="bg-[#1F3A5F] text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
         <div className="flex items-center gap-3">
-          <div className="bg-[#5DADE2] p-2 rounded-lg">
+          <div className="bg-[#2F80ED] p-2 rounded-lg">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight leading-none">Cruces de Inventario</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#5DADE2] font-bold">Auditoría y Cobros por Sede</p>
+            <h1 className="text-lg font-bold tracking-tight leading-none uppercase">Cruces de Inventario</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7C4E0] font-bold">Auditoría y Cobros por Sede</p>
           </div>
         </div>
         
@@ -249,7 +249,7 @@ export default function App() {
                 onClick={() => setActiveTab(tab)}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
                   activeTab === tab 
-                    ? 'border-primary text-primary' 
+                    ? 'border-[#2F80ED] text-[#2F80ED]' 
                     : 'border-transparent text-text-secondary hover:text-text-main'
                 }`}
               >
