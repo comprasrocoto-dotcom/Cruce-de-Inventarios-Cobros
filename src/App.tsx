@@ -196,7 +196,7 @@ export default function App() {
             )}
 
             {activeTab === 'GERENCIAL' && (
-              <ManagementAnalysis data={articles} />
+              <ManagementAnalysis data={articles} selectedSede={filters.sede} />
             )}
           </motion.div>
         </AnimatePresence>

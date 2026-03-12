@@ -15,6 +15,7 @@ import {
 import { 
   Trophy, 
   TrendingDown, 
+  TrendingUp,
   AlertTriangle, 
   CheckCircle2,
   Building2,
@@ -27,10 +28,16 @@ import { motion } from 'motion/react';
 
 interface ManagementAnalysisProps {
   data: ArticleSummary[];
+  selectedSede?: string;
 }
 
-export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) => {
-  const summary = useMemo(() => getReliabilitySummary(data, 'sede'), [data]);
+export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, selectedSede }) => {
+  const filteredData = useMemo(() => {
+    if (!selectedSede) return data;
+    return data.filter(a => a.sede === selectedSede);
+  }, [data, selectedSede]);
+
+  const summary = useMemo(() => getReliabilitySummary(filteredData, selectedSede ? 'cc' : 'sede'), [filteredData, selectedSede]);
 
   const rankingData = useMemo(() => {
     return [...summary.sedesStats].sort((a, b) => a.confiabilidad - b.confiabilidad);
@@ -41,14 +48,14 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
   }, [summary]);
 
   const problematicProducts = useMemo(() => {
-    // Group all data by article name to get global frequency if needed, 
-    // but here we analyze based on the current provided data set.
-    const items = data.map(a => {
+    const items = filteredData.map(a => {
       const impacto = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);
       const variacionAbs = Math.abs(a.totalDiferencia);
       const frecuencia = a.movements ? a.movements.filter(m => Math.abs(m.variacion) > 0.0001).length : 1;
       return { ...a, impacto, variacionAbs, frecuencia };
     });
+
+    if (items.length === 0) return [];
 
     const maxImpacto = Math.max(...items.map(i => i.impacto), 1);
     const maxVariacion = Math.max(...items.map(i => i.variacionAbs), 1);
@@ -77,7 +84,21 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
 
       return { ...i, score, nivel, color, emoji };
     }).sort((a, b) => b.score - a.score).slice(0, 10);
-  }, [data]);
+  }, [filteredData]);
+
+  const topGainsProducts = useMemo(() => {
+    return [...filteredData]
+      .filter(a => a.totalDiferencia > 0.0001)
+      .sort((a, b) => (b.totalDiferencia * (b.ultimoCoste || b.costePromedio)) - (a.totalDiferencia * (a.ultimoCoste || a.costePromedio)))
+      .slice(0, 5);
+  }, [filteredData]);
+
+  const topLossesProducts = useMemo(() => {
+    return [...filteredData]
+      .filter(a => a.totalDiferencia < -0.0001)
+      .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)))
+      .slice(0, 5);
+  }, [filteredData]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
@@ -105,8 +126,12 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
       {/* Header Section */}
       <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">Análisis Gerencial de Inventarios</h2>
-          <p className="text-[#A7C4E0] font-medium">Ranking de control y auditoría por sede</p>
+          <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
+            Análisis Gerencial de Inventarios {selectedSede ? `— ${selectedSede}` : ''}
+          </h2>
+          <p className="text-[#A7C4E0] font-medium">
+            {selectedSede ? `Auditoría detallada para ${selectedSede}` : 'Ranking de control y auditoría por sede'}
+          </p>
         </div>
         <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
           <Trophy className="w-64 h-64" />
@@ -118,7 +143,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
         <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#EB5757] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sedes Críticas</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {selectedSede ? 'CC Críticos' : 'Sedes Críticas'}
+            </span>
           </div>
           <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
           <p className="text-sm text-slate-500 mt-1">Requieren auditoría inmediata</p>
@@ -126,7 +153,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
         <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#F2C94C] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#F2C94C]" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sedes en Alerta</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {selectedSede ? 'CC en Alerta' : 'Sedes en Alerta'}
+            </span>
           </div>
           <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
           <p className="text-sm text-slate-500 mt-1">Necesitan seguimiento preventivo</p>
@@ -134,7 +163,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
         <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#27AE60] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <CheckCircle2 className="w-5 h-5 text-[#27AE60]" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sedes Confiables</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {selectedSede ? 'CC Confiables' : 'Sedes Confiables'}
+            </span>
           </div>
           <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
           <p className="text-sm text-slate-500 mt-1">Control de inventario óptimo</p>
@@ -147,7 +178,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
           <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#2F80ED]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Ranking de Confiabilidad</h3>
+              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
+                Ranking de Confiabilidad {selectedSede ? `— ${selectedSede}` : ''}
+              </h3>
             </div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orden: Menor a Mayor</span>
           </div>
@@ -156,7 +189,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
               <thead>
                 <tr className="bg-[#A7C4E0]">
                   <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Pos</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Sede</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">
+                    {selectedSede ? 'Centro de Costos' : 'Sede'}
+                  </th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Evaluados</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
@@ -263,13 +298,17 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
       <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
         <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
           <TrendingDown className="w-5 h-5 text-[#EB5757]" />
-          <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 Sedes con Mayor Impacto Económico (Pérdida)</h3>
+          <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
+            {selectedSede ? `Top Impacto Económico en ${selectedSede}` : 'Top 5 Sedes con Mayor Impacto Económico (Pérdida)'}
+          </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-[#A7C4E0]">
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Sede</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">
+                  {selectedSede ? 'Centro de Costos' : 'Sede'}
+                </th>
                 <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto Económico</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Artículos con Diferencia</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
@@ -314,12 +353,91 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
         </div>
       </div>
 
+      {/* Top Gains and Losses Products (New Section) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
+            <TrendingDown className="w-5 h-5 text-[#EB5757]" />
+            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 Pérdidas Críticas</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#A7C4E0]">
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D6DEE6]">
+                {topLossesProducts.map((p) => (
+                  <tr key={p.articulo + p.cc + p.sede} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[#1F3A5F] text-xs">{p.articulo}</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold">{p.cc || 'SIN CC'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right text-rose-600 font-bold text-xs">
+                      {p.totalDiferencia.toFixed(2)} {p.subarticulo}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-[#1F3A5F] text-xs">
+                      {formatCurrency(Math.abs(p.totalDiferencia) * (p.ultimoCoste || p.costePromedio))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-[#27AE60]" />
+            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 Ganancias (Sobrantes)</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#A7C4E0]">
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D6DEE6]">
+                {topGainsProducts.map((p) => (
+                  <tr key={p.articulo + p.cc + p.sede} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[#1F3A5F] text-xs">{p.articulo}</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold">{p.cc || 'SIN CC'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-bold text-xs">
+                      +{p.totalDiferencia.toFixed(2)} {p.subarticulo}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-[#1F3A5F] text-xs">
+                      {formatCurrency(Math.abs(p.totalDiferencia) * (p.ultimoCoste || p.costePromedio))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Problematic Products Section */}
       <div className="space-y-8">
         <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
           <div className="relative z-10">
-            <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">Productos con Mayor Riesgo Operativo</h2>
-            <p className="text-[#A7C4E0] font-medium">Artículos con mayor impacto en diferencias de inventario</p>
+            <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
+              Productos con Mayor Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
+            </h2>
+            <p className="text-[#A7C4E0] font-medium">
+              {selectedSede ? `Análisis de criticidad para ${selectedSede}` : 'Artículos con mayor impacto en diferencias de inventario'}
+            </p>
           </div>
           <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
             <ShieldAlert className="w-64 h-64" />
@@ -384,7 +502,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data }) 
             <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-[#EB5757]" />
-                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Ranking de Riesgo Operativo</h3>
+                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
+                  Ranking de Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
+                </h3>
               </div>
             </div>
             <div className="overflow-x-auto">
