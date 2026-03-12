@@ -4,6 +4,7 @@ import { getReliabilitySummary } from '../utils/inventory';
 import { motion, AnimatePresence } from 'motion/react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -39,9 +40,16 @@ import {
 
 interface ReliabilityViewProps {
   data: ArticleSummary[];
+  filters: {
+    sede: string;
+    cc: string;
+    subfamilia: string;
+    status: string;
+    search: string;
+  };
 }
 
-export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
+export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters }) => {
   const [viewMode, setViewMode] = useState<'sede' | 'cc'>('sede');
   const [selectedSede, setSelectedSede] = useState<ReliabilityStats | null>(null);
   const [selectedCCFilter, setSelectedCCFilter] = useState<string | null>(null);
@@ -585,6 +593,266 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
     downloadGeneralPDF(sede);
   };
 
+  const exportDashboardToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const dateStr = new Date().toLocaleDateString('es-CO');
+    
+    // 1. TÍTULO DEL REPORTE
+    doc.setFontSize(18);
+    doc.setTextColor(31, 58, 95); // Azul oscuro
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE CONFIABILIDAD DE INVENTARIOS POR SEDE', pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Indicador de precisión y consistencia del inventario.', pageWidth / 2, 28, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.text(`Fecha: ${dateStr}`, 14, 40);
+    doc.text(`Sede: ${filters.sede || 'Todas'}`, 14, 45);
+    doc.text(`Centro de costos: ${filters.cc || 'Todos'}`, 14, 50);
+    doc.text(`Subfamilia: ${filters.subfamilia || 'Todas'}`, 14, 55);
+    
+    let currentY = 65;
+    
+    // 2. SECCIÓN HALLAZGOS PRINCIPALES
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('HALLAZGOS PRINCIPALES', 14, currentY);
+    currentY += 10;
+    
+    // Tarjetas de Hallazgos
+    const cardWidth = (pageWidth - 38) / 2;
+    const cardHeight = 25;
+    
+    // Card 1: Sede más confiable
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(14, currentY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`${entityLabel.toUpperCase()} MÁS CONFIABLE`, 18, currentY + 8);
+    doc.setFontSize(10);
+    doc.setTextColor(31, 58, 95);
+    doc.text(summary.sedeMasConfiable, 18, currentY + 18);
+    
+    // Card 2: Sede menos confiable
+    doc.roundedRect(14 + cardWidth + 10, currentY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`${entityLabel.toUpperCase()} MENOS CONFIABLE`, 14 + cardWidth + 14, currentY + 8);
+    doc.setFontSize(10);
+    doc.setTextColor(31, 58, 95);
+    doc.text(summary.sedeMenosConfiable, 14 + cardWidth + 14, currentY + 18);
+    
+    currentY += cardHeight + 10;
+    
+    // Card 3: Mayor impacto económico
+    doc.roundedRect(14, currentY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('MAYOR IMPACTO ECONÓMICO', 18, currentY + 8);
+    doc.setFontSize(10);
+    doc.setTextColor(235, 87, 87); // Rojo
+    doc.text(formatCurrency(summary.impactoEconomicoTotal), 18, currentY + 18);
+    
+    // Card 4: Diferencias detectadas
+    doc.roundedRect(14 + cardWidth + 10, currentY, cardWidth, cardHeight, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('DIFERENCIAS DETECTADAS', 14 + cardWidth + 14, currentY + 8);
+    doc.setFontSize(10);
+    doc.setTextColor(31, 58, 95);
+    doc.text(`${summary.totalDiferencias} artículos`, 14 + cardWidth + 14, currentY + 18);
+    
+    currentY += cardHeight + 15;
+    
+    // 3. INDICADORES GENERALES
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INDICADORES GENERALES', 14, currentY);
+    currentY += 10;
+    
+    const kpiWidth = (pageWidth - 48) / 4;
+    const kpiHeight = 20;
+    
+    const kpis = [
+      { label: `${entitiesLabel.toUpperCase()}`, value: summary.totalSedes.toString() },
+      { label: 'CONFIABILIDAD', value: `${Math.round(summary.promedioConfiabilidad)}%`, color: getStatusColor(summary.promedioConfiabilidad) },
+      { label: 'DIFERENCIAS', value: summary.totalDiferencias.toString() },
+      { label: 'IMPACTO TOTAL', value: formatCurrency(summary.impactoEconomicoTotal), color: [235, 87, 87] }
+    ];
+    
+    kpis.forEach((kpi, i) => {
+      const x = 14 + i * (kpiWidth + 10);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(214, 222, 230);
+      doc.roundedRect(x, currentY, kpiWidth, kpiHeight, 2, 2, 'DF');
+      doc.setFontSize(7);
+      doc.setTextColor(107, 114, 128);
+      doc.text(kpi.label, x + 4, currentY + 6);
+      doc.setFontSize(9);
+      if (Array.isArray(kpi.color)) {
+        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+      } else if (typeof kpi.color === 'string') {
+        doc.setTextColor(kpi.color);
+      } else {
+        doc.setTextColor(31, 58, 95);
+      }
+      doc.text(kpi.value, x + 4, currentY + 14);
+    });
+    
+    currentY += kpiHeight + 15;
+    
+    // 4. CLASIFICACIÓN DE SEDES
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CLASIFICACIÓN DE SEDES POR NIVEL DE RIESGO', 14, currentY);
+    currentY += 6;
+    
+    const counts = { Confiable: 0, Alerta: 0, Crítico: 0 };
+    summary.sedesStats.forEach(s => {
+      if (counts.hasOwnProperty(s.nivel)) {
+        counts[s.nivel as keyof typeof counts]++;
+      }
+    });
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Nivel', 'Cantidad de sedes', 'Descripción']],
+      body: [
+        ['Confiables', counts.Confiable, 'Sedes con precisión alta (>=85%)'],
+        ['En alerta', counts.Alerta, 'Sedes con descuadres medios (70-84%)'],
+        ['Críticos', counts.Crítico, 'Sedes con descuadres graves (<70%)']
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        1: { halign: 'center' }
+      }
+    });
+    
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+    
+    // 5. GRÁFICO 1: CONFIABILIDAD POR SEDE (%)
+    if (currentY > 220) { doc.addPage(); currentY = 20; }
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONFIABILIDAD POR SEDE (%)', 14, currentY);
+    currentY += 10;
+    
+    const chartWidth = pageWidth - 60;
+    const barHeight = 8;
+    const gap = 4;
+    
+    summary.sedesStats.slice(0, 10).forEach((s, i) => {
+      if (currentY > 270) { doc.addPage(); currentY = 20; }
+      doc.setFontSize(8);
+      doc.setTextColor(31, 58, 95);
+      doc.text(s.sede, 14, currentY + 6);
+      
+      const barWidth = (s.confiabilidad / 100) * chartWidth;
+      doc.setFillColor(getStatusColor(s.confiabilidad));
+      doc.rect(50, currentY, barWidth, barHeight, 'F');
+      
+      doc.setFontSize(8);
+      doc.setTextColor(31, 58, 95);
+      doc.text(`${Math.round(s.confiabilidad)}%`, 50 + barWidth + 2, currentY + 6);
+      currentY += barHeight + gap;
+    });
+    
+    currentY += 10;
+    
+    // 6. GRÁFICO 2: DISTRIBUCIÓN POR NIVEL DE RIESGO
+    if (currentY > 220) { doc.addPage(); currentY = 20; }
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DISTRIBUCIÓN POR NIVEL DE RIESGO', 14, currentY);
+    currentY += 10;
+    
+    const total = summary.sedesStats.length;
+    const dist = [
+      { name: 'Confiables', value: counts.Confiable, color: '#27AE60' },
+      { name: 'En alerta', value: counts.Alerta, color: '#F2C94C' },
+      { name: 'Críticos', value: counts.Crítico, color: '#EB5757' }
+    ];
+    
+    dist.forEach((d, i) => {
+      const percentage = (d.value / total) * 100;
+      const barWidth = (percentage / 100) * (pageWidth - 60);
+      doc.setFontSize(8);
+      doc.setTextColor(31, 58, 95);
+      doc.text(d.name, 14, currentY + 6);
+      doc.setFillColor(d.color);
+      doc.rect(50, currentY, barWidth, barHeight, 'F');
+      doc.text(`${d.value} (${Math.round(percentage)}%)`, 50 + barWidth + 2, currentY + 6);
+      currentY += barHeight + gap;
+    });
+    
+    // 7. TABLA DETALLADA
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TABLA DETALLADA DE SEDES', 14, currentY);
+    currentY += 6;
+    
+    const sortedSedes = [...summary.sedesStats].sort((a, b) => a.confiabilidad - b.confiabilidad);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Sede', 'Artículos evaluados', 'Sin diferencia', 'Con diferencia', 'Confiabilidad', 'Impacto económico']],
+      body: sortedSedes.map(s => [
+        s.sede,
+        s.articulosEvaluados,
+        s.articulosSinDiferencia,
+        s.articulosConDiferencia,
+        { content: `${Math.round(s.confiabilidad)}%`, styles: { textColor: getStatusColor(s.confiabilidad), fontStyle: 'bold' } },
+        formatCurrency(s.impactoEconomico)
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 8 },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'center' },
+        5: { halign: 'right' }
+      }
+    });
+    
+    addFooter(doc, pageWidth);
+    doc.save(`Confiabilidad_por_Sede_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    // Basic implementation for Reliability Excel
+    const workbook = XLSX.utils.book_new();
+    
+    const dataRows = summary.sedesStats.map(s => ({
+      Sede: s.sede,
+      Evaluados: s.articulosEvaluados,
+      'Sin Diferencia': s.articulosSinDiferencia,
+      'Con Diferencia': s.articulosConDiferencia,
+      'Confiabilidad %': Math.round(s.confiabilidad),
+      'Impacto Económico': s.impactoEconomico,
+      Nivel: s.nivel
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(dataRows);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Confiabilidad");
+    XLSX.writeFile(workbook, `Confiabilidad_Sedes_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="space-y-8">
       {/* Header Section */}
@@ -609,11 +877,17 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data }) => {
               Por Centro de Costos
             </button>
           </div>
-          <button className="flex items-center space-x-2 bg-white border border-[#D6DEE6] text-[#1F3A5F] px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-slate-50 transition-all">
+          <button 
+            onClick={exportToExcel}
+            className="flex items-center space-x-2 bg-white border border-[#D6DEE6] text-[#1F3A5F] px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-slate-50 transition-all"
+          >
             <FileDown className="w-4 h-4" />
             <span>Exportar Excel</span>
           </button>
-          <button className="flex items-center space-x-2 bg-[#2F80ED] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#1C6DD0] transition-all shadow-sm">
+          <button 
+            onClick={exportDashboardToPDF}
+            className="flex items-center space-x-2 bg-[#2F80ED] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#1C6DD0] transition-all shadow-sm"
+          >
             <FileDown className="w-4 h-4" />
             <span>Exportar PDF</span>
           </button>

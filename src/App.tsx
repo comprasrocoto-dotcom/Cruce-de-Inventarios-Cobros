@@ -195,7 +195,7 @@ export default function App() {
             )}
 
             {activeTab === 'CONFIABILIDAD' && (
-              <ReliabilityView data={articles} />
+              <ReliabilityView data={articles} filters={filters} />
             )}
 
             {activeTab === 'GERENCIAL' && (
