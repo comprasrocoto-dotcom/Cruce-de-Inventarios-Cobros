@@ -28,6 +28,7 @@ type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
+  const [fileName, setFileName] = useState<string>('');
   const [filters, setFilters] = useState({
     sede: '',
     cc: '',
@@ -207,6 +208,11 @@ export default function App() {
                 sedes={uniqueSedes} 
                 ccs={uniqueCCs} 
                 subfamilias={uniqueSubfamilias} 
+                fileName={fileName}
+                onReset={() => {
+                  setArticles([]);
+                  setFileName('');
+                }}
               />
             )}
           </motion.div>
@@ -232,7 +238,11 @@ export default function App() {
         <div className="flex items-center gap-6">
           <FileUpload 
             onDataLoaded={(data) => setArticles(data)} 
-            onReset={() => setArticles([])}
+            onReset={() => {
+              setArticles([]);
+              setFileName('');
+            }}
+            onFileNameChange={(name) => setFileName(name)}
             hasData={articles.length > 0}
           />
           {articles.length > 0 && (

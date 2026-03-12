@@ -8,10 +8,11 @@ import { motion } from 'motion/react';
 interface FileUploadProps {
   onDataLoaded: (data: ArticleSummary[], debug?: any, preview?: any[]) => void;
   onReset: () => void;
+  onFileNameChange?: (name: string) => void;
   hasData: boolean;
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, hasData }) => {
+export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, onFileNameChange, hasData }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<{ name: string, sheet: string, rows: number } | null>(null);
@@ -54,6 +55,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
         rows: json.length
       });
 
+      if (onFileNameChange) onFileNameChange(file.name);
       onDataLoaded(articles, debugInfo, json.slice(0, 10));
       setLoading(false);
     } catch (err: any) {
@@ -66,6 +68,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, h
   const handleReset = () => {
     setFileInfo(null);
     setError(null);
+    if (onFileNameChange) onFileNameChange('');
     onReset();
   };
 

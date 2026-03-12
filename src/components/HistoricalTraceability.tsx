@@ -22,9 +22,11 @@ interface HistoricalTraceabilityProps {
   sedes: string[];
   ccs: string[];
   subfamilias: string[];
+  fileName?: string;
+  onReset?: () => void;
 }
 
-export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ data, sedes, ccs, subfamilias }) => {
+export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ data, sedes, ccs, subfamilias, fileName, onReset }) => {
   const [filters, setFilters] = useState({
     sede: '',
     cc: '',
@@ -159,13 +161,39 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
       {/* Header Section */}
       <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">Trazabilidad Histórica de Confiabilidad</h2>
-          <p className="text-[#A7C4E0] font-medium">Análisis de evolución y tendencias multiperíodo</p>
+          <h2 className="text-2xl font-bold mb-1 uppercase tracking-tight">TRAZABILIDAD</h2>
+          <p className="text-[#A7C4E0] font-medium">Comparativo histórico de confiabilidad e impacto económico</p>
         </div>
         <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
           <Activity className="w-64 h-64" />
         </div>
       </div>
+
+      {/* Archivo Historico Card */}
+      {fileName && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-emerald-50 border border-emerald-100 p-6 rounded-[12px] flex items-center justify-between shadow-sm"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-emerald-100 p-3 rounded-full">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <h4 className="text-emerald-900 font-bold uppercase text-xs tracking-wider">ARCHIVO HISTÓRICO CARGADO CORRECTAMENTE</h4>
+              <p className="text-emerald-700 text-sm font-medium">{fileName}</p>
+              <p className="text-emerald-600 text-[10px] font-bold uppercase mt-1">{data.length} registros históricos procesados con éxito</p>
+            </div>
+          </div>
+          <button 
+            onClick={onReset}
+            className="px-4 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors shadow-sm"
+          >
+            Cargar otro
+          </button>
+        </motion.div>
+      )}
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
@@ -195,6 +223,31 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
               <option value="">Todos los CC</option>
               {ccs.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider flex items-center gap-1">
+              <Package className="w-3 h-3" /> Subfamilia
+            </label>
+            <select 
+              value={filters.subfamilia}
+              onChange={(e) => setFilters({...filters, subfamilia: e.target.value})}
+              className="w-full p-2 rounded-md border border-brand-border text-sm font-medium focus:ring-2 focus:ring-[#2F80ED] outline-none"
+            >
+              <option value="">Todas las Subfamilias</option>
+              {subfamilias.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider flex items-center gap-1">
+              <Package className="w-3 h-3" /> Artículo
+            </label>
+            <input 
+              type="text"
+              value={filters.articulo}
+              onChange={(e) => setFilters({...filters, articulo: e.target.value})}
+              placeholder="Buscar artículo..."
+              className="w-full p-2 rounded-md border border-brand-border text-sm font-medium focus:ring-2 focus:ring-[#2F80ED] outline-none"
+            />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider flex items-center gap-1">
@@ -296,40 +349,58 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
         </div>
       )}
 
-      {/* Analysis Section */}
+      {/* Analysis Section (Conclusiones Historicas) */}
       {kpis && (
-        <div className="bg-[#F8FAFC] p-6 rounded-[12px] border border-brand-border">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4" /> Análisis de Mejora Operativa
+        <div className="bg-[#F8FAFC] p-8 rounded-[12px] border border-brand-border shadow-inner">
+          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-widest mb-6 flex items-center gap-2">
+            <Activity className="w-4 h-4" /> Conclusiones Históricas
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <div className="space-y-3">
-              <p className="text-slate-600 leading-relaxed">
-                En el rango analizado, la confiabilidad pasó de <span className="font-bold text-[#1F3A5F]">{firstStats.confiabilidad.toFixed(1)}%</span> a <span className="font-bold text-[#1F3A5F]">{currentStats.confiabilidad.toFixed(1)}%</span>, 
-                mostrando una variación de <span className={`font-bold ${kpis.accumulatedVariation >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{kpis.accumulatedVariation.toFixed(1)} puntos porcentuales</span>.
-              </p>
-              <p className="text-slate-600 leading-relaxed">
-                El impacto económico total en este período asciende a <span className="font-bold text-rose-600">{formatCurrency(kpis.accumulatedImpact)}</span>.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {Object.entries(historicalData.bySede).length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
                 <p className="text-slate-600 leading-relaxed">
-                  La sede con mejor evolución fue <span className="font-bold text-[#2F80ED]">{
-                    Object.entries(historicalData.bySede)
-                      .map(([name, s]) => ({ name, var: (s[s.length-1]?.confiabilidad || 0) - (s[0]?.confiabilidad || 0) }))
-                      .sort((a, b) => b.var - a.var)[0]?.name
-                  }</span>.
+                  En el rango analizado, la confiabilidad pasó de <span className="font-bold text-[#1F3A5F]">{firstStats.confiabilidad.toFixed(1)}%</span> a <span className="font-bold text-[#1F3A5F]">{currentStats.confiabilidad.toFixed(1)}%</span>, 
+                  mejorando <span className={`font-bold ${kpis.accumulatedVariation >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{Math.abs(kpis.accumulatedVariation).toFixed(1)} puntos porcentuales</span>.
                 </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
+                <p className="text-slate-600 leading-relaxed">
+                  El impacto económico disminuyó de <span className="font-bold text-[#1F3A5F]">{formatCurrency(firstStats.impactoEconomico)}</span> a <span className="font-bold text-rose-600">{formatCurrency(currentStats.impactoEconomico)}</span>.
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
+                <p className="text-slate-600 leading-relaxed">
+                  El período con peor desempeño fue <span className="font-bold text-rose-600 uppercase">{kpis.worstPeriod.period}</span> con un <span className="font-bold">{kpis.worstPeriod.confiabilidad.toFixed(1)}%</span>.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {Object.entries(historicalData.bySede).length > 0 && (
+                <div className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
+                  <p className="text-slate-600 leading-relaxed">
+                    La sede con mejor evolución fue <span className="font-bold text-[#2F80ED] uppercase">{
+                      Object.entries(historicalData.bySede)
+                        .map(([name, s]) => ({ name, var: (s[s.length-1]?.confiabilidad || 0) - (s[0]?.confiabilidad || 0) }))
+                        .sort((a, b) => b.var - a.var)[0]?.name
+                    }</span>.
+                  </p>
+                </div>
               )}
               {Object.entries(historicalData.byCC).length > 0 && (
-                <p className="text-slate-600 leading-relaxed">
-                  El centro de costos con mayor mejora fue <span className="font-bold text-[#2F80ED]">{
-                    Object.entries(historicalData.byCC)
-                      .map(([name, s]) => ({ name, var: (s[s.length-1]?.confiabilidad || 0) - (s[0]?.confiabilidad || 0) }))
-                      .sort((a, b) => b.var - a.var)[0]?.name
-                  }</span>.
-                </p>
+                <div className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
+                  <p className="text-slate-600 leading-relaxed">
+                    El centro de costos con mayor mejora fue <span className="font-bold text-[#2F80ED] uppercase">{
+                      Object.entries(historicalData.byCC)
+                        .map(([name, s]) => ({ name, var: (s[s.length-1]?.confiabilidad || 0) - (s[0]?.confiabilidad || 0) }))
+                        .sort((a, b) => b.var - a.var)[0]?.name
+                    }</span>.
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -440,10 +511,10 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
       {/* Comparative Table */}
       <div className="bg-white rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-brand-border bg-[#F5F7FA] flex items-center justify-between">
+        <div className="p-6 border-b border-brand-border bg-[#1F3A5F] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TableIcon className="w-5 h-5 text-[#1F3A5F]" />
-            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Comparativo de Comportamiento Histórico</h3>
+            <TableIcon className="w-5 h-5 text-white" />
+            <h3 className="font-bold text-white uppercase tracking-tight">COMPARATIVO POR PERÍODO</h3>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -452,12 +523,14 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
               <tr className="bg-[#A7C4E0]">
                 <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Período</th>
                 <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Evaluados</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Sin Dif.</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Con Dif.</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Sin diferencia</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Con diferencia</th>
                 <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Var. vs Ant.</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Estado</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto Económico</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Faltantes</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Sobrantes</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Var. vs período anterior</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Tendencia</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border">
@@ -473,6 +546,8 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
                     </span>
                   </td>
                   <td className="px-4 py-4 text-right font-bold text-[#1F3A5F] text-sm">{formatCurrency(s.impactoEconomico)}</td>
+                  <td className="px-4 py-4 text-center text-rose-500 text-xs font-bold">{s.faltantes}</td>
+                  <td className="px-4 py-4 text-center text-emerald-500 text-xs font-bold">{s.sobrantes}</td>
                   <td className="px-4 py-4 text-center">
                     {s.variacionVsAnterior !== undefined ? (
                       <span className={`text-xs font-bold flex items-center justify-center gap-1 ${s.variacionVsAnterior >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -497,75 +572,103 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
         </div>
       </div>
 
-      {/* Traceability by Sede/CC Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-brand-border bg-[#F5F7FA]">
-            <h3 className="text-xs font-bold text-[#1F3A5F] uppercase tracking-wider">Trazabilidad por Sede</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="px-4 py-2 font-bold text-slate-500 uppercase">Sede</th>
-                  {stats.map(s => <th key={s.period} className="px-4 py-2 font-bold text-slate-500 uppercase text-center">{s.period}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-border">
-                {(Object.entries(historicalData.bySede) as [string, HistoricalPeriodStats[]][]).map(([sede, s]) => (
-                  <tr key={sede} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-bold text-[#1F3A5F]">{sede}</td>
-                    {stats.map(period => {
-                      const periodStat = s.find(ps => ps.period === period.period);
-                      return (
-                        <td key={period.period} className="px-4 py-3 text-center">
-                          {periodStat ? (
-                            <span className={`font-bold ${periodStat.confiabilidad >= 85 ? 'text-emerald-600' : periodStat.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}>
-                              {periodStat.confiabilidad.toFixed(0)}%
-                            </span>
-                          ) : '-'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Evolution by Sede & CC Cards */}
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-widest flex items-center gap-2">
+            <Building2 className="w-4 h-4" /> Evolución por Sede
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {(Object.entries(historicalData.bySede) as [string, HistoricalPeriodStats[]][]).map(([sede, s]) => {
+              const first = s[0]?.confiabilidad || 0;
+              const last = s[s.length - 1]?.confiabilidad || 0;
+              const variation = last - first;
+              const totalImpact = s.reduce((acc, curr) => acc + curr.impactoEconomico, 0);
+              const trend = variation > 2 ? 'Mejorando' : variation < -2 ? 'Empeoró' : 'Estable';
+
+              return (
+                <div key={sede} className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm hover:shadow-md transition-shadow">
+                  <h4 className="font-bold text-[#1F3A5F] text-sm uppercase mb-4 border-b pb-2">{sede}</h4>
+                  <div className="space-y-2 mb-4">
+                    {s.slice(-3).map(period => (
+                      <div key={period.period} className="flex justify-between text-xs font-medium">
+                        <span className="text-slate-500">{period.period}</span>
+                        <span className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}>
+                          {period.confiabilidad.toFixed(0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-3 border-t border-slate-100 space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-400">Variación:</span>
+                      <span className={variation >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                        {variation >= 0 ? '+' : ''}{variation.toFixed(1)} pts
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-400">Impacto:</span>
+                      <span className="text-rose-600">{formatCurrency(totalImpact)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-400">Tendencia:</span>
+                      <span className={trend === 'Mejorando' ? 'text-emerald-600' : trend === 'Empeoró' ? 'text-rose-600' : 'text-slate-600'}>
+                        {trend}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="bg-white rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-brand-border bg-[#F5F7FA]">
-            <h3 className="text-xs font-bold text-[#1F3A5F] uppercase tracking-wider">Trazabilidad por Centro de Costos</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="px-4 py-2 font-bold text-slate-500 uppercase">CC</th>
-                  {stats.map(s => <th key={s.period} className="px-4 py-2 font-bold text-slate-500 uppercase text-center">{s.period}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-border">
-                {(Object.entries(historicalData.byCC) as [string, HistoricalPeriodStats[]][]).map(([cc, s]) => (
-                  <tr key={cc} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-bold text-[#1F3A5F]">{cc}</td>
-                    {stats.map(period => {
-                      const periodStat = s.find(ps => ps.period === period.period);
-                      return (
-                        <td key={period.period} className="px-4 py-3 text-center">
-                          {periodStat ? (
-                            <span className={`font-bold ${periodStat.confiabilidad >= 85 ? 'text-emerald-600' : periodStat.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}>
-                              {periodStat.confiabilidad.toFixed(0)}%
-                            </span>
-                          ) : '-'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-widest flex items-center gap-2">
+            <LayoutGrid className="w-4 h-4" /> Evolución por Centro de Costos
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {(Object.entries(historicalData.byCC) as [string, HistoricalPeriodStats[]][]).map(([cc, s]) => {
+              const first = s[0]?.confiabilidad || 0;
+              const last = s[s.length - 1]?.confiabilidad || 0;
+              const variation = last - first;
+              const totalImpact = s.reduce((acc, curr) => acc + curr.impactoEconomico, 0);
+              const trend = variation > 2 ? 'Mejorando' : variation < -2 ? 'Empeoró' : 'Estable';
+
+              return (
+                <div key={cc} className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm hover:shadow-md transition-shadow">
+                  <h4 className="font-bold text-[#1F3A5F] text-sm uppercase mb-4 border-b pb-2">{cc}</h4>
+                  <div className="space-y-2 mb-4">
+                    {s.slice(-3).map(period => (
+                      <div key={period.period} className="flex justify-between text-xs font-medium">
+                        <span className="text-slate-500">{period.period}</span>
+                        <span className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}>
+                          {period.confiabilidad.toFixed(0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-3 border-t border-slate-100 space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-400">Variación:</span>
+                      <span className={variation >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                        {variation >= 0 ? '+' : ''}{variation.toFixed(1)} pts
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-400">Impacto:</span>
+                      <span className="text-rose-600">{formatCurrency(totalImpact)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-400">Tendencia:</span>
+                      <span className={trend === 'Mejorando' ? 'text-emerald-600' : trend === 'Empeoró' ? 'text-rose-600' : 'text-slate-600'}>
+                        {trend}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
