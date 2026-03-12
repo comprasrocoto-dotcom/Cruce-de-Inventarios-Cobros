@@ -596,131 +596,206 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
   const exportDashboardToPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     const dateStr = new Date().toLocaleDateString('es-CO');
-    
-    // 1. TÍTULO DEL REPORTE
-    doc.setFontSize(18);
-    doc.setTextColor(31, 58, 95); // Azul oscuro
+    const conf = Math.round(summary.promedioConfiabilidad);
+    const status = conf >= 85 ? 'CONFIABLE' : conf >= 70 ? 'ALERTA' : 'CRÍTICO';
+    const statusColor = conf >= 85 ? [39, 174, 96] : conf >= 70 ? [242, 201, 76] : [235, 87, 87];
+
+    // --- PÁGINA 1: PORTADA EJECUTIVA ---
+    // Fondo decorativo superior
+    doc.setFillColor(31, 58, 95);
+    doc.rect(0, 0, pageWidth, 60, 'F');
+
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('REPORTE DE CONFIABILIDAD DE INVENTARIOS POR SEDE', pageWidth / 2, 20, { align: 'center' });
-    
+    doc.text('REPORTE GERENCIAL DE', pageWidth / 2, 25, { align: 'center' });
+    doc.text('CONFIABILIDAD DE INVENTARIOS', pageWidth / 2, 35, { align: 'center' });
+
     doc.setFontSize(12);
+    doc.setTextColor(200, 200, 200);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sistema de Auditoría de Inventarios', pageWidth / 2, 45, { align: 'center' });
+
+    // Detalles Portada
+    let coverY = 80;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text('DETALLES DEL REPORTE', 20, coverY);
+    coverY += 8;
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, coverY, pageWidth - 20, coverY);
+    coverY += 10;
+
+    doc.setFontSize(11);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fecha de generación:', 20, coverY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(dateStr, 70, coverY);
+    coverY += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sedes evaluadas:', 20, coverY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(summary.totalSedes.toString(), 70, coverY);
+    coverY += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Centro de costos:', 20, coverY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(filters.cc || 'Todos', 70, coverY);
+    coverY += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Subfamilias:', 20, coverY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(filters.subfamilia || 'Todas', 70, coverY);
+    coverY += 15;
+
+    // Indicador Central
+    doc.setFontSize(16);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONFIABILIDAD GENERAL', pageWidth / 2, coverY, { align: 'center' });
+    coverY += 25;
+
+    doc.setFontSize(72);
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+    doc.text(`${conf}%`, pageWidth / 2, coverY, { align: 'center' });
+    coverY += 15;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Estado general del sistema: ${status}`, pageWidth / 2, coverY, { align: 'center' });
+    coverY += 25;
+
+    // KPIs Principales (Cards en Portada)
+    const kpiCardWidth = (pageWidth - 50) / 2;
+    const kpiCardHeight = 35;
+
+    // Sede más confiable
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, coverY, kpiCardWidth, kpiCardHeight, 3, 3, 'FD');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('SEDE MÁS CONFIABLE', 25, coverY + 10);
+    doc.setFontSize(11);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    const bestSedeLines = doc.splitTextToSize(summary.sedeMasConfiable, kpiCardWidth - 10);
+    doc.text(bestSedeLines, 25, coverY + 22);
+
+    // Sede menos confiable
+    doc.roundedRect(pageWidth / 2 + 5, coverY, kpiCardWidth, kpiCardHeight, 3, 3, 'FD');
+    doc.setFontSize(8);
     doc.setTextColor(107, 114, 128);
     doc.setFont('helvetica', 'normal');
-    doc.text('Indicador de precisión y consistencia del inventario.', pageWidth / 2, 28, { align: 'center' });
-    
-    doc.setFontSize(9);
-    doc.text(`Fecha: ${dateStr}`, 14, 40);
-    doc.text(`Sede: ${filters.sede || 'Todas'}`, 14, 45);
-    doc.text(`Centro de costos: ${filters.cc || 'Todos'}`, 14, 50);
-    doc.text(`Subfamilia: ${filters.subfamilia || 'Todas'}`, 14, 55);
-    
-    let currentY = 65;
-    
-    // 2. SECCIÓN HALLAZGOS PRINCIPALES
+    doc.text('SEDE MENOS CONFIABLE', pageWidth / 2 + 10, coverY + 10);
+    doc.setFontSize(11);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    const worstSedeLines = doc.splitTextToSize(summary.sedeMenosConfiable, kpiCardWidth - 10);
+    doc.text(worstSedeLines, pageWidth / 2 + 10, coverY + 22);
+
+    coverY += kpiCardHeight + 10;
+
+    // Impacto económico
+    doc.setFillColor(254, 242, 242); // Rose 50
+    doc.setDrawColor(254, 202, 202); // Rose 200
+    doc.roundedRect(20, coverY, kpiCardWidth, kpiCardHeight, 3, 3, 'FD');
+    doc.setFontSize(8);
+    doc.setTextColor(153, 27, 27); // Rose 800
+    doc.setFont('helvetica', 'normal');
+    doc.text('IMPACTO ECONÓMICO TOTAL', 25, coverY + 10);
+    doc.setFontSize(14);
+    doc.setTextColor(220, 38, 38); // Rose 600
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatCurrency(summary.impactoEconomicoTotal), 25, coverY + 25);
+
+    // Diferencias detectadas
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(pageWidth / 2 + 5, coverY, kpiCardWidth, kpiCardHeight, 3, 3, 'FD');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.text('DIFERENCIAS DETECTADAS', pageWidth / 2 + 10, coverY + 10);
     doc.setFontSize(14);
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
+    doc.text(`${summary.totalDiferencias} artículos`, pageWidth / 2 + 10, coverY + 25);
+
+    // --- PÁGINA 2: DASHBOARD DE CONFIABILIDAD ---
+    doc.addPage();
+    let currentY = 20;
+    doc.setFontSize(16);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DASHBOARD DE CONFIABILIDAD', 14, currentY);
+    currentY += 12;
+
+    // Hallazgos Principales
+    doc.setFontSize(12);
     doc.text('HALLAZGOS PRINCIPALES', 14, currentY);
-    currentY += 10;
+    currentY += 8;
     
-    // Tarjetas de Hallazgos
-    const cardWidth = (pageWidth - 38) / 2;
-    const cardHeight = 25;
-    
-    // Card 1: Sede más confiable
-    doc.setFillColor(245, 247, 250);
-    doc.roundedRect(14, currentY, cardWidth, cardHeight, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(107, 114, 128);
-    doc.text(`${entityLabel.toUpperCase()} MÁS CONFIABLE`, 18, currentY + 8);
-    doc.setFontSize(10);
-    doc.setTextColor(31, 58, 95);
-    doc.text(summary.sedeMasConfiable, 18, currentY + 18);
-    
-    // Card 2: Sede menos confiable
-    doc.roundedRect(14 + cardWidth + 10, currentY, cardWidth, cardHeight, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(107, 114, 128);
-    doc.text(`${entityLabel.toUpperCase()} MENOS CONFIABLE`, 14 + cardWidth + 14, currentY + 8);
-    doc.setFontSize(10);
-    doc.setTextColor(31, 58, 95);
-    doc.text(summary.sedeMenosConfiable, 14 + cardWidth + 14, currentY + 18);
-    
-    currentY += cardHeight + 10;
-    
-    // Card 3: Mayor impacto económico
-    doc.roundedRect(14, currentY, cardWidth, cardHeight, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(107, 114, 128);
-    doc.text('MAYOR IMPACTO ECONÓMICO', 18, currentY + 8);
-    doc.setFontSize(10);
-    doc.setTextColor(235, 87, 87); // Rojo
-    doc.text(formatCurrency(summary.impactoEconomicoTotal), 18, currentY + 18);
-    
-    // Card 4: Diferencias detectadas
-    doc.roundedRect(14 + cardWidth + 10, currentY, cardWidth, cardHeight, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(107, 114, 128);
-    doc.text('DIFERENCIAS DETECTADAS', 14 + cardWidth + 14, currentY + 8);
-    doc.setFontSize(10);
-    doc.setTextColor(31, 58, 95);
-    doc.text(`${summary.totalDiferencias} artículos`, 14 + cardWidth + 14, currentY + 18);
-    
-    currentY += cardHeight + 15;
-    
-    // 3. INDICADORES GENERALES
-    doc.setFontSize(14);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INDICADORES GENERALES', 14, currentY);
-    currentY += 10;
-    
-    const kpiWidth = (pageWidth - 48) / 4;
-    const kpiHeight = 20;
-    
-    const kpis = [
-      { label: `${entitiesLabel.toUpperCase()}`, value: summary.totalSedes.toString() },
-      { label: 'CONFIABILIDAD', value: `${Math.round(summary.promedioConfiabilidad)}%`, color: getStatusColor(summary.promedioConfiabilidad) },
-      { label: 'DIFERENCIAS', value: summary.totalDiferencias.toString() },
-      { label: 'IMPACTO TOTAL', value: formatCurrency(summary.impactoEconomicoTotal), color: [235, 87, 87] }
+    const findings = [
+      { label: `${entityLabel} más confiable`, value: summary.sedeMasConfiable },
+      { label: `${entityLabel} menos confiable`, value: summary.sedeMenosConfiable },
+      { label: 'Mayor Impacto Económico', value: formatCurrency(summary.impactoEconomicoTotal) },
+      { label: 'Diferencias Detectadas', value: `${summary.totalDiferencias} artículos` }
     ];
-    
-    kpis.forEach((kpi, i) => {
-      const x = 14 + i * (kpiWidth + 10);
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(214, 222, 230);
-      doc.roundedRect(x, currentY, kpiWidth, kpiHeight, 2, 2, 'DF');
-      doc.setFontSize(7);
-      doc.setTextColor(107, 114, 128);
-      doc.text(kpi.label, x + 4, currentY + 6);
-      doc.setFontSize(9);
-      if (Array.isArray(kpi.color)) {
-        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-      } else if (typeof kpi.color === 'string') {
-        doc.setTextColor(kpi.color);
-      } else {
-        doc.setTextColor(31, 58, 95);
-      }
-      doc.text(kpi.value, x + 4, currentY + 14);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Indicador', 'Valor']],
+      body: findings.map(f => [f.label, f.value]),
+      theme: 'grid',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 10 }
     });
     
-    currentY += kpiHeight + 15;
-    
-    // 4. CLASIFICACIÓN DE SEDES
-    doc.setFontSize(14);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Indicadores Generales
+    doc.setFontSize(12);
+    doc.text('INDICADORES GENERALES', 14, currentY);
+    currentY += 8;
+
+    const kpis = [
+      { label: `${entitiesLabel.toUpperCase()}`, value: summary.totalSedes.toString() },
+      { label: 'CONFIABILIDAD', value: `${Math.round(summary.promedioConfiabilidad)}%` },
+      { label: 'DIFERENCIAS', value: summary.totalDiferencias.toString() },
+      { label: 'IMPACTO TOTAL', value: formatCurrency(summary.impactoEconomicoTotal) }
+    ];
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Sedes', 'Confiabilidad', 'Diferencias', 'Impacto Total']],
+      body: [[kpis[0].value, kpis[1].value, kpis[2].value, kpis[3].value]],
+      theme: 'grid',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 10, halign: 'center' }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Clasificación de Sedes
+    doc.setFontSize(12);
     doc.text('CLASIFICACIÓN DE SEDES POR NIVEL DE RIESGO', 14, currentY);
-    currentY += 6;
-    
+    currentY += 8;
+
     const counts = { Confiable: 0, Alerta: 0, Crítico: 0 };
     summary.sedesStats.forEach(s => {
       if (counts.hasOwnProperty(s.nivel)) {
         counts[s.nivel as keyof typeof counts]++;
       }
     });
-    
+
     autoTable(doc, {
       startY: currentY,
       head: [['Nivel', 'Cantidad de sedes', 'Descripción']],
@@ -731,107 +806,138 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
       ],
       theme: 'grid',
       headStyles: { fillColor: [31, 58, 95] },
-      styles: { fontSize: 9 },
-      columnStyles: {
-        1: { halign: 'center' }
-      }
+      styles: { fontSize: 9 }
     });
-    
+
     currentY = (doc as any).lastAutoTable.finalY + 15;
-    
-    // 5. GRÁFICO 1: CONFIABILIDAD POR SEDE (%)
-    if (currentY > 220) { doc.addPage(); currentY = 20; }
-    doc.setFontSize(14);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
+
+    // Gráficos (Representación visual simplificada)
+    if (currentY > 200) { doc.addPage(); currentY = 20; }
+    doc.setFontSize(12);
     doc.text('CONFIABILIDAD POR SEDE (%)', 14, currentY);
-    currentY += 10;
-    
+    currentY += 8;
+
     const chartWidth = pageWidth - 60;
-    const barHeight = 8;
-    const gap = 4;
-    
-    summary.sedesStats.slice(0, 10).forEach((s, i) => {
-      if (currentY > 270) { doc.addPage(); currentY = 20; }
+    const barHeight = 6;
+    summary.sedesStats.slice(0, 8).forEach((s, i) => {
       doc.setFontSize(8);
       doc.setTextColor(31, 58, 95);
-      doc.text(s.sede, 14, currentY + 6);
-      
-      const barWidth = (s.confiabilidad / 100) * chartWidth;
+      doc.text(s.sede, 14, currentY + 4);
+      const barW = (s.confiabilidad / 100) * chartWidth;
       doc.setFillColor(getStatusColor(s.confiabilidad));
-      doc.rect(50, currentY, barWidth, barHeight, 'F');
-      
-      doc.setFontSize(8);
-      doc.setTextColor(31, 58, 95);
-      doc.text(`${Math.round(s.confiabilidad)}%`, 50 + barWidth + 2, currentY + 6);
-      currentY += barHeight + gap;
+      doc.rect(50, currentY, barW, barHeight, 'F');
+      doc.text(`${Math.round(s.confiabilidad)}%`, 50 + barW + 2, currentY + 4);
+      currentY += barHeight + 3;
     });
-    
-    currentY += 10;
-    
-    // 6. GRÁFICO 2: DISTRIBUCIÓN POR NIVEL DE RIESGO
-    if (currentY > 220) { doc.addPage(); currentY = 20; }
-    doc.setFontSize(14);
-    doc.setTextColor(31, 58, 95);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DISTRIBUCIÓN POR NIVEL DE RIESGO', 14, currentY);
-    currentY += 10;
-    
-    const total = summary.sedesStats.length;
-    const dist = [
-      { name: 'Confiables', value: counts.Confiable, color: '#27AE60' },
-      { name: 'En alerta', value: counts.Alerta, color: '#F2C94C' },
-      { name: 'Críticos', value: counts.Crítico, color: '#EB5757' }
-    ];
-    
-    dist.forEach((d, i) => {
-      const percentage = (d.value / total) * 100;
-      const barWidth = (percentage / 100) * (pageWidth - 60);
-      doc.setFontSize(8);
-      doc.setTextColor(31, 58, 95);
-      doc.text(d.name, 14, currentY + 6);
-      doc.setFillColor(d.color);
-      doc.rect(50, currentY, barWidth, barHeight, 'F');
-      doc.text(`${d.value} (${Math.round(percentage)}%)`, 50 + barWidth + 2, currentY + 6);
-      currentY += barHeight + gap;
-    });
-    
-    // 7. TABLA DETALLADA
+
+    // --- PÁGINA 3: TABLA DETALLADA ---
     doc.addPage();
     currentY = 20;
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
-    doc.text('TABLA DETALLADA DE SEDES', 14, currentY);
-    currentY += 6;
-    
+    doc.text('DETALLE DE CONFIABILIDAD POR SEDE', 14, currentY);
+    currentY += 10;
+
     const sortedSedes = [...summary.sedesStats].sort((a, b) => a.confiabilidad - b.confiabilidad);
-    
+
     autoTable(doc, {
       startY: currentY,
-      head: [['Sede', 'Artículos evaluados', 'Sin diferencia', 'Con diferencia', 'Confiabilidad', 'Impacto económico']],
+      head: [['Sede', 'Evaluados', 'Sin Dif.', 'Con Dif.', 'Confiabilidad', 'Impacto $', 'Estado']],
       body: sortedSedes.map(s => [
         s.sede,
         s.articulosEvaluados,
         s.articulosSinDiferencia,
         s.articulosConDiferencia,
-        { content: `${Math.round(s.confiabilidad)}%`, styles: { textColor: getStatusColor(s.confiabilidad), fontStyle: 'bold' } },
-        formatCurrency(s.impactoEconomico)
+        `${Math.round(s.confiabilidad)}%`,
+        formatCurrency(s.impactoEconomico),
+        s.nivel
       ]),
       theme: 'striped',
       headStyles: { fillColor: [31, 58, 95] },
       styles: { fontSize: 8 },
       columnStyles: {
-        1: { halign: 'center' },
-        2: { halign: 'center' },
-        3: { halign: 'center' },
-        4: { halign: 'center' },
-        5: { halign: 'right' }
+        4: { halign: 'center', fontStyle: 'bold' },
+        5: { halign: 'right' },
+        6: { halign: 'center' }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 4) {
+          const val = parseInt(data.cell.text[0]);
+          if (val >= 85) data.cell.styles.textColor = [39, 174, 96];
+          else if (val >= 70) data.cell.styles.textColor = [242, 201, 76];
+          else data.cell.styles.textColor = [235, 87, 87];
+        }
       }
     });
+
+    // --- PÁGINA 4: CONCLUSIONES DEL SISTEMA ---
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(16);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONCLUSIONES DEL SISTEMA', 14, currentY);
+    currentY += 12;
+
+    doc.setFontSize(11);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'normal');
+
+    const interpretation = conf >= 85 
+      ? "El sistema presenta un nivel alto de control de inventarios, con una confiabilidad general favorable."
+      : conf >= 70 
+      ? "El sistema presenta un nivel aceptable de control, aunque existen alertas que requieren seguimiento."
+      : "El sistema presenta un nivel crítico de control de inventarios, con un alto volumen de diferencias que requieren intervención.";
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(interpretation, 14, currentY);
+    currentY += 12;
+
+    const phrases = [
+      `La confiabilidad general del inventario es del ${conf}%, lo que indica un nivel ${status.toLowerCase()} de control.`,
+      `Se evaluaron ${summary.totalSedes} sedes en total.`,
+      `La sede con mejor desempeño fue ${summary.sedeMasConfiable.toUpperCase()}.`,
+      `La sede con menor confiabilidad fue ${summary.sedeMenosConfiable.toUpperCase()}.`,
+      `Se detectaron ${summary.totalDiferencias} artículos con diferencias en inventario.`,
+      `El impacto económico total asociado a estas diferencias fue de ${formatCurrency(summary.impactoEconomicoTotal)}.`
+    ];
+
+    doc.setFont('helvetica', 'normal');
+    phrases.forEach(phrase => {
+      const lines = doc.splitTextToSize(phrase, pageWidth - 28);
+      doc.text(lines, 14, currentY);
+      currentY += (lines.length * 7);
+    });
+
+    // --- PÁGINA 5: RECOMENDACIONES ---
+    currentY += 15;
+    if (currentY > 200) { doc.addPage(); currentY = 20; }
     
+    doc.setFontSize(14);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RECOMENDACIONES', 14, currentY);
+    currentY += 10;
+
+    const recommendations = [
+      "Realizar auditorías inmediatas en las sedes con menor confiabilidad.",
+      "Priorizar la revisión de los centros de costos con mayor impacto económico.",
+      "Analizar las referencias con mayor frecuencia de diferencias para identificar patrones.",
+      "Implementar un seguimiento periódico (semanal/quincenal) del indicador de confiabilidad.",
+      "Reforzar la capacitación del personal en los procesos de registro y conteo."
+    ];
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    recommendations.forEach(rec => {
+      const lines = doc.splitTextToSize(`• ${rec}`, pageWidth - 35);
+      doc.text(lines, 18, currentY);
+      currentY += (lines.length * 7);
+    });
+
     addFooter(doc, pageWidth);
-    doc.save(`Confiabilidad_por_Sede_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`Reporte_Gerencial_Confiabilidad_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const exportToExcel = () => {
