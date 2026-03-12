@@ -1,5 +1,6 @@
-import { RawInventoryRow, ArticleSummary, SedeSummary, DashboardStats, InventoryMovement, ReliabilitySummary, ReliabilityStats } from '../types';
-import { parse, isValid } from 'date-fns';
+import { RawInventoryRow, ArticleSummary, SedeSummary, DashboardStats, InventoryMovement, ReliabilitySummary, ReliabilityStats, HistoricalPeriodStats, HistoricalTraceabilityData } from '../types';
+import { parse, isValid, format, startOfMonth, startOfWeek, startOfDay, isWithinInterval, addMonths, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const EXACT_MOJIBAKE_MAP: Record<string, string> = {
   "Fecha Doc": "fecha",
@@ -375,4 +376,145 @@ export function getReliabilitySummary(articles: ArticleSummary[], groupBy: 'sede
     impactoEconomicoTotal,
     sedesStats
   };
+}
+
+export function getHistoricalTraceability(
+  articles: ArticleSummary[],
+  groupBy: 'month' | 'week' | 'day' = 'month',
+  filters: { sede?: string; cc?: string; subfamilia?: string; articulo?: string; start?: Date; end?: Date }
+): HistoricalTraceabilityData {
+  const periodMap = new Map<string, ArticleSummary[]>();
+  const sedePeriodMap: Record<string, Map<string, ArticleSummary[]>> = {};
+  const ccPeriodMap: Record<string, Map<string, ArticleSummary[]>> = {};
+
+  const getPeriodKey = (date: Date) => {
+    if (groupBy === 'month') return format(startOfMonth(date), 'MMMM yyyy', { locale: es });
+    if (groupBy === 'week') return `Semana ${format(startOfWeek(date), 'dd/MM/yyyy', { locale: es })}`;
+    return format(startOfDay(date), 'dd/MM/yyyy', { locale: es });
+  };
+
+  const getPeriodDate = (date: Date) => {
+    if (groupBy === 'month') return startOfMonth(date);
+    if (groupBy === 'week') return startOfWeek(date);
+    return startOfDay(date);
+  };
+
+  articles.forEach(art => {
+    if (filters.sede && art.sede !== filters.sede) return;
+    if (filters.cc && art.cc !== filters.cc) return;
+    if (filters.subfamilia && art.subfamilia !== filters.subfamilia) return;
+    if (filters.articulo && !art.articulo.toLowerCase().includes(filters.articulo.toLowerCase())) return;
+
+    const movementsByPeriod = new Map<string, InventoryMovement[]>();
+    art.movements.forEach(m => {
+      if (filters.start && m.fecha < filters.start) return;
+      if (filters.end && m.fecha > filters.end) return;
+
+      const key = getPeriodKey(m.fecha);
+      if (!movementsByPeriod.has(key)) movementsByPeriod.set(key, []);
+      movementsByPeriod.get(key)!.push(m);
+    });
+
+    movementsByPeriod.forEach((movements, periodKey) => {
+      const totalDiferencia = movements.reduce((acc, m) => acc + m.variacion, 0);
+      const totalCoste = movements.reduce((acc, m) => acc + m.costeLinea, 0);
+      const costePromedio = movements.length > 0 ? totalCoste / movements.length : 0;
+      const ultimoCoste = movements.length > 0 ? movements[movements.length - 1].costeLinea : 0;
+      
+      const absDiff = Math.abs(totalDiferencia);
+      let tipo: ArticleSummary['tipo'] = 'SIN_VARIACION';
+      if (totalDiferencia < -0.0001) tipo = 'FALTANTE';
+      else if (totalDiferencia > 0.0001) tipo = 'SOBRANTE';
+
+      let debeCobrar = false;
+      if (tipo === 'FALTANTE') {
+        const unit = art.subarticulo;
+        if (unit.includes('GRAMO')) debeCobrar = absDiff > 1000;
+        else if (unit.includes('ONZA')) debeCobrar = absDiff > 5;
+        else if (unit.includes('UNIDAD')) debeCobrar = absDiff > 1;
+        else debeCobrar = absDiff > 1;
+      }
+
+      const virtualArt: ArticleSummary = {
+        ...art,
+        movements,
+        totalDiferencia,
+        costePromedio,
+        ultimoCoste,
+        totalCobro: debeCobrar ? absDiff * (ultimoCoste || costePromedio) : 0,
+        debeCobrar,
+        tipo
+      };
+
+      if (!periodMap.has(periodKey)) periodMap.set(periodKey, []);
+      periodMap.get(periodKey)!.push(virtualArt);
+
+      if (!sedePeriodMap[art.sede]) sedePeriodMap[art.sede] = new Map();
+      if (!sedePeriodMap[art.sede].has(periodKey)) sedePeriodMap[art.sede].set(periodKey, []);
+      sedePeriodMap[art.sede].get(periodKey)!.push(virtualArt);
+
+      const ccKey = art.cc || 'SIN CC';
+      if (!ccPeriodMap[ccKey]) ccPeriodMap[ccKey] = new Map();
+      if (!ccPeriodMap[ccKey].has(periodKey)) ccPeriodMap[ccKey].set(periodKey, []);
+      ccPeriodMap[ccKey].get(periodKey)!.push(virtualArt);
+    });
+  });
+
+  const calculateStats = (arts: ArticleSummary[], periodKey: string): HistoricalPeriodStats => {
+    const evaluados = arts.length;
+    const sinDiferencia = arts.filter(a => Math.abs(a.totalDiferencia) < 0.0001).length;
+    const conDiferencia = evaluados - sinDiferencia;
+    const confiabilidad = evaluados > 0 ? (sinDiferencia / evaluados) * 100 : 0;
+    const impactoEconomico = arts.reduce((acc, a) => acc + (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)), 0);
+    const faltantes = arts.filter(a => a.tipo === 'FALTANTE').length;
+    const sobrantes = arts.filter(a => a.tipo === 'SOBRANTE').length;
+    const cobrables = arts.filter(a => a.debeCobrar).length;
+    const valorCobro = arts.reduce((acc, a) => acc + a.totalCobro, 0);
+
+    const date = arts[0]?.movements[0]?.fecha || new Date();
+
+    return {
+      period: periodKey,
+      date: getPeriodDate(date),
+      evaluados,
+      sinDiferencia,
+      conDiferencia,
+      confiabilidad,
+      impactoEconomico,
+      faltantes,
+      sobrantes,
+      cobrables,
+      valorCobro,
+      estado: 'Estable'
+    };
+  };
+
+  const processPeriodStats = (map: Map<string, ArticleSummary[]>): HistoricalPeriodStats[] => {
+    const stats = Array.from(map.entries()).map(([key, arts]) => calculateStats(arts, key));
+    stats.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    for (let i = 1; i < stats.length; i++) {
+      const current = stats[i];
+      const previous = stats[i - 1];
+      current.variacionVsAnterior = current.confiabilidad - previous.confiabilidad;
+      if (current.variacionVsAnterior > 0.0001) current.estado = 'Mejoró';
+      else if (current.variacionVsAnterior < -0.0001) current.estado = 'Empeoró';
+      else current.estado = 'Estable';
+    }
+
+    return stats;
+  };
+
+  const periods = processPeriodStats(periodMap);
+  const bySede: Record<string, HistoricalPeriodStats[]> = {};
+  Object.keys(sedePeriodMap).forEach(sede => {
+    bySede[sede] = processPeriodStats(sedePeriodMap[sede]);
+  });
+
+  const byCC: Record<string, HistoricalPeriodStats[]> = {};
+  Object.keys(ccPeriodMap).forEach(cc => {
+    byCC[cc] = processPeriodStats(ccPeriodMap[cc]);
+  });
+
+  return { periods, bySede, byCC };
 }

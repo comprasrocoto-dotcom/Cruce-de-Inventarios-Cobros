@@ -10,7 +10,10 @@ import {
   Tooltip, 
   ResponsiveContainer, 
   Cell,
-  ReferenceLine
+  ReferenceLine,
+  ScatterChart,
+  Scatter,
+  ZAxis
 } from 'recharts';
 import { 
   Trophy, 
@@ -30,6 +33,21 @@ interface ManagementAnalysisProps {
   data: ArticleSummary[];
   selectedSede?: string;
 }
+
+const getRiskLevel = (impact: 'ALTO' | 'MEDIO' | 'BAJO', freq: 'ALTA' | 'MEDIA' | 'BAJA') => {
+  if (impact === 'ALTO') {
+    if (freq === 'BAJA') return { label: 'Medio', emoji: '🟠', color: '#F2C94C' };
+    return { label: 'Crítico', emoji: '🔴', color: '#EB5757' };
+  }
+  if (impact === 'MEDIO') {
+    if (freq === 'BAJA') return { label: 'Bajo', emoji: '🟢', color: '#27AE60' };
+    if (freq === 'MEDIA') return { label: 'Medio', emoji: '🟠', color: '#F2C94C' };
+    return { label: 'Crítico', emoji: '🔴', color: '#EB5757' };
+  }
+  // BAJO
+  if (freq === 'ALTA') return { label: 'Medio', emoji: '🟠', color: '#F2C94C' };
+  return { label: 'Bajo', emoji: '🟢', color: '#27AE60' };
+};
 
 export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, selectedSede }) => {
   const filteredData = useMemo(() => {
@@ -98,6 +116,43 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
       .filter(a => a.totalDiferencia < -0.0001)
       .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)))
       .slice(0, 5);
+  }, [filteredData]);
+
+  const riskMatrixData = useMemo(() => {
+    const items = filteredData.map(a => {
+      const impacto = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);
+      const variacionAbs = Math.abs(a.totalDiferencia);
+      const frecuencia = a.movements ? a.movements.filter(m => Math.abs(m.variacion) > 0.0001).length : 1;
+      return { ...a, impacto, variacionAbs, frecuencia };
+    }).filter(i => i.impacto > 0 || i.frecuencia > 0);
+
+    if (items.length === 0) return [];
+
+    const sortedByImpact = [...items].sort((a, b) => b.impacto - a.impacto);
+    const total = sortedByImpact.length;
+
+    return sortedByImpact.map((item, index) => {
+      const percentile = (index / total) * 100;
+      
+      let nivelImpacto: 'ALTO' | 'MEDIO' | 'BAJO' = 'BAJO';
+      if (percentile < 20) nivelImpacto = 'ALTO';
+      else if (percentile < 60) nivelImpacto = 'MEDIO';
+
+      let nivelFrecuencia: 'ALTA' | 'MEDIA' | 'BAJA' = 'BAJA';
+      if (item.frecuencia > 3) nivelFrecuencia = 'ALTA';
+      else if (item.frecuencia >= 2) nivelFrecuencia = 'MEDIA';
+
+      const risk = getRiskLevel(nivelImpacto, nivelFrecuencia);
+
+      return {
+        ...item,
+        nivelImpacto,
+        nivelFrecuencia,
+        riskLabel: risk.label,
+        riskEmoji: risk.emoji,
+        riskColor: risk.color
+      };
+    });
   }, [filteredData]);
 
   const formatCurrency = (val: number) => 
@@ -546,6 +601,151 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Risk Matrix Section */}
+      <div className="space-y-8">
+        <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
+              Matriz de Riesgo de Inventarios {selectedSede ? `— ${selectedSede}` : ''}
+            </h2>
+            <p className="text-[#A7C4E0] font-medium">
+              Identificación de productos críticos por impacto y frecuencia
+            </p>
+          </div>
+          <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+            <Activity className="w-64 h-64" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Scatter Plot */}
+          <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
+            <div className="flex items-center gap-2 mb-8">
+              <Activity className="w-5 h-5 text-[#2F80ED]" />
+              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Distribución de Riesgo (Impacto vs Frecuencia)</h3>
+            </div>
+            <div className="flex-1 min-h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis 
+                    type="number" 
+                    dataKey="frecuencia" 
+                    name="Frecuencia" 
+                    unit=" err" 
+                    label={{ value: 'Frecuencia (Errores)', position: 'insideBottom', offset: -10, fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }}
+                    tick={{ fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }}
+                  />
+                  <YAxis 
+                    type="number" 
+                    dataKey="impacto" 
+                    name="Impacto" 
+                    unit=" $" 
+                    label={{ value: 'Impacto ($)', angle: -90, position: 'insideLeft', fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }}
+                    tick={{ fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }}
+                  />
+                  <ZAxis type="number" range={[60, 400]} />
+                  <Tooltip 
+                    cursor={{ strokeDasharray: '3 3' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 border border-[#D6DEE6] shadow-xl rounded-lg">
+                            <p className="font-bold text-[#1F3A5F] mb-1">{data.articulo}</p>
+                            <p className="text-xs text-slate-500">Riesgo: <span className="font-bold" style={{ color: data.riskColor }}>{data.riskEmoji} {data.riskLabel}</span></p>
+                            <p className="text-xs text-slate-500">Impacto: <span className="font-bold text-rose-600">{formatCurrency(data.impacto)}</span></p>
+                            <p className="text-xs text-slate-500">Frecuencia: <span className="font-bold text-[#1F3A5F]">{data.frecuencia} errores</span></p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Scatter name="Productos" data={riskMatrixData}>
+                    {riskMatrixData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.riskColor} />
+                    ))}
+                  </Scatter>
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-6 flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-widest">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#27AE60]"></div>
+                <span className="text-slate-500">Bajo Riesgo</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#F2C94C]"></div>
+                <span className="text-slate-500">Riesgo Medio</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#EB5757]"></div>
+                <span className="text-slate-500">Alto Riesgo</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Matrix Table */}
+          <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-[#1F3A5F]" />
+                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Matriz de Riesgo de Inventarios</h3>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[#A7C4E0]">
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Err.</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Nivel</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Riesgo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#D6DEE6]">
+                  {riskMatrixData.slice(0, 15).map((p, idx) => (
+                    <tr key={p.articulo + p.cc + p.sede} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-[#1F3A5F] text-sm">{p.articulo}</span>
+                          <span className="text-[10px] text-slate-400 uppercase font-bold">{p.cc || 'SIN CC'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-right font-bold text-rose-600 text-sm">{formatCurrency(p.impacto)}</td>
+                      <td className="px-4 py-4 text-center text-slate-600 font-bold">{p.frecuencia}</td>
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">I: {p.nivelImpacto}</span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">F: {p.nivelFrecuencia}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-1">
+                          <span>{p.riskEmoji}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: p.riskColor }}>
+                            {p.riskLabel}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-[#D6DEE6] text-center">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                Sistema de Auditoría de Inventarios — Análisis generado automáticamente
+              </p>
             </div>
           </div>
         </div>

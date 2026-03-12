@@ -17,11 +17,13 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   TrendingDown,
-  BarChart3
+  BarChart3,
+  Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { HistoricalTraceability } from './components/HistoricalTraceability';
 
-type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL';
+type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
@@ -196,7 +198,16 @@ export default function App() {
             )}
 
             {activeTab === 'GERENCIAL' && (
-              <ManagementAnalysis data={articles} selectedSede={filters.sede} />
+              <ManagementAnalysis data={filteredArticles} selectedSede={filters.sede} />
+            )}
+
+            {activeTab === 'TRAZABILIDAD' && (
+              <HistoricalTraceability 
+                data={articles} 
+                sedes={uniqueSedes} 
+                ccs={uniqueCCs} 
+                subfamilias={uniqueSubfamilias} 
+              />
             )}
           </motion.div>
         </AnimatePresence>
@@ -240,14 +251,15 @@ export default function App() {
 
       {/* Navigation Tabs */}
       {articles.length > 0 && (
-        <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm">
-          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL'] as Tab[]).map((tab) => {
+        <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
+          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
               ANÁLISIS: BarChart2,
               COBROS: DollarSign,
               CONFIABILIDAD: ShieldCheck,
-              GERENCIAL: BarChart3
+              GERENCIAL: BarChart3,
+              TRAZABILIDAD: Activity
             }[tab];
 
             return (

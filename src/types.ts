@@ -63,3 +63,25 @@ export interface ReliabilitySummary {
   impactoEconomicoTotal: number;
   sedesStats: ReliabilityStats[];
 }
+
+export interface HistoricalPeriodStats {
+  period: string;
+  date: Date;
+  evaluados: number;
+  sinDiferencia: number;
+  conDiferencia: number;
+  confiabilidad: number;
+  impactoEconomico: number;
+  faltantes: number;
+  sobrantes: number;
+  cobrables: number;
+  valorCobro: number;
+  variacionVsAnterior?: number;
+  estado: 'Mejoró' | 'Empeoró' | 'Estable';
+}
+
+export interface HistoricalTraceabilityData {
+  periods: HistoricalPeriodStats[];
+  bySede: Record<string, HistoricalPeriodStats[]>;
+  byCC: Record<string, HistoricalPeriodStats[]>;
+}
