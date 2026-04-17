@@ -16,7 +16,9 @@ export interface ArticleSummary {
   subarticulo: string; // Unit of measure
   subfamilia: string;
   cc: string;
+  responsable: string;
   codBarras: string;
+  fecha: Date;
   movements: InventoryMovement[];
   totalDiferencia: number;
   stockFisico: number;
@@ -33,6 +35,7 @@ export interface ArticleSummary {
   perdidaPorMargen: number;
   dineroRecuperable: number;
   tipo: 'FALTANTE' | 'SOBRANTE' | 'SIN_VARIACION';
+  confiabilidad?: number;
 }
 
 export interface SedeSummary {
@@ -55,7 +58,7 @@ export interface DashboardStats {
 export interface ReliabilityStats {
   sede: string;
   confiabilidad: number;
-  nivel: 'Confiable' | 'Alerta' | 'Crítico';
+  nivel: 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico';
   articulosEvaluados: number;
   articulosSinDiferencia: number;
   articulosConDiferencia: number;
@@ -102,6 +105,26 @@ export interface ProductStability {
   totalInstancias: number;
   instanciasFueraMargen: number;
   porcentajeFueraMargen: number;
+  confiabilidad: number;
   impactoTotal: number;
   estado: 'Estable' | 'Inestable' | 'Crítico';
+}
+
+export interface ResponsableStability {
+  responsable: string;
+  totalEvaluaciones: number;
+  instanciasFueraMargen: number;
+  porcentajeFallo: number;
+  confiabilidad: number;
+}
+
+export interface GlobalFilters {
+  sedes: string[];
+  ccs: string[];
+  subfamilias: string[];
+  responsables: string[];
+  status: string;
+  search: string;
+  fechaInicio: string;
+  fechaFin: string;
 }

@@ -6,8 +6,9 @@ import { ReliabilityView } from './components/ReliabilityView';
 import { ManagementAnalysis } from './components/ManagementAnalysis';
 import { ExportButtons } from './components/ExportButtons';
 import { StatsCard } from './components/StatsCard';
-import { ArticleSummary } from './types';
+import { ArticleSummary, GlobalFilters } from './types';
 import { getDashboardStats } from './utils/inventory';
+import { useEffect } from 'react';
 import { 
   LayoutDashboard, 
   BarChart2, 
@@ -29,37 +30,70 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   const [fileName, setFileName] = useState<string>('');
-  const [filters, setFilters] = useState({
-    sede: '',
-    cc: '',
-    subfamilia: '',
+  const [filters, setFilters] = useState<GlobalFilters>({
+    sedes: [],
+    ccs: [],
+    subfamilias: [],
+    responsables: [],
     status: 'all',
-    search: ''
+    search: '',
+    fechaInicio: '',
+    fechaFin: ''
   });
 
-  const dashboardStats = useMemo(() => getDashboardStats(articles), [articles]);
+  // Persistencia de filtros
+  useEffect(() => {
+    const saved = localStorage.getItem('inventory_filters');
+    if (saved) {
+      try {
+        setFilters(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error loading filters", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('inventory_filters', JSON.stringify(filters));
+  }, [filters]);
 
   const filteredArticles = useMemo(() => {
     return articles.filter(art => {
-      const matchesSede = !filters.sede || art.sede === filters.sede;
-      const matchesCC = !filters.cc || art.cc === filters.cc;
-      const matchesSubfamilia = !filters.subfamilia || art.subfamilia === filters.subfamilia;
+      // Filtros multi-selección
+      const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
+      const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
+      const matchesSubfamilia = filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
+      const matchesResponsable = filters.responsables.length === 0 || filters.responsables.includes(art.responsable || 'Sin asignar');
+      
+      // Búsqueda
       const matchesSearch = !filters.search || 
         art.articulo.toLowerCase().includes(filters.search.toLowerCase()) ||
         art.codBarras.toLowerCase().includes(filters.search.toLowerCase());
       
+      // Estado
       let matchesStatus = true;
       if (filters.status === 'cobrables') matchesStatus = art.debeCobrar;
       else if (filters.status === 'faltantes') matchesStatus = art.tipo === 'FALTANTE';
       else if (filters.status === 'sobrantes') matchesStatus = art.tipo === 'SOBRANTE';
 
-      return matchesSede && matchesCC && matchesSubfamilia && matchesSearch && matchesStatus;
+      // Fechas
+      let matchesFecha = true;
+      if (filters.fechaInicio || filters.fechaFin) {
+        const itemDate = new Date(art.fecha);
+        if (filters.fechaInicio && itemDate < new Date(filters.fechaInicio)) matchesFecha = false;
+        if (filters.fechaFin && itemDate > new Date(filters.fechaFin)) matchesFecha = false;
+      }
+
+      return matchesSede && matchesCC && matchesSubfamilia && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
     });
   }, [articles, filters]);
+
+  const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
 
   const uniqueSedes = useMemo(() => Array.from(new Set(articles.map(a => a.sede))).sort(), [articles]);
   const uniqueCCs = useMemo(() => Array.from(new Set(articles.map(a => a.cc))).filter(Boolean).sort(), [articles]);
   const uniqueSubfamilias = useMemo(() => Array.from(new Set(articles.map(a => a.subfamilia))).filter(Boolean).sort(), [articles]);
+  const uniqueResponsables = useMemo(() => Array.from(new Set(articles.map(a => a.responsable || 'Sin asignar'))).sort(), [articles]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
@@ -87,6 +121,7 @@ export default function App() {
           sedes={uniqueSedes}
           ccs={uniqueCCs}
           subfamilias={uniqueSubfamilias}
+          responsables={uniqueResponsables}
           filters={filters}
           setFilters={setFilters}
         />
@@ -138,7 +173,7 @@ export default function App() {
                       <h3 className="text-xl font-bold text-brand-text">Resumen por Sede</h3>
                       <p className="text-sm text-brand-text-secondary">Distribución de cobros y faltantes por almacén</p>
                     </div>
-                    <ExportButtons data={articles} />
+                    <ExportButtons data={filteredArticles} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.sedes.map(sede => (
@@ -195,16 +230,16 @@ export default function App() {
             )}
 
             {activeTab === 'CONFIABILIDAD' && (
-              <ReliabilityView data={articles} filters={filters} />
+              <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
             )}
 
             {activeTab === 'GERENCIAL' && (
-              <ManagementAnalysis data={filteredArticles} selectedSede={filters.sede} />
+              <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
             )}
 
             {activeTab === 'TRAZABILIDAD' && (
               <HistoricalTraceability 
-                data={articles} 
+                data={filteredArticles} 
                 sedes={uniqueSedes} 
                 ccs={uniqueCCs} 
                 subfamilias={uniqueSubfamilias} 
