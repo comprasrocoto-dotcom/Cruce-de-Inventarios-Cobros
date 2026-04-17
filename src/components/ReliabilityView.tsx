@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ArticleSummary, ReliabilitySummary, ReliabilityStats } from '../types';
-import { getReliabilitySummary } from '../utils/inventory';
+import { ArticleSummary, ReliabilitySummary, ReliabilityStats, ProductStability } from '../types';
+import { getReliabilitySummary, getProductStabilityAnalysis } from '../utils/inventory';
 import { motion, AnimatePresence } from 'motion/react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -19,10 +19,14 @@ import {
   Search,
   Filter,
   FileDown,
+  FileSpreadsheet,
   X,
   FileText,
   CheckCircle2,
-  ShieldAlert
+  ShieldAlert,
+  Activity,
+  Award,
+  Zap
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -50,8 +54,10 @@ interface ReliabilityViewProps {
 }
 
 export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters }) => {
+  const [mainTab, setMainTab] = useState<'operativo' | 'tecnico' | 'estabilidad'>('operativo');
   const [viewMode, setViewMode] = useState<'sede' | 'cc'>('sede');
   const [selectedSede, setSelectedSede] = useState<ReliabilityStats | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductStability | null>(null);
   const [selectedCCFilter, setSelectedCCFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
@@ -59,8 +65,25 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
   // Modal specific states
   const [modalFilter, setModalFilter] = useState<'Todos' | 'Faltantes' | 'Sobrantes' | 'Sin diferencia'>('Todos');
   const [showOnlyFaltantes, setShowOnlyFaltantes] = useState(false);
+  const [modalTab, setModalTab] = useState<'operacion' | 'tecnico'>('operacion');
 
   const summary = useMemo(() => getReliabilitySummary(data, viewMode), [data, viewMode]);
+  const analisisEstabilidad = useMemo(() => getProductStabilityAnalysis(data), [data]);
+
+  const resumenFinanciero = useMemo(() => {
+    let totalPerdidaMargen = 0;
+    let totalRecuperable = 0;
+
+    data.forEach(item => {
+      totalPerdidaMargen += (item.perdidaPorMargen || 0);
+      totalRecuperable += (item.dineroRecuperable || 0);
+    });
+
+    return {
+      totalPerdidaMargen,
+      totalRecuperable
+    };
+  }, [data]);
 
   const allItemsForSede = useMemo(() => {
     if (!selectedSede) return [];
@@ -90,8 +113,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
     } else if (modalFilter === 'Sin diferencia') {
       items.sort((a, b) => a.articulo.localeCompare(b.articulo));
     } else {
-      // "Todos" - sort by absolute difference descending
-      items.sort((a, b) => Math.abs(b.totalDiferencia) - Math.abs(a.totalDiferencia));
+      // "Todos" - sort by dinero recuperable descending (Ranking de pérdidas)
+      items.sort((a, b) => (b.dineroRecuperable || 0) - (a.dineroRecuperable || 0));
     }
 
     return items;
@@ -871,7 +894,82 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
       }
     });
 
-    // --- PÁGINA 4: CONCLUSIONES DEL SISTEMA ---
+    // --- PÁGINA 4: ANÁLISIS DE ESTABILIDAD POR PRODUCTO ---
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(16);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ANÁLISIS DE ESTABILIDAD POR PRODUCTO', 14, currentY);
+    currentY += 10;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Ranking de productos según frecuencia de descuadres fuera de margen.', 14, currentY);
+    currentY += 10;
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Pos', 'Producto', 'Evaluaciones', 'Fuera de Margen', 'Estabilidad %', 'Impacto $', 'Estado']],
+      body: analisisEstabilidad.slice(0, 30).map((p, i) => [
+        i + 1,
+        p.producto,
+        p.totalInstancias,
+        p.instanciasFueraMargen,
+        `${Math.round(p.porcentajeFueraMargen)}%`,
+        formatCurrency(p.impactoTotal),
+        p.estado
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 8 },
+      columnStyles: {
+        0: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+                4: { halign: 'center', fontStyle: 'bold' },
+        5: { halign: 'right' },
+        6: { halign: 'center' }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 6) {
+          const val = data.cell.text[0];
+          if (val === 'Estable') data.cell.styles.textColor = [39, 174, 96];
+          else if (val === 'Inestable') data.cell.styles.textColor = [242, 201, 76];
+          else if (val === 'Crítico') data.cell.styles.textColor = [235, 87, 87];
+        }
+      }
+    });
+
+    // --- PÁGINA 5: INFORME: AJUSTES POR MARGEN DE ERROR ---
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(16);
+    doc.setTextColor(31, 58, 95);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INFORME: AJUSTES POR MARGEN DE ERROR', 14, currentY);
+    currentY += 10;
+
+    const allArticles = data.slice(0, 50);
+    const adjustmentBody = allArticles.slice(0, 50).map(a => [
+      a.articulo,
+      a.subarticulo,
+      a.totalDiferencia,
+      a.margenError,
+      formatCurrency(a.totalCobro),
+      a.reglaAplicada
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Producto', 'Unidad', 'Dif', 'Margen', 'Ajuste (Cobro)', 'Regla']],
+      body: adjustmentBody,
+      theme: 'grid',
+      headStyles: { fillColor: [31, 58, 95] },
+      styles: { fontSize: 7 },
+    });
+
+    // --- PÁGINA 5: CONCLUSIONES DEL SISTEMA ---
     doc.addPage();
     currentY = 20;
     doc.setFontSize(16);
@@ -956,33 +1054,80 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
     
     const worksheet = XLSX.utils.json_to_sheet(dataRows);
     XLSX.utils.book_append_sheet(workbook, worksheet, "Confiabilidad");
-    XLSX.writeFile(workbook, `Confiabilidad_Sedes_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    const stabilityRows = analisisEstabilidad.map(p => ({
+      Producto: p.producto,
+      'Total Instancias': p.totalInstancias,
+      'Instancias Fuera de Margen': p.instanciasFueraMargen,
+      'Frecuencia Inestabilidad %': Math.round(p.porcentajeFueraMargen),
+      'Impacto Total $': p.impactoTotal,
+      Estado: p.estado
+    }));
+
+    const stabilitySheet = XLSX.utils.json_to_sheet(stabilityRows);
+    XLSX.utils.book_append_sheet(workbook, stabilitySheet, "Estabilidad");
+
+    XLSX.writeFile(workbook, `Reporte_Confiabilidad_y_Estabilidad_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   return (
     <div className="space-y-8">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-brand-text">{reportTitle}</h2>
-          <p className="text-brand-text-secondary">Indicador de precisión y consistencia del inventario por {entityLabel.toLowerCase()}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* View Mode Selector */}
-          <div className="bg-brand-bg p-1 rounded-[6px] flex mr-4 border border-[#D6DEE6]">
+        <div className="flex flex-col gap-4">
+          <div className="inline-flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200 shadow-sm">
             <button
-              onClick={() => setViewMode('sede')}
-              className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              onClick={() => setMainTab('operativo')}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'operativo' ? 'bg-[#1F3A5F] text-white shadow-lg' : 'text-slate-500 hover:bg-white hover:shadow-sm'}`}
             >
-              Por Sede
+              <Target className="w-4 h-4" />
+              Dashboard Operativo
             </button>
             <button
-              onClick={() => setViewMode('cc')}
-              className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              onClick={() => setMainTab('tecnico')}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'tecnico' ? 'bg-[#1F3A5F] text-white shadow-lg' : 'text-slate-500 hover:bg-white hover:shadow-sm'}`}
             >
-              Por Centro de Costos
+              <FileSpreadsheet className="w-4 h-4" />
+              Informe Técnico de Márgenes
+            </button>
+            <button
+              onClick={() => setMainTab('estabilidad')}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'estabilidad' ? 'bg-[#1F3A5F] text-white shadow-lg' : 'text-slate-500 hover:bg-white hover:shadow-sm'}`}
+            >
+              <Activity className="w-4 h-4" />
+              Estabilidad de Productos
             </button>
           </div>
+          <div>
+            <h2 className="text-2xl font-bold text-brand-text">
+              {mainTab === 'operativo' ? reportTitle : mainTab === 'tecnico' ? 'Informe Técnico de Control de Inventarios' : 'Panel de Estabilidad de Productos'}
+            </h2>
+            <p className="text-brand-text-secondary">
+              {mainTab === 'operativo' 
+                ? `Indicador de precisión y consistencia del inventario por ${entityLabel.toLowerCase()}`
+                : mainTab === 'tecnico'
+                  ? 'Análisis detallado de variaciones, inventarios iniciales/finales y tolerancias por referencia'
+                  : 'Análisis de volatilidad y frecuencia de descuadres fuera de margen por cada referencia'}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {mainTab === 'operativo' && (
+            <div className="bg-brand-bg p-1 rounded-[6px] flex mr-4 border border-[#D6DEE6]">
+              <button
+                onClick={() => setViewMode('sede')}
+                className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              >
+                Por Sede
+              </button>
+              <button
+                onClick={() => setViewMode('cc')}
+                className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-[#2F80ED] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+              >
+                Por CC
+              </button>
+            </div>
+          )}
           <button 
             onClick={exportToExcel}
             className="flex items-center space-x-2 bg-white border border-[#D6DEE6] text-[#1F3A5F] px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-slate-50 transition-all"
@@ -1000,8 +1145,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
         </div>
       </div>
 
-      {/* Main Findings Block */}
-      <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6">
+      {mainTab === 'operativo' && (
+        <React.Fragment>
+          {/* Main Findings Block */}
+          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6">
         <div className="flex items-center space-x-2 mb-4 text-brand-secondary">
           <Target className="w-5 h-5" />
           <h3 className="font-bold uppercase tracking-wider text-sm">Hallazgos Principales</h3>
@@ -1042,6 +1189,39 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
               <p className="text-xs text-text-secondary font-semibold uppercase">Diferencias Detectadas</p>
               <p className="text-lg font-bold text-text-main">{summary.totalDiferencias} artículos</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* REPORTE FINANCIERO DE PÉRDIDAS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-yellow-50 border border-yellow-100 p-6 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="bg-yellow-100 p-3 rounded-full text-yellow-600 shadow-sm">
+              <TrendingDown className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-yellow-600 uppercase tracking-widest">💸 Pérdida por margen</p>
+              <p className="text-3xl font-black text-yellow-700">{formatCurrency(resumenFinanciero.totalPerdidaMargen)}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-tighter">Dinero no cobrado por tolerancia</p>
+          </div>
+        </div>
+
+        <div className="bg-rose-50 border border-rose-100 p-6 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="bg-rose-100 p-3 rounded-full text-rose-600 shadow-sm">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-rose-600 uppercase tracking-widest">🚨 Dinero recuperable</p>
+              <p className="text-3xl font-black text-rose-700">{formatCurrency(resumenFinanciero.totalRecuperable)}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-bold text-rose-400 uppercase tracking-tighter">Dinero que ya debería cobrarse</p>
           </div>
         </div>
       </div>
@@ -1402,6 +1582,264 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
           </table>
         </div>
       </div>
+    </React.Fragment>
+      )}
+
+      {mainTab === 'tecnico' && (
+        /* INFORME INDEPENDIENTE DE MARGEN DE ERROR (TECHNICAL VIEW) */
+        <div className="space-y-8 pb-20">
+          {/* Technical KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-[#1F3A5F] p-6 rounded-2xl text-white shadow-xl overflow-hidden relative group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-60">Referencias Evaluadas</p>
+              <p className="text-4xl font-black">{data.length}</p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white w-full" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-slate-400">Confiabilidad Técnica Alta</p>
+              <p className="text-4xl font-black text-[#27AE60]">{data.filter(a => a.confiabilidadTecnica === 'ALTA').length}</p>
+              <p className="text-xs text-slate-500 mt-2">Referencias con ajuste &lt; 2%</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-slate-400">Confiabilidad Técnica Media</p>
+              <p className="text-4xl font-black text-[#F2C94C]">{data.filter(a => a.confiabilidadTecnica === 'MEDIA').length}</p>
+              <p className="text-xs text-slate-500 mt-2">Referencias con ajuste 2% - 10%</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-slate-400">Referencias Críticas (Baja)</p>
+              <p className="text-4xl font-black text-[#EB5757]">{data.filter(a => a.confiabilidadTecnica === 'BAJA').length}</p>
+              <p className="text-xs text-slate-500 mt-2">Referencias con ajuste &gt; 10%</p>
+            </div>
+          </div>
+
+          {/* Technical Data Grid */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#1F3A5F] p-2 rounded-lg text-white">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 uppercase tracking-tight">Control de Inventario y Tolerancia</h3>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Análisis detallado de variaciones técnicas y márgenes aplicados</p>
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4">Producto / Sede / CC</th>
+                    <th className="px-4 py-4 text-right">Inv. Inicial</th>
+                    <th className="px-4 py-4 text-right">Variación</th>
+                    <th className="px-4 py-4 text-right">Inv. Final</th>
+                    <th className="px-4 py-4 text-right">Tolerancia</th>
+                    <th className="px-4 py-4 text-center">Estado Técnico</th>
+                    <th className="px-4 py-4 text-center">Confiabilidad</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {data.slice(0, 100).map((a, i) => (
+                    <tr key={i} className="hover:bg-slate-50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-[#1F3A5F] group-hover:text-blue-600 transition-colors uppercase tracking-tight">{a.articulo}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase">{a.sede}</span>
+                          <span className="text-[9px] font-black bg-blue-50 text-[#2F80ED] px-1.5 py-0.5 rounded uppercase">{a.cc}</span>
+                          <span className="text-[9px] font-medium text-slate-400 uppercase italic leading-none">{a.subarticulo}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-right font-mono text-xs text-slate-500">
+                        {formatVariation(a.stockEsperado, a.subarticulo)}
+                      </td>
+                      <td className={`px-4 py-4 text-right font-mono text-xs font-bold ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                      </td>
+                      <td className="px-4 py-4 text-right font-mono text-xs text-[#1F3A5F] font-bold underline decoration-slate-200 underline-offset-4">
+                        {formatVariation(a.stockFisico, a.subarticulo)}
+                      </td>
+                      <td className="px-4 py-4 text-right font-mono text-xs text-indigo-500">
+                        {formatVariation(a.margenError, a.subarticulo)}
+                        <p className="text-[8px] font-bold text-slate-400 uppercase leading-none mt-1">{a.reglaAplicada}</p>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                          {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`px-2 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-tighter shadow-sm ${
+                          a.confiabilidadTecnica === 'ALTA' ? 'bg-[#27AE60] text-white' : 
+                          a.confiabilidadTecnica === 'MEDIA' ? 'bg-[#F2C94C] text-slate-800' : 
+                          'bg-[#EB5757] text-white'
+                        }`}>
+                          {a.confiabilidadTecnica}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {data.length > 100 && (
+                <div className="p-4 bg-slate-50 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 italic">
+                  Mostrando las primeras 100 de {data.length} referencias totales.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mainTab === 'estabilidad' && (
+        <div className="space-y-8 pb-20">
+          {/* Stability KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Productos Estables</p>
+                <p className="text-2xl font-black text-slate-800">{analisisEstabilidad.filter(p => p.estado === 'Estable').length}</p>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="bg-amber-100 p-3 rounded-xl text-amber-600">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Productos Inestables</p>
+                <p className="text-2xl font-black text-slate-800">{analisisEstabilidad.filter(p => p.estado === 'Inestable').length}</p>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="bg-rose-100 p-3 rounded-xl text-rose-600">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Productos Críticos</p>
+                <p className="text-2xl font-black text-slate-800">{analisisEstabilidad.filter(p => p.estado === 'Crítico').length}</p>
+              </div>
+            </div>
+            <div className="bg-[#1F3A5F] p-6 rounded-2xl text-white shadow-xl flex items-center gap-4 overflow-hidden relative group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
+              <div className="bg-white/10 p-3 rounded-xl z-10">
+                <TrendingDown className="w-6 h-6" />
+              </div>
+              <div className="z-10">
+                <p className="text-[10px] font-black uppercase tracking-wider opacity-60">Impacto Total Riesgo</p>
+                <p className="text-xl font-black">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(analisisEstabilidad.reduce((acc, p) => acc + p.impactoTotal, 0))}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Chart Card */}
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-50 p-2 rounded-lg text-blue-600">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-slate-800 uppercase tracking-tight">Frecuencia de Inestabilidad (%)</h3>
+                </div>
+              </div>
+              <div className="h-96 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analisisEstabilidad.slice(0, 15)} layout="vertical" margin={{ left: 20, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis 
+                      dataKey="producto" 
+                      type="category" 
+                      width={120} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      style={{ fontSize: '10px', fontWeight: 700, fill: '#64748b' }} 
+                    />
+                    <Tooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const item = payload[0].payload;
+                          const impactStr = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(item.impactoTotal);
+                          return (
+                            <div className="bg-[#1F3A5F] p-4 rounded-xl shadow-2xl text-white border border-white/10">
+                              <p className="text-xs font-black uppercase mb-1">{item.producto}</p>
+                              <p className="text-2xl font-black">{Math.round(item.porcentajeFueraMargen)}% <span className="text-[10px] font-bold opacity-60">Fuera de Margen</span></p>
+                              <p className="text-[10px] font-bold mt-2 opacity-80">Impacto: {impactStr}</p>
+                              <p className="text-[10px] font-bold opacity-60">Evaluado en {item.totalInstancias} sedes/CCs</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="porcentajeFueraMargen" radius={[0, 4, 4, 0]} barSize={20}>
+                      {analisisEstabilidad.slice(0, 15).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.porcentajeFueraMargen > 60 ? '#EB5757' : entry.porcentajeFueraMargen > 30 ? '#F2C94C' : '#27AE60'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Ranking Card */}
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[600px]">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-50 p-2 rounded-lg text-amber-600">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-slate-800 uppercase tracking-tight">Ranking de Criticidad</h3>
+                </div>
+                <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md uppercase tracking-widest">Top 20 Referencias</span>
+              </div>
+              <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                {analisisEstabilidad.slice(0, 20).map((item, i) => (
+                  <div 
+                    key={i} 
+                    onClick={() => setSelectedProduct(item)}
+                    className="flex items-center justify-between p-4 rounded-xl border border-slate-50 hover:border-slate-100 hover:bg-slate-50/50 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                        item.estado === 'Crítico' ? 'bg-rose-100 text-rose-600' : 
+                        item.estado === 'Inestable' ? 'bg-amber-100 text-amber-600' : 
+                        'bg-emerald-100 text-emerald-600'
+                      }`}>
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-700 uppercase leading-none">{item.producto}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                          {item.totalInstancias} EVALUACIONES • {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(item.impactoTotal)} IMPACTO
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-lg font-black ${
+                        item.estado === 'Crítico' ? 'text-rose-600' : 
+                        item.estado === 'Inestable' ? 'text-amber-500' : 
+                        'text-emerald-600'
+                      }`}>
+                        {Math.round(item.porcentajeFueraMargen)}%
+                      </p>
+                      <p className="text-[9px] font-black text-slate-300 uppercase leading-none">Descuadre</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       <AnimatePresence>
@@ -1512,8 +1950,25 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
                   </div>
                 </div>
 
-                {/* Modal Filters */}
+                {/* Modal Tabs & Filters */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#F5F7FA] p-4 rounded-[8px] border border-[#D6DEE6]">
+                  <div className="flex bg-white p-1 rounded-[8px] border border-[#D6DEE6] shadow-sm">
+                    <button
+                      onClick={() => setModalTab('operacion')}
+                      className={`px-4 py-2 rounded-[6px] text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${modalTab === 'operacion' ? 'bg-[#1F3A5F] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                      <BarChart3 className="w-3.5 h-3.5" />
+                      Auditoría Operativa
+                    </button>
+                    <button
+                      onClick={() => setModalTab('tecnico')}
+                      className={`px-4 py-2 rounded-[6px] text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${modalTab === 'tecnico' ? 'bg-[#1F3A5F] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      Control Técnico
+                    </button>
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-slate-400" />
                     <div className="flex bg-white p-1 rounded-[6px] border border-[#D6DEE6]">
@@ -1528,66 +1983,116 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
                       ))}
                     </div>
                   </div>
-                  <label className="flex items-center space-x-3 cursor-pointer group">
-                    <div className="relative">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only" 
-                        checked={showOnlyFaltantes}
-                        onChange={(e) => setShowOnlyFaltantes(e.target.checked)}
-                      />
-                      <div className={`w-10 h-5 rounded-full transition-colors ${showOnlyFaltantes ? 'bg-[#EB5757]' : 'bg-slate-200'}`}></div>
-                      <div className={`absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform ${showOnlyFaltantes ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                    </div>
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-[#1F3A5F] transition-colors">Mostrar solo unidades faltantes</span>
-                  </label>
                 </div>
 
                 {/* Tables Section */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center">
-                      <BarChart3 className="w-4 h-4 mr-2" />
-                      Listado de Referencias
-                    </h4>
-                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
-                      Referencias encontradas: {filteredItems.length}
-                    </span>
-                  </div>
-                  
-                  <div className="overflow-hidden rounded-[8px] border border-[#D6DEE6] shadow-sm">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-[#A7C4E0] text-[#1F3A5F]">
-                        <tr>
-                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
-                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">UNIDAD</th>
-                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
-                          <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-right">IMPACTO ECONÓMICO</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#D6DEE6]">
-                        {filteredItems.map((a, i) => (
-                          <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F8]'} hover:bg-[#E5EDF5] transition-colors`}>
-                            <td className="px-6 py-3 font-bold text-[#1F3A5F]">{a.articulo}</td>
-                            <td className="px-6 py-3 text-slate-500 text-[10px] font-bold">{a.subarticulo}</td>
-                            <td className={`px-6 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EB5757]' : a.totalDiferencia > 0 ? 'text-[#27AE60]' : 'text-slate-400'}`}>
-                              {a.totalDiferencia > 0 ? '+' : ''}{showOnlyFaltantes ? formatVariation(Math.abs(a.totalDiferencia), a.subarticulo) : formatVariation(a.totalDiferencia, a.subarticulo)}
-                            </td>
-                            <td className={`px-6 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EB5757]' : 'text-[#1F3A5F]'}`}>
-                              {formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))}
-                            </td>
-                          </tr>
-                        ))}
-                        {filteredItems.length === 0 && (
-                          <tr>
-                            <td colSpan={4} className="px-6 py-10 text-center text-slate-400 italic bg-slate-50">
-                              No hay artículos que coincidan con el filtro
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  {modalTab === 'operacion' ? (
+                    <React.Fragment>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center">
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          Listado de Referencias - Auditoría
+                        </h4>
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                          Referencias: {filteredItems.length}
+                        </span>
+                      </div>
+                      
+                      <div className="overflow-hidden rounded-[8px] border border-[#D6DEE6] shadow-sm">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-[#A7C4E0] text-[#1F3A5F]">
+                            <tr>
+                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
+                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">UNIDAD</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">DIF</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">MARGEN</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">PÉRDIDA $</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">RECUPERABLE $</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px]">REGLA APLICADA</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#D6DEE6]">
+                            {filteredItems.map((a, i) => (
+                              <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F8]'} hover:bg-[#E5EDF5] transition-colors`}>
+                                <td className="px-6 py-3 font-bold text-[#1F3A5F]">{a.articulo}</td>
+                                <td className="px-6 py-3 text-slate-500 text-[10px] font-bold">{a.subarticulo}</td>
+                                <td className={`px-4 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EB5757]' : a.totalDiferencia > 0 ? 'text-[#27AE60]' : 'text-slate-400'}`}>
+                                  {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                                </td>
+                                <td className="px-4 py-3 text-right text-slate-500 text-[10px] font-medium">
+                                  {formatVariation(a.margenError, a.subarticulo)}
+                                </td>
+                                <td className="px-4 py-3 text-right font-bold text-amber-600">
+                                  {a.perdidaPorMargen > 0 ? formatCurrency(a.perdidaPorMargen) : '-'}
+                                </td>
+                                <td className="px-4 py-3 text-right font-bold text-rose-600">
+                                  {a.dineroRecuperable > 0 ? formatCurrency(a.dineroRecuperable) : '-'}
+                                </td>
+                                <td className="px-4 py-3 text-[9px] text-slate-400 font-bold italic uppercase">
+                                  {a.reglaAplicada}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </React.Fragment>
+                  ) : (
+                    <React.Fragment>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center">
+                          <FileSpreadsheet className="w-4 h-4 mr-2" />
+                          Informe Técnico de Margen de Error
+                        </h4>
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                          Referencias: {filteredItems.length}
+                        </span>
+                      </div>
+                      
+                      <div className="overflow-hidden rounded-[8px] border border-[#D6DEE6] shadow-sm">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-[#1F3A5F] text-white">
+                            <tr>
+                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">INV. INICIAL</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">INV. FINAL</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">MARGEN</th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">ESTADO</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#D6DEE6]">
+                            {filteredItems.map((a, i) => (
+                              <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-indigo-50 transition-colors`}>
+                                <td className="px-6 py-3 font-bold text-[#1F3A5F]">
+                                  {a.articulo}
+                                  <div className="text-[9px] text-slate-400 uppercase leading-none mt-0.5">{a.subarticulo}</div>
+                                </td>
+                                <td className="px-4 py-3 text-right font-medium text-slate-600">
+                                  {formatVariation(a.stockEsperado, a.subarticulo)}
+                                </td>
+                                <td className={`px-4 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-[#EB5757]' : a.totalDiferencia > 0 ? 'text-[#27AE60]' : 'text-slate-400'}`}>
+                                  {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                                </td>
+                                <td className="px-4 py-3 text-right font-medium text-[#1F3A5F]">
+                                  {formatVariation(a.stockFisico, a.subarticulo)}
+                                </td>
+                                <td className="px-4 py-3 text-right text-indigo-600 font-bold">
+                                  {formatVariation(a.margenError, a.subarticulo)}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                    {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </React.Fragment>
+                  )}
                 </div>
               </div>
 
@@ -1608,6 +2113,101 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters 
                   className="bg-[#1F3A5F] text-white px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#2F80ED] transition-all"
                 >
                   Cerrar Detalle
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Product Detail Modal */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProduct(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              layoutId={selectedProduct.producto}
+              className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[12px] shadow-2xl overflow-hidden flex flex-col border border-[#D6DEE6]"
+            >
+              <div className="p-6 border-b border-[#D6DEE6] flex items-center justify-between bg-[#F5F7FA]">
+                <div>
+                  <h3 className="text-xl font-bold text-[#1F3A5F]">Trazabilidad de Producto: {selectedProduct.producto}</h3>
+                  <div className="flex items-center gap-4 mt-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Nivel de Estabilidad: 
+                      <span className={`ml-2 px-2 py-0.5 rounded-[4px] text-white ${
+                        selectedProduct.estado === 'Crítico' ? 'bg-rose-500' : 
+                        selectedProduct.estado === 'Inestable' ? 'bg-amber-500' : 
+                        'bg-emerald-500'
+                      }`}>
+                        {selectedProduct.estado}
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Impacto Total: {formatCurrency(selectedProduct.impactoTotal)}
+                    </span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedProduct(null)}
+                  className="p-2 hover:bg-white rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto">
+                <div className="bg-white rounded-[8px] border border-[#D6DEE6] shadow-sm overflow-hidden">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#1F3A5F] text-white">
+                      <tr>
+                        <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">Sede / Centro de Costo</th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">Variación</th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">Ajuste Cobro</th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">Impacto $</th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#D6DEE6]">
+                      {data.filter(a => a.articulo === selectedProduct.producto).map((a, i) => (
+                        <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`}>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-[#1F3A5F]">{a.sede}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase">{a.cc || 'SIN CC'}</div>
+                          </td>
+                          <td className={`px-4 py-4 text-right font-mono text-xs ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                            {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                          </td>
+                          <td className="px-4 py-4 text-right font-mono text-xs text-indigo-600">
+                            {formatVariation(a.ajusteCobro, a.subarticulo)}
+                          </td>
+                          <td className="px-4 py-4 text-right font-bold text-slate-700">
+                            {formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                              {a.dentroDeTolerancia ? 'ESTABLE' : 'INCONSISTENTE'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="p-6 bg-[#F5F7FA] border-t border-[#D6DEE6] flex justify-end">
+                <button 
+                  onClick={() => setSelectedProduct(null)}
+                  className="bg-[#1F3A5F] text-white px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#2F80ED] transition-all"
+                >
+                  Cerrar Trazabilidad
                 </button>
               </div>
             </motion.div>

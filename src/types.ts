@@ -6,6 +6,8 @@ export interface InventoryMovement {
   fecha: Date;
   variacion: number;
   costeLinea: number;
+  stockFecha: number;
+  stockInventario: number;
 }
 
 export interface ArticleSummary {
@@ -17,10 +19,19 @@ export interface ArticleSummary {
   codBarras: string;
   movements: InventoryMovement[];
   totalDiferencia: number;
+  stockFisico: number;
+  stockEsperado: number;
+  ajusteCobro: number;
+  confiabilidadTecnica: 'ALTA' | 'MEDIA' | 'BAJA';
   costePromedio: number;
   ultimoCoste: number;
   totalCobro: number;
   debeCobrar: boolean;
+  dentroDeTolerancia: boolean;
+  margenError: number;
+  reglaAplicada: string;
+  perdidaPorMargen: number;
+  dineroRecuperable: number;
   tipo: 'FALTANTE' | 'SOBRANTE' | 'SIN_VARIACION';
 }
 
@@ -84,4 +95,13 @@ export interface HistoricalTraceabilityData {
   periods: HistoricalPeriodStats[];
   bySede: Record<string, HistoricalPeriodStats[]>;
   byCC: Record<string, HistoricalPeriodStats[]>;
+}
+
+export interface ProductStability {
+  producto: string;
+  totalInstancias: number;
+  instanciasFueraMargen: number;
+  porcentajeFueraMargen: number;
+  impactoTotal: number;
+  estado: 'Estable' | 'Inestable' | 'Crítico';
 }

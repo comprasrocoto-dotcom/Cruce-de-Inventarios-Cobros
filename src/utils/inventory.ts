@@ -1,4 +1,4 @@
-import { RawInventoryRow, ArticleSummary, SedeSummary, DashboardStats, InventoryMovement, ReliabilitySummary, ReliabilityStats, HistoricalPeriodStats, HistoricalTraceabilityData } from '../types';
+import { RawInventoryRow, ArticleSummary, SedeSummary, DashboardStats, InventoryMovement, ReliabilitySummary, ReliabilityStats, HistoricalPeriodStats, HistoricalTraceabilityData, ProductStability } from '../types';
 import { parse, isValid, format, startOfMonth, startOfWeek, startOfDay, isWithinInterval, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -203,6 +203,22 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
       costeLinea = parseFloat(costeRaw.replace(/,/g, '').trim()) || 0;
     }
 
+    const stockFechaRaw = row.stockFecha;
+    let stockFecha = 0;
+    if (typeof stockFechaRaw === 'number') {
+      stockFecha = stockFechaRaw;
+    } else if (typeof stockFechaRaw === 'string') {
+      stockFecha = parseFloat(stockFechaRaw.replace(/,/g, '').trim()) || 0;
+    }
+
+    const stockInventarioRaw = row.stockInventario;
+    let stockInventario = 0;
+    if (typeof stockInventarioRaw === 'number') {
+      stockInventario = stockInventarioRaw;
+    } else if (typeof stockInventarioRaw === 'string') {
+      stockInventario = parseFloat(stockInventarioRaw.replace(/,/g, '').trim()) || 0;
+    }
+
     const subarticulo = (row.subarticulo || 'UNIDADES').toString().toUpperCase().trim();
     const sedeStr = row.sede.toString().trim();
     const ccStr = (row.cc || '').toString().trim();
@@ -219,28 +235,42 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
         codBarras: (row.codBarras || '').toString().trim(),
         movements: [],
         totalDiferencia: 0,
+        stockFisico: 0,
+        stockEsperado: 0,
         costePromedio: 0,
         ultimoCoste: 0,
         totalCobro: 0,
+        ajusteCobro: 0,
+        confiabilidadTecnica: 'ALTA',
         debeCobrar: false,
+        dentroDeTolerancia: true,
+        margenError: 0,
+        reglaAplicada: '',
+        perdidaPorMargen: 0,
+        dineroRecuperable: 0,
         tipo: 'SIN_VARIACION'
       });
     }
 
     const summary = grouped.get(key)!;
-    summary.movements.push({ fecha, variacion, costeLinea });
+    summary.movements.push({ fecha, variacion, costeLinea, stockFecha, stockInventario });
   });
 
   const articles: ArticleSummary[] = Array.from(grouped.values()).map(summary => {
     summary.movements.sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
     
+    const lastM = summary.movements[summary.movements.length - 1];
+    summary.stockFisico = lastM?.stockInventario || 0;
+    summary.stockEsperado = lastM?.stockFecha || 0;
+
     const totalDiferencia = summary.movements.reduce((acc, m) => acc + m.variacion, 0);
     const totalCoste = summary.movements.reduce((acc, m) => acc + m.costeLinea, 0);
+    const totalStockTeorico = summary.movements.reduce((acc, m) => acc + m.stockFecha, 0);
+    const averageStockTeorico = summary.movements.length > 0 ? totalStockTeorico / summary.movements.length : 0;
+    
     const costePromedio = summary.movements.length > 0 ? totalCoste / summary.movements.length : 0;
     const ultimoCoste = summary.movements.length > 0 ? summary.movements[summary.movements.length - 1].costeLinea : 0;
     
-    const costToUse = costePromedio > 0 ? costePromedio : ultimoCoste;
-
     summary.totalDiferencia = totalDiferencia;
     summary.costePromedio = costePromedio;
     summary.ultimoCoste = ultimoCoste;
@@ -249,24 +279,73 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
     else if (totalDiferencia > 0.0001) summary.tipo = 'SOBRANTE';
     else summary.tipo = 'SIN_VARIACION';
 
+    const unit = summary.subarticulo.toUpperCase();
     const absDiff = Math.abs(totalDiferencia);
+    let ajusteCobro = 0;
     let debeCobrar = false;
+    let margen = 0;
+    let regla = "";
 
-    if (summary.tipo === 'FALTANTE') {
-      const unit = summary.subarticulo;
-      if (unit.includes('GRAMO')) {
-        debeCobrar = absDiff > 1000;
-      } else if (unit.includes('ONZA')) {
-        debeCobrar = absDiff > 5;
-      } else if (unit.includes('UNIDAD')) {
-        debeCobrar = absDiff > 1;
-      } else {
-        debeCobrar = absDiff > 1;
+    // 🔥 REGLAS DE NEGOCIO SEGÚN UNIDAD
+    if (unit.includes('ONZA')) {
+      // ONZAS: ±1 no se cobra
+      margen = 1;
+      regla = "±1 onza no cobra";
+      if (absDiff > margen) {
+        ajusteCobro = totalDiferencia;
       }
+    } else if (unit.includes('GRAMO')) {
+      // GRAMOS: Solo faltantes, 2.5% margen del Stock Teórico
+      regla = "2.5% solo faltantes";
+      if (totalDiferencia < 0) {
+        margen = Math.abs(averageStockTeorico) * 0.025;
+        if (absDiff > margen) {
+          ajusteCobro = totalDiferencia;
+        }
+      }
+    } else if (unit.includes('COPA') || unit.includes('UNIDAD')) {
+      // COPAS / UNIDADES: Sin margen
+      regla = "Sin margen";
+      margen = 0;
+      ajusteCobro = totalDiferencia;
+    } else {
+      // OTROS: Por defecto usar lógica estricta para faltantes
+      regla = "Lógica estricta (faltantes)";
+      if (totalDiferencia < 0) ajusteCobro = totalDiferencia;
+    }
+
+    // Solo se cobra si es faltante y califica según el ajuste
+    if (ajusteCobro < -0.0001) {
+      debeCobrar = true;
     }
 
     summary.debeCobrar = debeCobrar;
-    summary.totalCobro = debeCobrar ? absDiff * (summary.ultimoCoste || summary.costePromedio) : 0;
+    summary.margenError = margen;
+    summary.reglaAplicada = regla;
+    summary.dentroDeTolerancia = Math.abs(totalDiferencia) < 0.0001 || (Math.abs(ajusteCobro) < 0.0001 && Math.abs(totalDiferencia) > 0);
+    
+    const valorUnitario = summary.ultimoCoste || summary.costePromedio;
+    // 💰 dinero que NO cobraste por tolerancia
+    summary.perdidaPorMargen = summary.dentroDeTolerancia && Math.abs(totalDiferencia) > 0 ? Math.abs(totalDiferencia) * valorUnitario : 0;
+    // 💰 dinero que SÍ deberías cobrar
+    summary.dineroRecuperable = debeCobrar ? Math.abs(ajusteCobro) * valorUnitario : 0;
+
+    // Cobro basado en el ajuste calificado
+    summary.ajusteCobro = ajusteCobro;
+    summary.totalCobro = summary.dineroRecuperable;
+
+    // 🔥 CONFIABILIDAD TÉCNICA (3 niveles)
+    // Usamos el stock esperado como base de comparación (benchmark)
+    const baseBench = Math.abs(summary.stockEsperado) || 1;
+    const ratioError = Math.abs(ajusteCobro) / baseBench;
+
+    if (ratioError > 0.1) { // Más del 10% de error respecto al stock esperado
+      summary.confiabilidadTecnica = 'BAJA';
+    } else if (ratioError > 0.02) { // Entre 2% y 10%
+      summary.confiabilidadTecnica = 'MEDIA';
+    } else {
+      summary.confiabilidadTecnica = 'ALTA';
+    }
 
     return summary;
   });
@@ -314,7 +393,7 @@ export function getReliabilitySummary(articles: ArticleSummary[], groupBy: 'sede
 
   const sedesStats: ReliabilityStats[] = Array.from(entityMap.entries()).map(([entityName, arts]) => {
     const articulosEvaluados = arts.length;
-    const articulosSinDiferencia = arts.filter(a => Math.abs(a.totalDiferencia) < 0.0001).length;
+    const articulosSinDiferencia = arts.filter(a => a.dentroDeTolerancia).length;
     const articulosConDiferencia = articulosEvaluados - articulosSinDiferencia;
     const confiabilidad = articulosEvaluados > 0 ? (articulosSinDiferencia / articulosEvaluados) * 100 : 0;
     
@@ -517,4 +596,33 @@ export function getHistoricalTraceability(
   });
 
   return { periods, bySede, byCC };
+}
+
+export function getProductStabilityAnalysis(articles: ArticleSummary[]): ProductStability[] {
+  const productMap = new Map<string, ArticleSummary[]>();
+  
+  articles.forEach(a => {
+    if (!productMap.has(a.articulo)) productMap.set(a.articulo, []);
+    productMap.get(a.articulo)!.push(a);
+  });
+
+  return Array.from(productMap.entries()).map(([producto, instances]) => {
+    const totalInstancias = instances.length;
+    const instanciasFueraMargen = instances.filter(i => !i.dentroDeTolerancia).length;
+    const porcentajeFueraMargen = totalInstancias > 0 ? (instanciasFueraMargen / totalInstancias) * 100 : 0;
+    const impactoTotal = instances.reduce((acc, i) => acc + (Math.abs(i.totalDiferencia) * (i.ultimoCoste || i.costePromedio)), 0);
+
+    let estado: 'Estable' | 'Inestable' | 'Crítico' = 'Estable';
+    if (porcentajeFueraMargen > 60) estado = 'Crítico';
+    else if (porcentajeFueraMargen > 30) estado = 'Inestable';
+
+    return {
+      producto,
+      totalInstancias,
+      instanciasFueraMargen,
+      porcentajeFueraMargen,
+      impactoTotal,
+      estado
+    };
+  }).sort((a, b) => b.porcentajeFueraMargen - a.porcentajeFueraMargen);
 }
