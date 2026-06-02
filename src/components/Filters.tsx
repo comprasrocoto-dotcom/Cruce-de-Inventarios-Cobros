@@ -5,6 +5,9 @@ import { GlobalFilters } from '../types';
 interface FiltersProps {
   sedes: string[];
   ccs: string[];
+  familias?: string[];
+  subArticulos?: string[];
+  proveedores?: string[];
   subfamilias: string[];
   responsables: string[];
   filters: GlobalFilters;
@@ -16,6 +19,9 @@ export const Filters: React.FC<FiltersProps> = ({
   ccs, 
   subfamilias, 
   responsables,
+  familias = [],
+  subArticulos = [],
+  proveedores = [],
   filters, 
   setFilters 
 }) => {
@@ -30,6 +36,9 @@ export const Filters: React.FC<FiltersProps> = ({
   const clearFilters = () => {
     setFilters({
       sedes: [],
+      familias: [],
+      subArticulos: [],
+      proveedores: [],
       ccs: [],
       subfamilias: [],
       responsables: [],
