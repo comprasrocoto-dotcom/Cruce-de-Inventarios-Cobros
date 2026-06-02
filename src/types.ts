@@ -13,8 +13,10 @@ export interface InventoryMovement {
 export interface ArticleSummary {
   sede: string;
   articulo: string;
-  subarticulo: string; // Unit of measure
+  subarticulo: string;
+  familia: string;
   subfamilia: string;
+  proveedor: string;
   cc: string;
   responsable: string;
   codBarras: string;
@@ -36,30 +38,29 @@ export interface ArticleSummary {
   dineroRecuperable: number;
   tipo: 'FALTANTE' | 'SOBRANTE' | 'SIN_VARIACION';
   confiabilidad?: number;
+  totalFaltantes: number;
+  totalSobrantes: number;
+  cantidadACobrar: number;
+  valorPerdida: number;
+  valorSobrante: number;
+  severidad: 'CRITICO' | 'MEDIO' | 'NORMAL';
 }
-
 export interface SedeSummary {
   sede: string;
-  articulos: ArticleSummary[];
-  totalCobroSede: number;
   totalArticulos: number;
   totalFaltantes: number;
+  totalSobrantes: number;
   totalCobrables: number;
-}
-
-export interface DashboardStats {
-  totalArticulos: number;
-  totalFaltantes: number;
-  totalCobrables: number;
-  valorTotalCobro: number;
-  sedes: SedeSummary[];
+  articulosConDiferencia: number;
+  variacionTotal: number;
+  impactoEconomico: number;
+  topArticulosCriticos: { articulo: string; variacion: number; impacto: number; unidad: string }[];
+  topArticulosConfiables: { articulo: string; variacion: number; impacto: number; unidad: string }[];
 }
 
 export interface ReliabilityStats {
   sede: string;
-  confiabilidad: number;
-  nivel: 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico';
-  articulosEvaluados: number;
+  totalArticulos: number;
   articulosSinDiferencia: number;
   articulosConDiferencia: number;
   variacionTotal: number;
@@ -91,7 +92,7 @@ export interface HistoricalPeriodStats {
   cobrables: number;
   valorCobro: number;
   variacionVsAnterior?: number;
-  estado: 'Mejoró' | 'Empeoró' | 'Estable';
+  estado: 'Mejoro' | 'Empeoro' | 'Estable';
 }
 
 export interface HistoricalTraceabilityData {
@@ -107,7 +108,7 @@ export interface ProductStability {
   porcentajeFueraMargen: number;
   confiabilidad: number;
   impactoTotal: number;
-  estado: 'Estable' | 'Inestable' | 'Crítico';
+  estado: 'Estable' | 'Inestable' | 'Critico';
 }
 
 export interface ResponsableStability {
@@ -121,10 +122,27 @@ export interface ResponsableStability {
 export interface GlobalFilters {
   sedes: string[];
   ccs: string[];
+  familias: string[];
   subfamilias: string[];
+  subArticulos: string[];
   responsables: string[];
+  proveedores: string[];
   status: string;
   search: string;
   fechaInicio: string;
   fechaFin: string;
+}
+
+export interface ExecutiveSummary {
+  totalProductosRevisados: number;
+  totalProductosConNovedades: number;
+  totalProductosSinNovedades: number;
+  valorTotalPerdidas: number;
+  valorTotalSobrantes: number;
+  balanceFinal: number;
+  cantidadTotalACobrar: number;
+  top10Diferencias: ArticleSummary[];
+  top10Recurrentes: ArticleSummary[];
+  perdidas: ArticleSummary[];
+  sobrantes: ArticleSummary[];
 }
