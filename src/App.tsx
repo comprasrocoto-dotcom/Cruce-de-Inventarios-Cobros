@@ -23,8 +23,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
+import { AdvancedAnalysis } from './components/AdvancedAnalysis';
+import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 
-type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD';
+type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
@@ -84,13 +86,16 @@ export default function App() {
         if (filters.fechaFin && itemDate > new Date(filters.fechaFin)) matchesFecha = false;
       }
 
-      return matchesSede && matchesCC && matchesSubfamilia && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
+      return matchesSede && matchesCC && matchesSubfamilia && matchesFamilia && matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
     });
   }, [articles, filters]);
 
   const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
 
   const uniqueSedes = useMemo(() => Array.from(new Set(articles.map(a => a.sede))).sort(), [articles]);
+  const uniqueFamilias = useMemo(() => Array.from(new Set(articles.map(a => a.familia))).filter(Boolean).sort(), [articles]);
+  const uniqueProveedores = useMemo(() => Array.from(new Set(articles.map(a => a.proveedor))).filter(Boolean).sort(), [articles]);
+  const uniqueSubArticulos = useMemo(() => Array.from(new Set(articles.map(a => a.subarticulo))).filter(Boolean).sort(), [articles]);
   const uniqueCCs = useMemo(() => Array.from(new Set(articles.map(a => a.cc))).filter(Boolean).sort(), [articles]);
   const uniqueSubfamilias = useMemo(() => Array.from(new Set(articles.map(a => a.subfamilia))).filter(Boolean).sort(), [articles]);
   const uniqueResponsables = useMemo(() => Array.from(new Set(articles.map(a => a.responsable || 'Sin asignar'))).sort(), [articles]);
@@ -120,8 +125,11 @@ export default function App() {
         <Filters 
           sedes={uniqueSedes}
           ccs={uniqueCCs}
+          familias={uniqueFamilias}
           subfamilias={uniqueSubfamilias}
+          subArticulos={uniqueSubArticulos}
           responsables={uniqueResponsables}
+          proveedores={uniqueProveedores}
           filters={filters}
           setFilters={setFilters}
         />
@@ -234,7 +242,21 @@ export default function App() {
             )}
 
             {activeTab === 'GERENCIAL' && (
-              <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
+              <AdvancedAnalysis data={filteredArticles} />
+                <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
+            )}
+
+            {activeTab === 'EJECUTIVO' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-text">Dashboard Ejecutivo</h3>
+                    <p className="text-sm text-brand-text-secondary">KPIs, tendencias y top productos</p>
+                  </div>
+                  <ExportButtons data={filteredArticles} />
+                </div>
+                <ExecutiveDashboard data={filteredArticles} />
+              </div>
             )}
 
             {activeTab === 'TRAZABILIDAD' && (
@@ -297,14 +319,15 @@ export default function App() {
       {/* Navigation Tabs */}
       {articles.length > 0 && (
         <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
-          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD'] as Tab[]).map((tab) => {
+          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD', 'EJECUTIVO'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
               ANÁLISIS: BarChart2,
               COBROS: DollarSign,
               CONFIABILIDAD: ShieldCheck,
               GERENCIAL: BarChart3,
-              TRAZABILIDAD: Activity
+              TRAZABILIDAD: Activity,
+              EJECUTIVO: LayoutDashboard
             }[tab];
 
             return (
