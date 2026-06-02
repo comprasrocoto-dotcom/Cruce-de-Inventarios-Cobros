@@ -7,8 +7,9 @@ const EXACT_MOJIBAKE_MAP: Record<string, string> = {
   "Fecha Doc": "fecha",
   "Serie / NÃºmero": "serie",
   "AlmacÃ©n": "sede",
-  "CC": "cc",
+  "Familia": "familia",
   "Subfamilia": "subfamilia",
+  "Proveedor": "proveedor",
   "ArtÃculo": "articulo",
   "CÃ³d. Barras": "codBarras",
   "SubartÃculo": "subarticulo",
@@ -22,15 +23,16 @@ const INDEX_FALLBACK: Record<number, string> = {
   0: "fecha",
   1: "serie",
   2: "sede",
-  3: "cc",
+  3: "familia",
   4: "subfamilia",
-  5: "articulo",
-  6: "codBarras",
-  7: "subarticulo",
-  8: "costeLinea",
-  9: "stockFecha",
-  10: "variacion",
-  11: "stockInventario"
+  5: "proveedor",
+  6: "articulo",
+  7: "codBarras",
+  8: "subarticulo",
+  9: "costeLinea",
+  10: "stockFecha",
+  11: "variacion",
+  12: "stockInventario"
 };
 
 const ALIASES: Record<string, string[]> = {
@@ -40,7 +42,9 @@ const ALIASES: Record<string, string[]> = {
   "subarticulo": ["subarticulo", "unidad", "unidad de medida", "medida", "u m", "um"],
   "costeLinea": ["coste linea", "costo linea", "coste", "costo", "valor costo"],
   "variacion": ["variacion stock", "variacion", "ajuste", "ajuste stock", "diferencia stock", "movimiento stock"],
-  "subfamilia": ["subfamilia", "familia"],
+  "familia": ["familia", "category"],
+  "proveedor": ["proveedor", "distribuidor"],
+  "subfamilia": ["subfamilia", "subgrupo"],
   "stockFecha": ["stock a fecha", "stock fecha"],
   "stockInventario": ["stock inventario", "inventario"],
   "codBarras": ["cod barras", "codigo barras", "cod.", "barras"],
@@ -223,15 +227,19 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
     const subarticulo = (row.subarticulo || 'UNIDADES').toString().toUpperCase().trim();
     const sedeStr = row.sede.toString().trim();
-    const ccStr = (row.cc || '').toString().trim();
+    const familiaStr = (row.familia || "").toString().trim();
+    const ccStr = (row.cc || familiaStr || "").toString().trim();
+    const proveedorStr = (row.proveedor || "").toString().trim();
     const articuloStr = row.articulo.toString().trim();
     const responsableStr = (row.responsable || 'Sin asignar').toString().trim();
-    const key = `${sedeStr}|${ccStr}|${articuloStr}`;
+    const key = `${sedeStr}|${articuloStr}`;
 
     if (!grouped.has(key)) {
       grouped.set(key, {
         sede: sedeStr,
         cc: ccStr,
+        familia: familiaStr,
+        proveedor: proveedorStr,
         responsable: responsableStr,
         articulo: articuloStr,
         subarticulo,
@@ -253,7 +261,13 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
         reglaAplicada: '',
         perdidaPorMargen: 0,
         dineroRecuperable: 0,
-        tipo: 'SIN_VARIACION'
+        tipo: 'SIN_VARIACION',
+        totalFaltantes: 0,
+        totalSobrantes: 0,
+        cantidadACobrar: 0,
+        valorPerdida: 0,
+        valorSobrante: 0,
+        severidad: 'NORMAL'
       });
     }
 
@@ -320,6 +334,21 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
     } else {
       summary.confiabilidadTecnica = 'ALTA';
     }
+
+    // Consolidated charges
+    const mFalt = summary.movements.filter(m => m.variacion < 0);
+    const mSobr = summary.movements.filter(m => m.variacion > 0);
+    summary.totalFaltantes = mFalt.reduce((acc, m) => acc + Math.abs(m.variacion), 0);
+    summary.totalSobrantes = mSobr.reduce((acc, m) => acc + m.variacion, 0);
+    summary.cantidadACobrar = Math.max(0, summary.totalFaltantes - summary.totalSobrantes);
+    const vu = summary.ultimoCoste || summary.costePromedio;
+    summary.valorPerdida = summary.totalFaltantes * vu;
+    summary.valorSobrante = summary.totalSobrantes * vu;
+    const absDiff = Math.abs(summary.totalDiferencia);
+    const stockRef = Math.max(Math.abs(summary.stockEsperado), 1);
+    if (absDiff > 10 || (absDiff / stockRef) > 0.5) { summary.severidad = "CRITICO"; }
+    else if (absDiff > 2) { summary.severidad = "MEDIO"; }
+    else { summary.severidad = "NORMAL"; }
 
     return summary;
   });
@@ -632,4 +661,23 @@ export function getResponsableStabilityAnalysis(articles: ArticleSummary[]): Res
       confiabilidad
     };
   }).sort((a, b) => b.confiabilidad - a.confiabilidad);
+}
+
+
+export function getExecutiveSummary(articles) {
+  const perdidas = articles.filter(a => a.totalFaltantes > 0);
+  const sobrantes = articles.filter(a => a.totalSobrantes > 0);
+  return {
+    totalProductosRevisados: articles.length,
+    totalProductosConNovedades: articles.filter(a => a.tipo !== 'SIN_VARIACION').length,
+    totalProductosSinNovedades: articles.filter(a => a.tipo === 'SIN_VARIACION').length,
+    valorTotalPerdidas: articles.reduce((acc, a) => acc + (a.valorPerdida || 0), 0),
+    valorTotalSobrantes: articles.reduce((acc, a) => acc + (a.valorSobrante || 0), 0),
+    balanceFinal: articles.reduce((acc, a) => acc + ((a.valorSobrante || 0) - (a.valorPerdida || 0)), 0),
+    cantidadTotalACobrar: articles.reduce((acc, a) => acc + (a.cantidadACobrar || 0), 0),
+    top10Diferencias: [...articles].sort((a,b) => Math.abs(b.totalDiferencia) - Math.abs(a.totalDiferencia)).slice(0, 10),
+    top10Recurrentes: [...articles].sort((a,b) => b.movements.length - a.movements.length).slice(0, 10),
+    perdidas,
+    sobrantes,
+  };
 }
