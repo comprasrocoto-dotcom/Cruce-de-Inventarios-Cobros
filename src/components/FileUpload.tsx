@@ -7,7 +7,7 @@ import { motion } from 'motion/react';
 
 const SHEET_ID = '1Sce90Tdc-f4RdiF1aWdotYKO4jkFn1Dy';
 const SHEET_NAME = 'BASE DE DATOS';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=802660947`;
+const CSV_URL = '/api/sheets';
 
 interface FileUploadProps {
   onDataLoaded: (data: ArticleSummary[], debug?: any, preview?: any[]) => void;
