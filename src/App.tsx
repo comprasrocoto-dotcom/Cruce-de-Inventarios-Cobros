@@ -60,7 +60,9 @@ export default function App() {
     localStorage.setItem('inventory_filters', JSON.stringify(filters));
   }, [filters]);
 
-  const filteredArticles = useMemo(() => {
+  const filteredArticles =subarticulo);
+        const matchesProveedor = !filters.proveedores?.length || filters.proveedores.includes(art.proveedor);
+        return matchesSede && matchesCC && matchesSubfamiliauseMemo(() => {
     return articles.filter(art => {
       // Filtros multi-selección
       const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
@@ -87,7 +89,7 @@ export default function App() {
         if (filters.fechaFin && itemDate > new Date(filters.fechaFin)) matchesFecha = false;
       }
 
-      const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);      const matchesSubArticulo = !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo); && matchesCC && matchesSubfamilia && matchesFamilia && matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
+      const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);      const matchesSubArticulo = !filters.subArticulos?.length || filters.subArticulos.includes(art. && matchesFamilia && matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
     });
   }, [articles, filters]);
 
