@@ -35,7 +35,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
       .slice(0, 10);
 
     const top10Recurrentes = [...data]
-      .sort((a, b) => b.movimientos.length - a.movimientos.length)
+      .sort((a, b) => b.movements.length - a.movements.length)
       .slice(0, 10);
 
     const sevAlta = data.filter(a => a.severidad === 'ALTA').length;
@@ -181,7 +181,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
                   <tr key={idx} className="border-t border-gray-100">
                     <td className="px-3 py-2 text-brand-text-secondary">{idx + 1}</td>
                     <td className="px-3 py-2 font-medium text-brand-text max-w-[180px] truncate">{a.articulo}</td>
-                    <td className="px-3 py-2 text-right text-brand-text">{a.movimientos.length}</td>
+                    <td className="px-3 py-2 text-right text-brand-text">{a.movements.length}</td>
                     <td className={`px-3 py-2 text-right font-bold ${a.totalDiferencia < 0 ? 'text-red-600' : a.totalDiferencia > 0 ? 'text-green-600' : 'text-brand-text-secondary'}`}>
                       {a.totalDiferencia > 0 ? '+' : ''}{fmtNumber(a.totalDiferencia)}
                     </td>
