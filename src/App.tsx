@@ -255,6 +255,7 @@ export default function App() {
                     <p className="text-sm text-brand-text-secondary">KPIs, tendencias y top productos</p>
                   </div>
                   <ExportButtons data={filteredArticles} />
+                                    <PDFReport data={filteredArticles} filters={filters} />
                 </div>
                 <ExecutiveDashboard data={filteredArticles} />
               </div>
