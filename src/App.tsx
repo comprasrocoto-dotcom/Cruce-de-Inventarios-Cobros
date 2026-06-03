@@ -27,7 +27,7 @@ import { AdvancedAnalysis } from './components/AdvancedAnalysis';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { PDFReport } from './components/PDFReport';
 
-type Tab = 'RESUMEN' | 'ANÃLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
+type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
@@ -65,13 +65,13 @@ export default function App() {
 
   const filteredArticles = useMemo(() => {
     return articles.filter(art => {
-      // Filtros multi-selecciÃ³n
+      // Filtros multi-selección
       const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
       const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
       const matchesSubfamilia = filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
       const matchesResponsable = filters.responsables.length === 0 || filters.responsables.includes(art.responsable || 'Sin asignar');
       
-      // BÃºsqueda
+      // Búsqueda
       const matchesSearch = !filters.search || 
         art.articulo.toLowerCase().includes(filters.search.toLowerCase()) ||
         art.codBarras.toLowerCase().includes(filters.search.toLowerCase());
@@ -120,7 +120,7 @@ export default function App() {
           <div>
             <h2 className="text-2xl font-bold text-[#1F3A5F] mb-2">No hay datos cargados</h2>
             <p className="text-slate-500 max-w-md mx-auto">
-              Utiliza el botÃ³n <span className="font-bold text-[#2F80ED]">Cargar Excel</span> en la esquina superior derecha para comenzar el anÃ¡lisis de inventarios.
+              Utiliza el botón <span className="font-bold text-[#2F80ED]">Cargar Excel</span> en la esquina superior derecha para comenzar el análisis de inventarios.
             </p>
           </div>
         </div>
@@ -153,21 +153,21 @@ export default function App() {
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <StatsCard 
-                    title="ArtÃ­culos Revisados" 
+                    title="Artículos Revisados" 
                     value={dashboardStats.totalArticulos} 
                     icon={Package} 
                     color="bg-kpi-revisados" 
-                    description="ArtÃ­culos evaluados en el cruce"
+                    description="Artículos evaluados en el cruce"
                   />
                   <StatsCard 
-                    title="ArtÃ­culos Faltantes" 
+                    title="Artículos Faltantes" 
                     value={dashboardStats.totalFaltantes} 
                     icon={AlertTriangle} 
                     color="bg-kpi-faltantes" 
-                    description="ArtÃ­culos con diferencia negativa"
+                    description="Artículos con diferencia negativa"
                   />
                   <StatsCard 
-                    title="ArtÃ­culos Cobrables" 
+                    title="Artículos Cobrables" 
                     value={dashboardStats.totalCobrables} 
                     icon={TrendingDown} 
                     color="bg-kpi-cobrables" 
@@ -178,7 +178,7 @@ export default function App() {
                     value={formatCurrency(dashboardStats.valorTotalCobro)} 
                     icon={DollarSign} 
                     color="bg-kpi-valor" 
-                    description="Impacto econÃ³mico total"
+                    description="Impacto económico total"
                   />
                 </div>
                 
@@ -186,7 +186,7 @@ export default function App() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-brand-text">Resumen por Sede</h3>
-                      <p className="text-sm text-brand-text-secondary">DistribuciÃ³n de cobros y faltantes por almacÃ©n</p>
+                      <p className="text-sm text-brand-text-secondary">Distribución de cobros y faltantes por almacén</p>
                     </div>
                     <ExportButtons data={filteredArticles} />
                   </div>
@@ -196,7 +196,7 @@ export default function App() {
                         <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">{sede.sede}</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-brand-text-secondary font-medium">ArtÃ­culos:</span>
+                            <span className="text-brand-text-secondary font-medium">Artículos:</span>
                             <span className="font-bold text-brand-text">{sede.totalArticulos}</span>
                           </div>
                           <div className="flex justify-between text-xs">
@@ -224,7 +224,7 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">Detalle de Cobros</h3>
-                    <p className="text-sm text-brand-text-secondary">Listado jerÃ¡rquico de artÃ­culos y variaciones</p>
+                    <p className="text-sm text-brand-text-secondary">Listado jerárquico de artículos y variaciones</p>
                   </div>
                   <ExportButtons data={filteredArticles} />
                 </div>
@@ -232,12 +232,12 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === 'ANÃLISIS' && (
+            {activeTab === 'ANÁLISIS' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-brand-text">AnÃ¡lisis de Variaciones</h3>
-                    <p className="text-sm text-brand-text-secondary">ExploraciÃ³n detallada de movimientos</p>
+                    <h3 className="text-xl font-bold text-brand-text">Análisis de Variaciones</h3>
+                    <p className="text-sm text-brand-text-secondary">Exploración detallada de movimientos</p>
                   </div>
                 </div>
                 <InventoryTable data={filteredArticles} />
@@ -296,7 +296,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight leading-none uppercase">Cruces de Inventario</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7C4E0] font-bold">AuditorÃ­a y Cobros por Sede</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7C4E0] font-bold">Auditoría y Cobros por Sede</p>
           </div>
         </div>
         
@@ -327,10 +327,10 @@ export default function App() {
       {/* Navigation Tabs */}
       {articles.length > 0 && (
         <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
-          {(['RESUMEN', 'ANÃLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD', 'EJECUTIVO'] as Tab[]).map((tab) => {
+          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD', 'EJECUTIVO'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
-              ANÃLISIS: BarChart2,
+              ANÁLISIS: BarChart2,
               COBROS: DollarSign,
               CONFIABILIDAD: ShieldCheck,
               GERENCIAL: BarChart3,
@@ -363,7 +363,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-brand-border p-4 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-        Â© {new Date().getFullYear()} PROMPT MAESTRO â SISTEMA DE AUDITORÃA DE INVENTARIOS
+        © {new Date().getFullYear()} PROMPT MAESTRO – SISTEMA DE AUDITORÍA DE INVENTARIOS
       </footer>
     </div>
   );
