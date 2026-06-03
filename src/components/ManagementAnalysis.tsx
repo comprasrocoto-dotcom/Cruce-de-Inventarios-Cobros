@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import { ArticleSummary, ReliabilityStats } from '../types';
+import { getReliabilitySummary } from '../utils/inventory';
 import {
   BarChart,
   Bar,
