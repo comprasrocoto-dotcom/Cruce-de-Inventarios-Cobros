@@ -77,7 +77,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
         <div className="bg-white rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="w-4 h-4 text-red-500" />
-            <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Total P\u00e9rdidas</span>
+            <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Total Pérdidas</span>
           </div>
           <p className="text-lg font-bold text-red-600">{fmtCurrency(summary.totalPerdidas)}</p>
         </div>
@@ -111,7 +111,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
 
       {/* Severity Indicators */}
       <div className="bg-white rounded-xl border border-brand-border p-4">
-        <h3 className="font-bold text-brand-text mb-3">Clasificaci\u00f3n por Severidad</h3>
+        <h3 className="font-bold text-brand-text mb-3">Clasificación por Severidad</h3>
         <div className="flex gap-4">
           <div className="flex-1 bg-red-50 rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-red-600">{summary.sevAlta}</p>
@@ -164,7 +164,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
         {/* Top 10 by recurrence */}
         <div className="bg-white rounded-xl border border-brand-border overflow-hidden">
           <div className="px-4 py-3 border-b border-brand-border bg-brand-background">
-            <h3 className="font-bold text-brand-text text-sm uppercase tracking-wide">Top 10 - M\u00e1s Recurrentes</h3>
+            <h3 className="font-bold text-brand-text text-sm uppercase tracking-wide">Top 10 - Más Recurrentes</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
