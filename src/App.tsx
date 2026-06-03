@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
 import { AdvancedAnalysis } from './components/AdvancedAnalysis';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
+import { PDFReport } from './components/PDFReport';
 
 type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
 
