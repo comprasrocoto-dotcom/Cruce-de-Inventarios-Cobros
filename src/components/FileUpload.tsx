@@ -48,7 +48,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
         headers.forEach((header, index) => { obj[header] = row[index] ?? ''; });
         return obj;
       });
-      const { items, debug, preview } = normalizeData(rawData);
+      const { articles: items, errors, debug } = normalizeData(rawData);
       if (items.length === 0) throw new Error('No se encontraron articulos validos.');
       setFileInfo({ name: `Google Sheets - ${SHEET_NAME}`, sheet: SHEET_NAME, rows: dataRows.length });
       if (onFileNameChange) onFileNameChange(`Google Sheets - ${SHEET_NAME}`);
@@ -82,7 +82,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
         headers.forEach((header, index) => { obj[header] = (row as any[])[index] ?? ''; });
         return obj;
       });
-      const { items, debug, preview } = normalizeData(formattedData);
+      const { articles: items, errors, debug } = normalizeData(formattedData);
       if (items.length === 0) throw new Error('No se encontraron articulos validos.');
       setFileInfo({ name: file.name, sheet: sheetName, rows: dataRows.length });
       if (onFileNameChange) onFileNameChange(file.name);
@@ -116,7 +116,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
           </div>
           <div>
             <p className="font-semibold text-emerald-800 text-sm">{fileInfo.name}</p>
-            <p className="text-emerald-600 text-xs">Hoja: {fileInfo.sheet} · {fileInfo.rows.toLocaleString()} filas</p>
+            <p className="text-emerald-600 text-xs">Hoja: {fileInfo.sheet} Â· {fileInfo.rows.toLocaleString()} filas</p>
           </div>
         </div>
         <div className="flex gap-2">
