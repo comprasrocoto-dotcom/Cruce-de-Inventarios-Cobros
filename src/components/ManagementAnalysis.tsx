@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react'; // v2
 import { ArticleSummary, ReliabilityStats } from '../types';
 import { getReliabilitySummary } from '../utils/inventory';
 import {
