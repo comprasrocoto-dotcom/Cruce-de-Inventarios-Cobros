@@ -52,7 +52,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
       if (items.length === 0) throw new Error('No se encontraron articulos validos.');
       setFileInfo({ name: `Google Sheets - ${SHEET_NAME}`, sheet: SHEET_NAME, rows: dataRows.length });
       if (onFileNameChange) onFileNameChange(`Google Sheets - ${SHEET_NAME}`);
-      onDataLoaded(items, debug, preview);
+      onDataLoaded(items, debug);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar desde Google Sheets');
     } finally {
@@ -86,7 +86,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
       if (items.length === 0) throw new Error('No se encontraron articulos validos.');
       setFileInfo({ name: file.name, sheet: sheetName, rows: dataRows.length });
       if (onFileNameChange) onFileNameChange(file.name);
-      onDataLoaded(items, debug, preview);
+      onDataLoaded(items, debug);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar el archivo');
     } finally {
