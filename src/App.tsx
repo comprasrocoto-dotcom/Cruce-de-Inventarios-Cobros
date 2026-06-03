@@ -37,7 +37,7 @@ export default function App() {
     sedes: [],
     ccs: [],
     subfamilias: [],
-    responsables: [],
+    responsables: [],    familias: [],
     status: 'all',
     search: '',
     fechaInicio: '',
@@ -87,7 +87,7 @@ export default function App() {
         if (filters.fechaFin && itemDate > new Date(filters.fechaFin)) matchesFecha = false;
       }
 
-      return matchesSede && matchesCC && matchesSubfamilia && matchesFamilia && matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
+      const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);      const matchesSubArticulo = !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo); && matchesCC && matchesSubfamilia && matchesFamilia && matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
     });
   }, [articles, filters]);
 
