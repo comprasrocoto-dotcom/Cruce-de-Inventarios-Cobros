@@ -234,6 +234,7 @@ export default function App() {
                   </div>
                 </div>
                 <InventoryTable data={filteredArticles} />
+                <AdvancedAnalysis data={filteredArticles} />
               </div>
             )}
 
@@ -242,7 +243,6 @@ export default function App() {
             )}
 
             {activeTab === 'GERENCIAL' && (
-              <AdvancedAnalysis data={filteredArticles} />
                 <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
             )}
 
