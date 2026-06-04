@@ -114,13 +114,13 @@ export default function App() {
     if (articles.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-          <div className="bg-blue-50 p-8 rounded-full">
-            <Package className="w-16 h-16 text-[#2F80ED] opacity-30" />
+          <div className="bg-[#0d1b2a] p-8 rounded-full">
+            <Package className="w-16 h-16 text-secondary opacity-30" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-[#1F3A5F] mb-2">No hay datos cargados</h2>
-            <p className="text-slate-500 max-w-md mx-auto">
-              Utiliza el botón <span className="font-bold text-[#2F80ED]">Cargar Excel</span> en la esquina superior derecha para comenzar el análisis de inventarios.
+            <h2 className="text-2xl font-bold text-text-main mb-2">No hay datos cargados</h2>
+            <p className="text-text-secondary max-w-md mx-auto">
+              Utiliza el botón <span className="font-bold text-secondary">Cargar Excel</span> en la esquina superior derecha para comenzar el análisis de inventarios.
             </p>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function App() {
                 onClick={() => setActiveTab(tab)}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
                   activeTab === tab 
-                    ? 'border-[#2F80ED] text-[#2F80ED]' 
+                    ? 'border-[#2F80ED] text-secondary' 
                     : 'border-transparent text-text-secondary hover:text-text-main'
                 }`}
               >
