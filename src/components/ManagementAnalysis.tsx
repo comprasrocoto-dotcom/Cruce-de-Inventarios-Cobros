@@ -231,7 +231,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
             Análisis Gerencial de Inventarios {selectedSede ? `— ${selectedSede}` : ''}
           </h2>
-          <p className="text-[#A7C4E0] font-medium">
+          <p className="text-text-secondary font-medium">
             {selectedSede ? `Auditoría detallada para ${selectedSede}` : 'Ranking de control y auditoría por sede'}
           </p>
         </div>
@@ -242,77 +242,77 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
 
       {/* KPI Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#EB5757] shadow-sm">
+        <div className="bg-[#0d1b2a] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#EB5757] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {selectedSede ? 'CC Críticos' : 'Sedes Críticas'}
             </span>
           </div>
-          <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
-          <p className="text-sm text-slate-500 mt-1">Requieren auditoría inmediata</p>
+          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
+          <p className="text-sm text-text-secondary mt-1">Requieren auditoría inmediata</p>
         </div>
-        <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#F2C94C] shadow-sm">
+        <div className="bg-[#0d1b2a] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#F2C94C] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#F2C94C]" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {selectedSede ? 'CC en Alerta' : 'Sedes en Alerta'}
             </span>
           </div>
-          <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
-          <p className="text-sm text-slate-500 mt-1">Necesitan seguimiento preventivo</p>
+          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
+          <p className="text-sm text-text-secondary mt-1">Necesitan seguimiento preventivo</p>
         </div>
-        <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#27AE60] shadow-sm">
+        <div className="bg-[#0d1b2a] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#27AE60] shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <CheckCircle2 className="w-5 h-5 text-[#27AE60]" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {selectedSede ? 'CC Confiables' : 'Sedes Confiables'}
             </span>
           </div>
-          <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
-          <p className="text-sm text-slate-500 mt-1">Control de inventario óptimo</p>
+          <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
+          <p className="text-sm text-text-secondary mt-1">Control de inventario óptimo</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Ranking Table */}
-        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center justify-between">
+        <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#2F80ED]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
+              <h3 className="font-bold text-text-main uppercase tracking-tight">
                 Ranking de Confiabilidad {selectedSede ? `— ${selectedSede}` : ''}
               </h3>
             </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orden: Menor a Mayor</span>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Orden: Menor a Mayor</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-[#A7C4E0]">
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Pos</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">
+                <tr className="bg-[#1a2d45]">
+                  <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Pos</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">
                     {selectedSede ? 'Centro de Costos' : 'Sede'}
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Evaluados</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Estado</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Evaluados</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Impacto $</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Confiabilidad</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D6DEE6]">
+              <tbody className="divide-y divide-brand-border">
                 {rankingData.map((s, idx) => (
-                  <tr key={s.sede} className="hover:bg-slate-50 transition-colors">
+                  <tr key={s.sede} className="hover:bg-[#1a2d45] transition-colors">
                     <td className="px-4 py-4">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-rose-100 text-rose-700' : idx === rankingData.length - 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#2d0f0f] text-rose-400' : idx === rankingData.length - 1 ? 'bg-[#0a2d1a] text-emerald-400' : 'bg-slate-100 text-text-secondary'}`}>
                         {idx + 1}
                       </span>
                     </td>
-                    <td className="px-4 py-4 font-bold text-[#1F3A5F]">{s.sede}</td>
-                    <td className="px-4 py-4 text-center text-slate-600 text-sm">{s.articulosEvaluados}</td>
+                    <td className="px-4 py-4 font-bold text-text-main">{s.sede}</td>
+                    <td className="px-4 py-4 text-center text-text-secondary text-sm">{s.articulosEvaluados}</td>
                     <td className="px-4 py-4 text-right font-bold text-rose-600 text-sm">{formatCurrency(s.impactoEconomico)}</td>
                     <td className="px-4 py-4 text-center">
-                      <span className="font-bold text-[#1F3A5F]">{Math.round(s.confiabilidad)}%</span>
+                      <span className="font-bold text-text-main">{Math.round(s.confiabilidad)}%</span>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
@@ -330,10 +330,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
 
         {/* Bar Chart Comparison */}
-        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
+        <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-8">
             <BarChart3 className="w-5 h-5 text-[#2F80ED]" />
-            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Comparativa Visual de Confiabilidad</h3>
+            <h3 className="font-bold text-text-main uppercase tracking-tight">Comparativa Visual de Confiabilidad</h3>
           </div>
           <div className="flex-1 min-h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -342,7 +342,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#1a2d45" />
                 <XAxis type="number" domain={[0, 100]} hide />
                 <YAxis 
                   dataKey="sede" 
@@ -356,10 +356,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                     if (active && payload && payload.length) {
                       const data = payload[0].payload as ReliabilityStats;
                       return (
-                        <div className="bg-white p-3 border border-[#D6DEE6] shadow-xl rounded-lg">
-                          <p className="font-bold text-[#1F3A5F] mb-1">{data.sede}</p>
-                          <p className="text-xs text-slate-500">Confiabilidad: <span className="font-bold" style={{ color: getStatusColor(data.confiabilidad) }}>{Math.round(data.confiabilidad)}%</span></p>
-                          <p className="text-xs text-slate-500">Impacto: <span className="font-bold text-rose-600">{formatCurrency(data.impactoEconomico)}</span></p>
+                        <div className="bg-[#0d1b2a] p-3 border border-brand-border shadow-xl rounded-lg bg-[#0d1b2a]">
+                          <p className="font-bold text-text-main mb-1">{data.sede}</p>
+                          <p className="text-xs text-text-secondary">Confiabilidad: <span className="font-bold" style={{ color: getStatusColor(data.confiabilidad) }}>{Math.round(data.confiabilidad)}%</span></p>
+                          <p className="text-xs text-text-secondary">Impacto: <span className="font-bold text-rose-600">{formatCurrency(data.impactoEconomico)}</span></p>
                         </div>
                       );
                     }
@@ -382,61 +382,61 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <div className="mt-6 flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-widest">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#27AE60]"></div>
-              <span className="text-slate-500">Confiable</span>
+              <span className="text-text-secondary">Confiable</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#F2C94C]"></div>
-              <span className="text-slate-500">Alerta</span>
+              <span className="text-text-secondary">Alerta</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#EB5757]"></div>
-              <span className="text-slate-500">Crítico</span>
+              <span className="text-text-secondary">Crítico</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Top Economic Impact */}
-      <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
+      <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center gap-2">
           <TrendingDown className="w-5 h-5 text-[#EB5757]" />
-          <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
+          <h3 className="font-bold text-text-main uppercase tracking-tight">
             {selectedSede ? `Top Impacto Económico en ${selectedSede}` : 'Top 5 Sedes con Mayor Impacto Económico (Pérdida)'}
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-[#A7C4E0]">
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">
+              <tr className="bg-[#1a2d45]">
+                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">
                   {selectedSede ? 'Centro de Costos' : 'Sede'}
                 </th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto Económico</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Artículos con Diferencia</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Acción Sugerida</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Impacto Económico</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Artículos con Diferencia</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Confiabilidad</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">Acción Sugerida</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D6DEE6]">
+            <tbody className="divide-y divide-brand-border">
               {topLossesData.map((s) => (
-                <tr key={s.sede} className="hover:bg-slate-50 transition-colors">
+                <tr key={s.sede} className="hover:bg-[#1a2d45] transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="bg-slate-100 p-2 rounded-lg">
-                        <Building2 className="w-4 h-4 text-[#1F3A5F]" />
+                      <div className="bg-[#1a2d45] p-2 rounded-lg">
+                        <Building2 className="w-4 h-4 text-text-main" />
                       </div>
-                      <span className="font-bold text-[#1F3A5F]">{s.sede}</span>
+                      <span className="font-bold text-text-main">{s.sede}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-rose-600 text-lg">
                     {formatCurrency(s.impactoEconomico)}
                   </td>
-                  <td className="px-6 py-4 text-center text-slate-600 font-medium">
+                  <td className="px-6 py-4 text-center text-text-secondary font-medium">
                     {s.articulosConDiferencia}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="font-bold text-[#1F3A5F]">{Math.round(s.confiabilidad)}%</span>
+                      <span className="font-bold text-text-main">{Math.round(s.confiabilidad)}%</span>
                       <span className="text-[9px] font-bold" style={{ color: getStatusColor(s.confiabilidad) }}>
                         {getStatusLabel(s.confiabilidad)}
                       </span>
@@ -457,11 +457,11 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
 
 
           {/* Problematic Table */}
-          <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center justify-between">
+          <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-[#EB5757]" />
-                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
+                <h3 className="font-bold text-text-main uppercase tracking-tight">
                   Ranking de Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
                 </h3>
               </div>
@@ -469,30 +469,30 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-[#A7C4E0]">
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Pos</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Err.</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Riesgo</th>
+                  <tr className="bg-[#1a2d45]">
+                    <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Pos</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Artículo</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Impacto $</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Err.</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Riesgo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#D6DEE6]">
+                <tbody className="divide-y divide-brand-border">
                   {problematicProducts.map((p, idx) => (
-                    <tr key={p.articulo} className="hover:bg-slate-50 transition-colors">
+                    <tr key={p.articulo} className="hover:bg-[#1a2d45] transition-colors">
                       <td className="px-4 py-4">
-                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-500">
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-text-secondary">
                           {idx + 1}
                         </span>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-col">
-                          <span className="font-bold text-[#1F3A5F] text-sm">{p.articulo}</span>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold">{p.cc || 'SIN CC'}</span>
+                          <span className="font-bold text-text-main text-sm">{p.articulo}</span>
+                          <span className="text-[10px] text-text-secondary uppercase font-bold">{p.cc || 'SIN CC'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-4 text-right font-bold text-rose-600 text-sm">{formatCurrency(p.impacto)}</td>
-                      <td className="px-4 py-4 text-center text-slate-600 font-bold">{p.frecuencia}</td>
+                      <td className="px-4 py-4 text-center text-text-secondary font-bold">{p.frecuencia}</td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-1">
                           <span>{p.emoji}</span>
@@ -516,7 +516,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
               Comparativo Histórico de Confiabilidad por Sede
             </h2>
-            <p className="text-[#A7C4E0] font-medium">
+            <p className="text-text-secondary font-medium">
               Evaluación de tendencias de confiabilidad entre inventarios consecutivos
             </p>
           </div>
@@ -526,10 +526,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
 
         {/* Selector de agrupacion */}
-        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6">
+        <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-3">
-              <span className="font-bold text-[#1F3A5F] text-sm uppercase tracking-tight">Agrupar por:</span>
+              <span className="font-bold text-text-main text-sm uppercase tracking-tight">Agrupar por:</span>
               <div className="flex gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -540,7 +540,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                     onChange={() => setGroupBy('mes')}
                     className="accent-[#2F80ED]"
                   />
-                  <span className="text-sm font-medium text-slate-700">Por Mes</span>
+                  <span className="text-sm font-medium text-text-main">Por Mes</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -551,17 +551,17 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                     onChange={() => setGroupBy('sede')}
                     className="accent-[#2F80ED]"
                   />
-                  <span className="text-sm font-medium text-slate-700">Por Sede</span>
+                  <span className="text-sm font-medium text-text-main">Por Sede</span>
                 </label>
               </div>
             </div>
             {groupBy === 'mes' && sedesDisponibles.length > 0 && (
               <div className="flex items-center gap-3">
-                <span className="font-bold text-[#1F3A5F] text-sm uppercase tracking-tight">Filtrar sede:</span>
+                <span className="font-bold text-text-main text-sm uppercase tracking-tight">Filtrar sede:</span>
                 <select
                   value={selectedSedeFilter}
                   onChange={(e) => setSelectedSedeFilter(e.target.value)}
-                  className="border border-[#D6DEE6] rounded-lg px-3 py-1.5 text-sm text-[#1F3A5F] font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#2F80ED]"
+                  className="border border-brand-border rounded-lg px-3 py-1.5 text-sm text-text-main font-medium bg-[#0d1b2a] focus:outline-none focus:ring-2 focus:ring-[#2F80ED]"
                 >
                   <option value="all">Todas las sedes</option>
                   {sedesDisponibles.map(s => (
@@ -574,22 +574,22 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
 
         {groupBy === 'mes' ? (
-          <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
+          <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-6">
               <Activity className="w-5 h-5 text-[#2F80ED]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Confiabilidad por Inventario</h3>
+              <h3 className="font-bold text-text-main uppercase tracking-tight">Confiabilidad por Inventario</h3>
             </div>
             {chartDataByMes.length === 0 ? (
               <div className="flex-1 min-h-[300px] flex items-center justify-center">
-                <p className="text-slate-400 text-sm font-medium">No hay datos de movimientos disponibles</p>
+                <p className="text-text-secondary text-sm font-medium">No hay datos de movimientos disponibles</p>
               </div>
             ) : (
               <div className="flex-1 min-h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartDataByMes} margin={{ top: 10, right: 30, left: 0, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5EAF0" />
-                    <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#4A5568' }} angle={-35} textAnchor="end" interval={0} />
-                    <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: '#4A5568' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1a2d45" />
+                    <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#8ba4c0' }} angle={-35} textAnchor="end" interval={0} />
+                    <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: '#8ba4c0' }} />
                     <Tooltip formatter={(value: number, name: string) => [value.toFixed(1) + '%', name]} contentStyle={{ borderRadius: 8, border: '1px solid #D6DEE6', fontSize: 12 }} />
                     <Legend wrapperStyle={{ paddingTop: 16, fontSize: 11 }} />
                     <ReferenceLine y={98} stroke="#27AE60" strokeDasharray="4 4" label={{ value: 'Excelente 98%', position: 'right', fontSize: 9, fill: '#27AE60' }} />
@@ -605,21 +605,21 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
+            <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-6">
                 <Building2 className="w-5 h-5 text-[#2F80ED]" />
-                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Confiabilidad Promedio por Sede</h3>
+                <h3 className="font-bold text-text-main uppercase tracking-tight">Confiabilidad Promedio por Sede</h3>
               </div>
               {sedeHistoricalData.length === 0 ? (
                 <div className="min-h-[300px] flex items-center justify-center">
-                  <p className="text-slate-400 text-sm font-medium">No hay datos de movimientos disponibles</p>
+                  <p className="text-text-secondary text-sm font-medium">No hay datos de movimientos disponibles</p>
                 </div>
               ) : (
                 <div className="min-h-[400px]">
                   <ResponsiveContainer width="100%" height={Math.max(400, sedeHistoricalData.length * 50)}>
                     <BarChart data={sedeHistoricalData} layout="vertical" margin={{ top: 10, right: 60, left: 80, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5EAF0" horizontal={false} />
-                      <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: '#4A5568' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1a2d45" horizontal={false} />
+                      <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: '#8ba4c0' }} />
                       <YAxis type="category" dataKey="sede" tick={{ fontSize: 11, fill: '#1F3A5F', fontWeight: 600 }} width={75} />
                       <Tooltip formatter={(value: number) => [value.toFixed(1) + '%', 'Confiabilidad']} contentStyle={{ borderRadius: 8, border: '1px solid #D6DEE6', fontSize: 12 }} />
                       <ReferenceLine x={98} stroke="#27AE60" strokeDasharray="4 4" />
@@ -644,26 +644,26 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
               )}
             </div>
 
-            <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-[#1F3A5F]" />
-                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Análisis Económico por Sede</h3>
+            <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-text-main" />
+                <h3 className="font-bold text-text-main uppercase tracking-tight">Análisis Económico por Sede</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-[#D6DEE6] bg-[#F8FAFC]">
-                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest">Sede</th>
-                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Confiabilidad</th>
-                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Total Pérdidas</th>
-                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Total Sobrantes</th>
-                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Balance Final</th>
+                    <tr className="border-b border-brand-border bg-[#0d1b2a]">
+                      <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest">Sede</th>
+                      <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest text-right">Confiabilidad</th>
+                      <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest text-right">Total Pérdidas</th>
+                      <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest text-right">Total Sobrantes</th>
+                      <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest text-right">Balance Final</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sedeHistoricalData.map((sede, idx) => (
-                      <tr key={sede.sede} className={`border-b border-[#F0F4F8] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F8FAFC]'}`}>
-                        <td className="px-4 py-4 font-bold text-[#1F3A5F] text-sm">{sede.sede}</td>
+                      <tr key={sede.sede} className={`border-b border-[#F0F4F8] ${idx % 2 === 0 ? 'bg-[#0d1b2a]' : 'bg-[#0d1b2a]'}`}>
+                        <td className="px-4 py-4 font-bold text-text-main text-sm">{sede.sede}</td>
                         <td className="px-4 py-4 text-right">
                           <span className={`font-bold text-sm ${
                             sede.confiabilidad >= 98 ? 'text-emerald-600' :
