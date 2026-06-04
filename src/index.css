@@ -1,97 +1,106 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1F3A5F;
-  --color-primary-hover: #2F80ED;
-  --color-secondary: #2F80ED;
-  --color-secondary-hover: #1C6DD0;
-  --color-success: #27AE60;
-  --color-warning: #F2C94C;
-  --color-danger: #EB5757;
-  --color-background: #F5F7FA;
-  --color-card: #FFFFFF;
-  --color-border: #D6DEE6;
-  --color-text-main: #1F3A5F;
-  --color-text-secondary: #6B7280;
+    /* ===== PALETA ARREBATAO - DARK PROFESSIONAL ===== */
+
+  /* Colores principales */
+  --color-primary: #00c9b1;
+    --color-primary-hover: #00b09c;
+    --color-secondary: #4f8ef7;
+    --color-secondary-hover: #3a7de0;
+
+  /* Estados funcionales */
+  --color-success: #00c9b1;
+    --color-warning: #f2c94c;
+    --color-danger: #eb5757;
+
+  /* Fondos */
+  --color-background: #0d1b2a;
+    --color-card: #1a2d45;
+    --color-border: #2a3f5e;
+
+  /* Texto */
+  --color-text-main: #e8f1ff;
+    --color-text-secondary: #8ba4c0;
 
   /* ERP Specific Colors */
-  --color-table-header: #A7C4E0;
-  --color-table-header-text: #1F3A5F;
-  --color-row-alt: #F0F4F8;
-  --color-row-hover: #E5EDF5;
+  --color-table-header: #0d1e30;
+    --color-table-header-text: #00c9b1;
+    --color-row-alt: #162338;
+    --color-row-hover: #1e3a5c;
 
-  /* Compatibility with existing brand classes */
+  /* Compatibilidad con clases de marca existentes */
   --color-brand-primary: var(--color-primary);
-  --color-brand-secondary: var(--color-secondary);
-  --color-brand-bg: var(--color-background);
-  --color-brand-border: var(--color-border);
-  --color-brand-text: var(--color-text-main);
-  --color-brand-text-secondary: var(--color-text-secondary);
+    --color-brand-secondary: var(--color-secondary);
+    --color-brand-bg: var(--color-background);
+    --color-brand-border: var(--color-border);
+    --color-brand-text: var(--color-text-main);
+    --color-brand-text-secondary: var(--color-text-secondary);
 
-  /* Status Colors */
+  /* Colores de estado */
   --color-status-sobrante: var(--color-success);
-  --color-status-faltante: var(--color-danger);
-  --color-status-sin-diferencia: #9AA4B2;
-  --color-status-cobra: #EB5757;
-  --color-status-sin-cobra: var(--color-text-secondary);
+    --color-status-faltante: var(--color-danger);
+    --color-status-sin-diferencia: #4a6a8a;
+    --color-status-cobra: #eb5757;
+    --color-status-sin-cobra: var(--color-text-secondary);
 
-  /* KPI Colors */
-  --color-kpi-revisados: #2F80ED;
-  --color-kpi-faltantes: #F2994A;
-  --color-kpi-cobrables: #EB5757;
-  --color-kpi-valor: #27AE60;
+  /* Colores de KPI */
+  --color-kpi-revisados: #4f8ef7;
+    --color-kpi-faltantes: #f2994a;
+    --color-kpi-cobrables: #eb5757;
+    --color-kpi-valor: #00c9b1;
 
-  /* Table Row Colors */
+  /* Colores de filas de tabla */
   --color-brand-table-hover: var(--color-row-hover);
-  --color-brand-table-selected: #EAF2FB;
+    --color-brand-table-selected: #1e3a5c;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
-  body {
-    @apply bg-background text-text-main font-sans;
-  }
+    body {
+          @apply bg-background text-text-main font-sans;
+    }
 }
 
 @layer components {
-  .table-header {
-    @apply bg-table-header text-table-header-text font-bold;
-  }
+    .table-header {
+          @apply bg-table-header text-table-header-text font-bold;
+    }
 
   .btn-primary {
-    @apply bg-secondary text-white transition-colors rounded-[6px] font-bold;
+        @apply bg-primary text-[#0a1628] transition-colors rounded-[6px] font-bold;
   }
 
   .btn-primary:hover {
-    @apply bg-secondary-hover;
+        @apply bg-primary-hover;
   }
 
   .card {
-    @apply bg-card border border-border shadow-sm rounded-[12px];
+        @apply bg-card border-border shadow-sm rounded-[12px];
   }
 
   .status-success {
-    @apply text-success;
+        @apply text-success;
   }
 
   .status-warning {
-    @apply text-warning;
+        @apply text-warning;
   }
 
   .status-danger {
-    @apply text-danger;
+        @apply text-danger;
   }
 
   .sidebar {
-    @apply bg-[#111827];
+        @apply bg-[#0a1628];
   }
 
   .sidebar-icon-active {
-    @apply text-secondary;
+        @apply text-primary;
   }
 
   .tab-active {
-    @apply bg-white border border-border text-primary;
+        @apply bg-card border-border text-primary;
   }
 }
