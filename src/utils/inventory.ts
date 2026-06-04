@@ -698,7 +698,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
 
 
-      const formats = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy', 'd/M/yyyy'];
+      const formats = ['dd/MM/yyyy', 'yyyy-MM-dd', 'd/M/yyyy', 'dd-MM-yyyy'];
 
 
 
@@ -734,7 +734,22 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
 
 
-      fecha = parsedDate || new Date(cleanFecha);
+      if (parsedDate) {
+        fecha = parsedDate;
+      } else {
+        // Fallback: parse manually as DD/MM/YYYY to avoid JS default MM/DD interpretation
+        const parts = cleanFecha.split('/');
+        if (parts.length === 3) {
+          fecha = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+        } else {
+          const partsD = cleanFecha.split('-');
+          if (partsD.length === 3 && partsD[0].length <= 2) {
+            fecha = new Date(Number(partsD[2]), Number(partsD[1]) - 1, Number(partsD[0]));
+          } else {
+            fecha = new Date(cleanFecha);
+          }
+        }
+      }
 
 
 
