@@ -34,10 +34,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm">
-        <Info className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-slate-400">No hay artículos para mostrar</h3>
-        <p className="text-slate-400 text-sm">Ajusta los filtros para ver más resultados.</p>
+      <div className="bg-[#0d1b2a] rounded-2xl p-12 text-center border border-brand-border shadow-sm">
+        <Info className="w-12 h-12 text-text-secondary mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-text-secondary">No hay artículos para mostrar</h3>
+        <p className="text-text-secondary text-sm">Ajusta los filtros para ver más resultados.</p>
       </div>
     );
   }
@@ -45,7 +45,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
   return (
     <div className="space-y-4">
       {/* Depuración Temporal */}
-      <div className="flex items-center space-x-4 bg-slate-800 text-slate-400 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-widest">
+      <div className="flex items-center space-x-4 bg-slate-800 text-text-secondary px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-widest">
         <span>Sedes: {Object.keys(groupedBySede).length}</span>
         <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
         <span>Artículos filtrados: {data.length}</span>
@@ -53,7 +53,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
 
       <div className="overflow-x-auto card rounded-[12px]">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-[#A7C4E0] text-[#1F3A5F] text-[10px] uppercase tracking-widest">
+          <thead className="bg-[#1a2d45] text-text-main text-[10px] uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4 font-bold rounded-tl-[12px]">Sede / Artículo</th>
               <th className="px-6 py-4 font-bold">Unidad</th>
@@ -68,18 +68,18 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
               <React.Fragment key={sede}>
                 {/* Sede Header Row */}
                 <tr 
-                  className="bg-[#F0F4F8] cursor-pointer hover:bg-[#E5EDF5] transition-colors border-b border-[#D6DEE6]"
+                  className="bg-[#0d1b2a] cursor-pointer hover:bg-[#1a2d45] transition-colors border-b border-brand-border"
                   onClick={() => toggleSede(sede)}
                 >
                   <td colSpan={6} className="px-6 py-3">
-                    <div className="flex items-center font-bold text-[#1F3A5F] uppercase tracking-tight">
+                    <div className="flex items-center font-bold text-text-main uppercase tracking-tight">
                       {expandedSedes[sede] ? (
-                        <ChevronDown className="w-5 h-5 mr-2 text-[#2F80ED]" />
+                        <ChevronDown className="w-5 h-5 mr-2 text-secondary" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 mr-2 text-slate-400" />
+                        <ChevronRight className="w-5 h-5 mr-2 text-text-secondary" />
                       )}
                       <span>SEDE: {sede}</span>
-                      <span className="ml-3 px-2 py-0.5 bg-white text-[#2F80ED] rounded text-[10px] font-bold border border-[#D6DEE6]">
+                      <span className="ml-3 px-2 py-0.5 bg-[#0d1b2a] text-secondary rounded text-[10px] font-bold border border-brand-border">
                         {articles.length} ARTÍCULOS
                       </span>
                     </div>
@@ -95,10 +95,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                     <React.Fragment key={artKey}>
                       <tr 
                         className={clsx(
-                          "border-b border-slate-100 transition-colors cursor-pointer",
-                          artIdx % 2 === 0 ? "bg-white" : "bg-[#F0F4F8]",
-                          "hover:bg-[#E5EDF5]",
-                          isExpanded && "bg-[#EAF2FB]"
+                          "border-b border-brand-border transition-colors cursor-pointer",
+                          artIdx % 2 === 0 ? "bg-[#0d1b2a]" : "bg-[#0d1b2a]",
+                          "hover:bg-[#1a2d45]",
+                          isExpanded && "bg-[#152338]"
                         )}
                         onClick={() => toggleArticle(artKey)}
                       >
@@ -121,11 +121,11 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                         </td>
                         <td className="px-6 py-4 text-center">
                           {art.debeCobrar ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-status-cobra border border-rose-100">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d0f0f] text-status-cobra border border-rose-900">
                               <AlertCircle className="w-3 h-3 mr-1" /> Cobra
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-50 text-status-sin-cobra border border-brand-border">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0d1b2a] text-status-sin-cobra border border-brand-border">
                               <CheckCircle2 className="w-3 h-3 mr-1" /> No cobra
                             </span>
                           )}
@@ -141,7 +141,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                       {/* Movement Details (Level 3) */}
                       <AnimatePresence>
                         {isExpanded && (
-                          <tr className="bg-slate-50/80">
+                          <tr className="bg-[#0d1b2a]/80">
                             <td colSpan={6} className="px-12 py-4">
                               <motion.div 
                                 initial={{ opacity: 0, height: 0 }}
@@ -153,7 +153,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                                   <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Detalle de movimientos por fecha</h4>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {art.movements.map((m, idx) => (
-                                      <div key={idx} className="bg-white p-3 rounded-xl border border-border shadow-sm flex justify-between items-center">
+                                      <div key={idx} className="bg-[#0d1b2a] p-3 rounded-xl border border-border shadow-sm flex justify-between items-center">
                                         <div>
                                           <p className="text-[10px] font-bold text-text-secondary uppercase">{format(m.fecha, 'MMMM yyyy', { locale: es })}</p>
                                           <p className="text-xs font-bold text-text-main">{format(m.fecha, 'dd MMM yyyy', { locale: es })}</p>
