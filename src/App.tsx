@@ -182,7 +182,7 @@ export default function App() {
                   />
                 </div>
                 
-                <div className="bg-white p-8 rounded-[12px] shadow-sm border border-brand-border">
+                <div className="bg-card p-8 rounded-[12px] shadow-sm border border-brand-border">
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-brand-text">Resumen por Sede</h3>
@@ -192,7 +192,7 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.sedes.map(sede => (
-                      <div key={sede.sede} className="p-5 rounded-[8px] border border-brand-border bg-[#F5F7FA]">
+                      <div key={sede.sede} className="p-5 rounded-[8px] border border-brand-border bg-[#162338]">
                         <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">{sede.sede}</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
@@ -326,7 +326,7 @@ export default function App() {
 
       {/* Navigation Tabs */}
       {articles.length > 0 && (
-        <nav className="bg-white border-b border-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
+        <nav className="bg-[#0a1628] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
           {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD', 'EJECUTIVO'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
@@ -362,7 +362,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-brand-border p-4 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+      <footer className="bg-[#0a1628] border-t border-brand-border p-4 text-center text-[10px] text-[#4a6a8a] font-bold uppercase tracking-widest">
         © {new Date().getFullYear()} PROMPT MAESTRO – SISTEMA DE AUDITORÍA DE INVENTARIOS
       </footer>
     </div>
