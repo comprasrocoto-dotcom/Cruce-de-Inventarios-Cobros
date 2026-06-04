@@ -692,64 +692,42 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
     } else if (typeof fecha === 'string') {
 
-
-
       const cleanFecha = fecha.trim();
+      const slashParts = cleanFecha.split('/');
 
+      if (slashParts.length === 3) {
+        const firstSeg = slashParts[0];
+        const secondSeg = slashParts[1];
+        const yearNum = Number(slashParts[2]);
+        const firstNum = Number(firstSeg);
+        const secondNum = Number(secondSeg);
 
+        // If first segment starts with 0 (e.g. 01, 06) or value > 12 => day-first (dd/MM/yyyy)
+        // Otherwise single-digit or 10-12 without leading zero => month-first (M/d/yyyy)
+        const isDayFirst = firstSeg.charAt(0) === '0' || firstNum > 12;
 
-      const formats = ['MM/dd/yyyy', 'yyyy-MM-dd', 'M/d/yyyy', 'MM-dd-yyyy'];
-
-
-
-      let parsedDate = null;
-
-
-
-      for (const f of formats) {
-
-
-
-        const d = parse(cleanFecha, f, new Date());
-
-
-
-        if (isValid(d)) {
-
-
-
-          parsedDate = d;
-
-
-
-          break;
-
-
-
-        }
-
-
-
-      }
-
-
-
-      if (parsedDate) {
-        fecha = parsedDate;
-      } else {
-        // Fallback: parse manually as DD/MM/YYYY to avoid JS default MM/DD interpretation
-        const parts = cleanFecha.split('/');
-        if (parts.length === 3) {
-          fecha = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+        if (isDayFirst) {
+          // dd/MM/yyyy
+          const day = firstNum;
+          const month = secondNum;
+          if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && yearNum > 1900) {
+            fecha = new Date(yearNum, month - 1, day);
+          }
         } else {
-          const partsD = cleanFecha.split('-');
-          if (partsD.length === 3 && partsD[0].length <= 2) {
-            fecha = new Date(Number(partsD[2]), Number(partsD[1]) - 1, Number(partsD[0]));
-          } else {
-            fecha = new Date(cleanFecha);
+          // M/d/yyyy (month first, US/sheet format)
+          const month = firstNum;
+          const day = secondNum;
+          if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && yearNum > 1900) {
+            fecha = new Date(yearNum, month - 1, day);
           }
         }
+
+      } else {
+        // Try ISO yyyy-MM-dd
+        const isoD = parse(cleanFecha, 'yyyy-MM-dd', new Date());
+        if (isValid(isoD)) fecha = isoD;
       }
+
 
 
 
@@ -2471,19 +2449,8 @@ export function getProductStabilityAnalysis(articles: ArticleSummary[]): Product
 
 
 
-    // Nueva confiabilidad: promedio de confiabilidades individuales
-
-
-
-    const confiabilidad = totalInstancias > 0 
-
-
-
-      ? evaluados.reduce((acc, i) => acc + (i.confiabilidad || 0), 0) / totalInstancias 
-
-
-
-      : 0;
+    // Confiabilidad: basada en % instancias fuera margen
+    const confiabilidad = 100 - porcentajeFueraMargen;
 
 
 
