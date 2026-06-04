@@ -39,6 +39,7 @@ const EXACT_MOJIBAKE_MAP: Record<string, string> = {
 
 
   "Subfamilia": "subfamilia",
+  "Centro de Costos": "cc",
 
 
 
@@ -106,7 +107,7 @@ const INDEX_FALLBACK: Record<number, string> = {
 
 
 
-  5: "proveedor",
+  5: "cc",
 
 
 
@@ -198,7 +199,8 @@ const ALIASES: Record<string, string[]> = {
 
 
 
-  "responsable": ["responsable", "usuario", "vendedor", "creado por", "persona", "empleado"]
+  "responsable": ["responsable", "usuario", "vendedor", "creado por", "persona", "empleado"],
+  "cc": ["centro de costos", "centro costos", "cc", "centro de costo"]
 
 
 
