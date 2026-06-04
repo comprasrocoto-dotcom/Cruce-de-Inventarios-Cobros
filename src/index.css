@@ -100,6 +100,32 @@
         @apply text-primary;
   }
 
+      
+/* ===== DARK THEME FORM ELEMENTS ===== */
+select {
+    background-color: #0d1b2a !important;
+    color: #e8f1ff !important;
+    border-color: #2a3f5e !important;
+}
+
+select option {
+    background-color: #1a2d45;
+    color: #e8f1ff;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="search"] {
+    background-color: #0d1b2a !important;
+    color: #e8f1ff !important;
+    border-color: #2a3f5e !important;
+    color-scheme: dark;
+}
+
+input::placeholder {
+    color: #8ba4c0 !important;
+}
+
   .tab-active {
         @apply bg-card border-border text-primary;
   }
