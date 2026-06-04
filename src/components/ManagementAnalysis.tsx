@@ -16,7 +16,6 @@ import {
 import { 
   Trophy, 
   TrendingDown, 
-  TrendingUp,
   AlertTriangle, 
   CheckCircle2,
   Building2,
@@ -102,19 +101,6 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
     }).sort((a, b) => b.score - a.score).slice(0, 10);
   }, [filteredData]);
 
-  const topGainsProducts = useMemo(() => {
-    return [...filteredData]
-      .filter(a => a.totalDiferencia > 0.0001)
-      .sort((a, b) => (b.totalDiferencia * (b.ultimoCoste || b.costePromedio)) - (a.totalDiferencia * (a.ultimoCoste || a.costePromedio)))
-      .slice(0, 5);
-  }, [filteredData]);
-
-  const topLossesProducts = useMemo(() => {
-    return [...filteredData]
-      .filter(a => a.totalDiferencia < -0.0001)
-      .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)))
-      .slice(0, 5);
-  }, [filteredData]);
 
   // Estado para agrupar por mes o por sede
   const [groupBy, setGroupBy] = useState<'mes' | 'sede'>('mes');
@@ -469,149 +455,6 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
       </div>
 
-      {/* Top Gains and Losses Products (New Section) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
-            <TrendingDown className="w-5 h-5 text-[#EB5757]" />
-            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 Pérdidas Críticas</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-[#A7C4E0]">
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D6DEE6]">
-                {topLossesProducts.map((p) => (
-                  <tr key={p.articulo + p.cc + p.sede} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-[#1F3A5F] text-xs">{p.articulo}</span>
-                        <span className="text-[9px] text-slate-400 uppercase font-bold">{p.cc || 'SIN CC'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right text-rose-600 font-bold text-xs">
-                      {p.totalDiferencia.toFixed(2)} {p.subarticulo}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-[#1F3A5F] text-xs">
-                      {formatCurrency(Math.abs(p.totalDiferencia) * (p.ultimoCoste || p.costePromedio))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-[#27AE60]" />
-            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 Ganancias (Sobrantes)</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-[#A7C4E0]">
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D6DEE6]">
-                {topGainsProducts.map((p) => (
-                  <tr key={p.articulo + p.cc + p.sede} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-[#1F3A5F] text-xs">{p.articulo}</span>
-                        <span className="text-[9px] text-slate-400 uppercase font-bold">{p.cc || 'SIN CC'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-bold text-xs">
-                      +{p.totalDiferencia.toFixed(2)} {p.subarticulo}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-[#1F3A5F] text-xs">
-                      {formatCurrency(Math.abs(p.totalDiferencia) * (p.ultimoCoste || p.costePromedio))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Problematic Products Section */}
-      <div className="space-y-8">
-        <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
-          <div className="relative z-10">
-            <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
-              Productos con Mayor Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
-            </h2>
-            <p className="text-[#A7C4E0] font-medium">
-              {selectedSede ? `Análisis de criticidad para ${selectedSede}` : 'Artículos con mayor impacto en diferencias de inventario'}
-            </p>
-          </div>
-          <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-            <ShieldAlert className="w-64 h-64" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Problematic Chart */}
-          <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
-            <div className="flex items-center gap-2 mb-8">
-              <Activity className="w-5 h-5 text-[#EB5757]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Productos más Problemáticos (Impacto $)</h3>
-            </div>
-            <div className="flex-1 min-h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={problematicProducts}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E2E8F0" />
-                  <XAxis type="number" hide />
-                  <YAxis 
-                    dataKey="articulo" 
-                    type="category" 
-                    width={120}
-                    tick={{ fontSize: 9, fontWeight: 700, fill: '#1F3A5F' }}
-                  />
-                  <Tooltip 
-                    cursor={{ fill: '#F8FAFC' }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-white p-3 border border-[#D6DEE6] shadow-xl rounded-lg">
-                            <p className="font-bold text-[#1F3A5F] mb-1">{data.articulo}</p>
-                            <p className="text-xs text-slate-500">Puntaje Riesgo: <span className="font-bold" style={{ color: data.color }}>{Math.round(data.score)} pts</span></p>
-                            <p className="text-xs text-slate-500">Impacto: <span className="font-bold text-rose-600">{formatCurrency(data.impacto)}</span></p>
-                            <p className="text-xs text-slate-500">Frecuencia: <span className="font-bold text-[#1F3A5F]">{data.frecuencia} errores</span></p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar 
-                    dataKey="impacto" 
-                    radius={[0, 4, 4, 0]}
-                    barSize={24}
-                  >
-                    {problematicProducts.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
 
           {/* Problematic Table */}
           <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden flex flex-col">
@@ -664,8 +507,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
               </table>
             </div>
           </div>
-        </div>
-      </div>
+
 
       {/* Comparativo Historico de Confiabilidad por Sede */}
       <div className="space-y-8">
