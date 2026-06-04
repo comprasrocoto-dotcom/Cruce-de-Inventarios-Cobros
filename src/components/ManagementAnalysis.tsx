@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'; // v2
+import React, { useMemo, useState } from 'react';
 import { ArticleSummary, ReliabilityStats } from '../types';
 import { getReliabilitySummary } from '../utils/inventory';
 import {
@@ -34,17 +34,17 @@ interface ManagementAnalysisProps {
 
 const getRiskLevel = (impact: 'ALTO' | 'MEDIO' | 'BAJO', freq: 'ALTA' | 'MEDIA' | 'BAJA') => {
   if (impact === 'ALTO') {
-    if (freq === 'BAJA') return { label: 'Medio', emoji: 'ð ', color: '#F2C94C' };
-    return { label: 'CrÃ­tico', emoji: 'ð´', color: '#EB5757' };
+    if (freq === 'BAJA') return { label: 'Medio', emoji: '🟠', color: '#F2C94C' };
+    return { label: 'Crítico', emoji: '🔴', color: '#EB5757' };
   }
   if (impact === 'MEDIO') {
-    if (freq === 'BAJA') return { label: 'Bajo', emoji: 'ð¢', color: '#27AE60' };
-    if (freq === 'MEDIA') return { label: 'Medio', emoji: 'ð ', color: '#F2C94C' };
-    return { label: 'CrÃ­tico', emoji: 'ð´', color: '#EB5757' };
+    if (freq === 'BAJA') return { label: 'Bajo', emoji: '🟢', color: '#27AE60' };
+    if (freq === 'MEDIA') return { label: 'Medio', emoji: '🟠', color: '#F2C94C' };
+    return { label: 'Crítico', emoji: '🔴', color: '#EB5757' };
   }
   // BAJO
-  if (freq === 'ALTA') return { label: 'Medio', emoji: 'ð ', color: '#F2C94C' };
-  return { label: 'Bajo', emoji: 'ð¢', color: '#27AE60' };
+  if (freq === 'ALTA') return { label: 'Medio', emoji: '🟠', color: '#F2C94C' };
+  return { label: 'Bajo', emoji: '🟢', color: '#27AE60' };
 };
 
 export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, selectedSede }) => {
@@ -84,18 +84,18 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         (i.frecuencia / maxFrecuencia * 0.1)
       ) * 100;
 
-      let nivel: 'CRÃTICO' | 'MEDIO' | 'BAJO' = 'BAJO';
+      let nivel: 'CRÍTICO' | 'MEDIO' | 'BAJO' = 'BAJO';
       let color = '#27AE60';
-      let emoji = 'ð¢';
+      let emoji = '🟢';
 
       if (score >= 80) {
-        nivel = 'CRÃTICO';
+        nivel = 'CRÍTICO';
         color = '#EB5757';
-        emoji = 'ð´';
+        emoji = '🔴';
       } else if (score >= 50) {
         nivel = 'MEDIO';
         color = '#F2C94C';
-        emoji = 'ð ';
+        emoji = '🟠';
       }
 
       return { ...i, score, nivel, color, emoji };
@@ -116,42 +116,105 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
       .slice(0, 5);
   }, [filteredData]);
 
-  const riskMatrixData = useMemo(() => {
-    const items = filteredData.map(a => {
-      const impacto = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);
-      const variacionAbs = Math.abs(a.totalDiferencia);
-      const frecuencia = a.movements ? a.movements.filter(m => Math.abs(m.variacion) > 0.0001).length : 1;
-      return { ...a, impacto, variacionAbs, frecuencia };
-    }).filter(i => i.impacto > 0 || i.frecuencia > 0);
+  // Estado para agrupar por mes o por sede
+  const [groupBy, setGroupBy] = useState<'mes' | 'sede'>('mes');
+  const [selectedSedeFilter, setSelectedSedeFilter] = useState<string>('all');
 
-    if (items.length === 0) return [];
-
-    const sortedByImpact = [...items].sort((a, b) => b.impacto - a.impacto);
-    const total = sortedByImpact.length;
-
-    return sortedByImpact.map((item, index) => {
-      const percentile = (index / total) * 100;
-      
-      let nivelImpacto: 'ALTO' | 'MEDIO' | 'BAJO' = 'BAJO';
-      if (percentile < 20) nivelImpacto = 'ALTO';
-      else if (percentile < 60) nivelImpacto = 'MEDIO';
-
-      let nivelFrecuencia: 'ALTA' | 'MEDIA' | 'BAJA' = 'BAJA';
-      if (item.frecuencia > 3) nivelFrecuencia = 'ALTA';
-      else if (item.frecuencia >= 2) nivelFrecuencia = 'MEDIA';
-
-      const risk = getRiskLevel(nivelImpacto, nivelFrecuencia);
-
-      return {
-        ...item,
-        nivelImpacto,
-        nivelFrecuencia,
-        riskLabel: risk.label,
-        riskEmoji: risk.emoji,
-        riskColor: risk.color
-      };
+  // Datos para el Comparativo Historico de Confiabilidad por Sede
+  const historicalData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const inventoryMap = new Map<string, Map<string, {
+      sede: string; fecha: string; total: number;
+      conDiferencia: number; perdidas: number; sobrantes: number;
+    }>>();
+    data.forEach(a => {
+      if (!a.movements) return;
+      a.movements.forEach(m => {
+        const fecha = m.fecha ? new Date(m.fecha).toISOString().slice(0, 10) : 'Sin fecha';
+        const sede = m.sede || a.sede || 'Sin sede';
+        if (!inventoryMap.has(fecha)) inventoryMap.set(fecha, new Map());
+        const sedeMap = inventoryMap.get(fecha)!;
+        if (!sedeMap.has(sede)) {
+          sedeMap.set(sede, { sede, fecha, total: 0, conDiferencia: 0, perdidas: 0, sobrantes: 0 });
+        }
+        const entry = sedeMap.get(sede)!;
+        entry.total++;
+        if (Math.abs(m.variacion || 0) > 0.0001) entry.conDiferencia++;
+        if ((m.variacion || 0) < -0.0001) entry.perdidas += Math.abs(m.variacion || 0) * (m.coste || 0);
+        if ((m.variacion || 0) > 0.0001) entry.sobrantes += (m.variacion || 0) * (m.coste || 0);
+      });
     });
-  }, [filteredData]);
+    const result: {
+      sede: string; fecha: string; confiabilidad: number;
+      perdidas: number; sobrantes: number; total: number;
+    }[] = [];
+    inventoryMap.forEach((sedeMap, fecha) => {
+      sedeMap.forEach((entry) => {
+        const confiabilidad = entry.total > 0
+          ? ((entry.total - entry.conDiferencia) / entry.total) * 100
+          : 100;
+        result.push({
+          sede: entry.sede, fecha,
+          confiabilidad: Math.round(confiabilidad * 10) / 10,
+          perdidas: entry.perdidas,
+          sobrantes: entry.sobrantes,
+          total: entry.total
+        });
+      });
+    });
+    return result.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }, [data]);
+
+  const sedeHistoricalData = useMemo(() => {
+    const sedeMap = new Map<string, {
+      sede: string; confiabilidad: number; perdidas: number;
+      sobrantes: number; total: number; count: number;
+    }>();
+    historicalData.forEach(item => {
+      if (!sedeMap.has(item.sede)) {
+        sedeMap.set(item.sede, { sede: item.sede, confiabilidad: 0, perdidas: 0, sobrantes: 0, total: 0, count: 0 });
+      }
+      const entry = sedeMap.get(item.sede)!;
+      entry.confiabilidad += item.confiabilidad;
+      entry.perdidas += item.perdidas;
+      entry.sobrantes += item.sobrantes;
+      entry.total += item.total;
+      entry.count++;
+    });
+    return Array.from(sedeMap.values()).map(e => ({
+      ...e,
+      confiabilidad: e.count > 0 ? Math.round((e.confiabilidad / e.count) * 10) / 10 : 100,
+      balance: e.sobrantes - e.perdidas,
+    })).sort((a, b) => a.confiabilidad - b.confiabilidad);
+  }, [historicalData]);
+
+  const fechasDisponibles = useMemo(() => {
+    return [...new Set(historicalData.map(d => d.fecha))].sort();
+  }, [historicalData]);
+
+  const sedesDisponibles = useMemo(() => {
+    return [...new Set(historicalData.map(d => d.sede))].sort();
+  }, [historicalData]);
+
+  const chartDataByMes = useMemo(() => {
+    if (fechasDisponibles.length === 0) return [];
+    const filtered = selectedSedeFilter === 'all'
+      ? historicalData
+      : historicalData.filter(d => d.sede === selectedSedeFilter);
+    return fechasDisponibles.map(fecha => {
+      const obj: Record<string, string | number> = { fecha };
+      const itemsForFecha = filtered.filter(d => d.fecha === fecha);
+      itemsForFecha.forEach(item => { obj[item.sede] = item.confiabilidad; });
+      return obj;
+    });
+  }, [historicalData, fechasDisponibles, selectedSedeFilter]);
+
+  const sedeColors = useMemo(() => {
+    const colors = ['#2F80ED','#27AE60','#F2994A','#EB5757','#9B51E0','#2D9CDB','#6FCF97','#F2C94C','#BB6BD9','#56CCF2'];
+    const map: Record<string, string> = {};
+    sedesDisponibles.forEach((sede, i) => { map[sede] = colors[i % colors.length]; });
+    return map;
+  }, [sedesDisponibles]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
@@ -165,51 +228,14 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
   const getStatusLabel = (p: number) => {
     if (p >= 85) return 'CONFIABLE';
     if (p >= 70) return 'ALERTA';
-    return 'CRÃTICO';
+    return 'CRÍTICO';
   };
 
   const getStatusEmoji = (p: number) => {
-    if (p >= 85) return 'ð¢';
-    if (p >= 70) return 'ð¡';
-    return 'ð´';
+    if (p >= 85) return '🟢';
+    if (p >= 70) return '🟡';
+    return '🔴';
   };
-
-  const [historicalSedeFiler, setHistoricalSedeFiler] = useState('');
-  const [agrupacion, setAgrupacion] = useState('sede');
-  const sedesForHistorical = useMemo(() => Array.from(new Set(filteredData.map((a) => a.sede))).sort(), [filteredData]);
-  const historicalBarData = useMemo(() => {
-    const sedes = historicalSedeFiler ? [historicalSedeFiler] : Array.from(new Set(filteredData.map((a) => a.sede))).sort();
-    return sedes.map(sede => {
-      const items = filteredData.filter((a) => a.sede === sede);
-      const total = items.length;
-      const conDif = items.filter((a) => a.tipo !== 'SIN_VARIACION').length;
-      const confiabilidad = total > 0 ? ((total - conDif) / total) * 100 : 100;
-      return { sede, confiabilidad: Math.round(confiabilidad * 100) / 100, total, conDif };
-    }).sort((a, b) => a.confiabilidad - b.confiabilidad);
-  }, [filteredData, historicalSedeFiler]);
-  const economicBarData = useMemo(() => {
-    if (agrupacion === 'sede') {
-      const sedes = Array.from(new Set(filteredData.map((a) => a.sede))).sort();
-      return sedes.map(sede => {
-        const items = filteredData.filter((a) => a.sede === sede);
-        const perdidas = items.reduce((acc, a) => acc + (a.valorPerdida || 0), 0);
-        const sobrantes = items.reduce((acc, a) => acc + (a.valorSobrante || 0), 0);
-        return { label: sede, perdidas, sobrantes, balance: sobrantes - perdidas };
-      });
-    }
-    const byMonth = new Map();
-    filteredData.forEach((a) => {
-      (a.movements || []).forEach((m) => {
-        if (!m.fecha) return;
-        const key = new Date(m.fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'short' });
-        if (!byMonth.has(key)) byMonth.set(key, { perdidas: 0, sobrantes: 0 });
-        const e = byMonth.get(key);
-        if (m.variacion < 0) e.perdidas += Math.abs(m.costeLinea || 0);
-        else if (m.variacion > 0) e.sobrantes += (m.costeLinea || 0);
-      });
-    });
-    return Array.from(byMonth.entries()).map(([label, v]) => ({ label, perdidas: v.perdidas, sobrantes: v.sobrantes, balance: v.sobrantes - v.perdidas })).sort((a, b) => a.label.localeCompare(b.label));
-  }, [filteredData, agrupacion]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -217,10 +243,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
       <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
-            AnÃ¡lisis Gerencial de Inventarios {selectedSede ? `â ${selectedSede}` : ''}
+            Análisis Gerencial de Inventarios {selectedSede ? `— ${selectedSede}` : ''}
           </h2>
           <p className="text-[#A7C4E0] font-medium">
-            {selectedSede ? `AuditorÃ­a detallada para ${selectedSede}` : 'Ranking de control y auditorÃ­a por sede'}
+            {selectedSede ? `Auditoría detallada para ${selectedSede}` : 'Ranking de control y auditoría por sede'}
           </p>
         </div>
         <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
@@ -234,11 +260,11 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <div className="flex items-center justify-between mb-2">
             <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {selectedSede ? 'CC CrÃ­ticos' : 'Sedes CrÃ­ticas'}
+              {selectedSede ? 'CC Críticos' : 'Sedes Críticas'}
             </span>
           </div>
           <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
-          <p className="text-sm text-slate-500 mt-1">Requieren auditorÃ­a inmediata</p>
+          <p className="text-sm text-slate-500 mt-1">Requieren auditoría inmediata</p>
         </div>
         <div className="bg-white p-6 rounded-[12px] border border-[#D6DEE6] border-l-4 border-[#F2C94C] shadow-sm">
           <div className="flex items-center justify-between mb-2">
@@ -258,7 +284,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             </span>
           </div>
           <p className="text-3xl font-bold text-[#1F3A5F]">{summary.sedesStats.filter(s => s.confiabilidad >= 85).length}</p>
-          <p className="text-sm text-slate-500 mt-1">Control de inventario Ã³ptimo</p>
+          <p className="text-sm text-slate-500 mt-1">Control de inventario óptimo</p>
         </div>
       </div>
 
@@ -269,7 +295,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#2F80ED]" />
               <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
-                Ranking de Confiabilidad {selectedSede ? `â ${selectedSede}` : ''}
+                Ranking de Confiabilidad {selectedSede ? `— ${selectedSede}` : ''}
               </h3>
             </div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orden: Menor a Mayor</span>
@@ -378,7 +404,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#EB5757]"></div>
-              <span className="text-slate-500">CrÃ­tico</span>
+              <span className="text-slate-500">Crítico</span>
             </div>
           </div>
         </div>
@@ -389,7 +415,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
           <TrendingDown className="w-5 h-5 text-[#EB5757]" />
           <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
-            {selectedSede ? `Top Impacto EconÃ³mico en ${selectedSede}` : 'Top 5 Sedes con Mayor Impacto EconÃ³mico (PÃ©rdida)'}
+            {selectedSede ? `Top Impacto Económico en ${selectedSede}` : 'Top 5 Sedes con Mayor Impacto Económico (Pérdida)'}
           </h3>
         </div>
         <div className="overflow-x-auto">
@@ -399,10 +425,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                 <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">
                   {selectedSede ? 'Centro de Costos' : 'Sede'}
                 </th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto EconÃ³mico</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">ArtÃ­culos con Diferencia</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto Económico</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Artículos con Diferencia</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">AcciÃ³n Sugerida</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Acción Sugerida</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D6DEE6]">
@@ -432,7 +458,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-[#2F80ED] font-bold text-xs uppercase tracking-wider">
-                      <span>AuditorÃ­a Prioritaria</span>
+                      <span>Auditoría Prioritaria</span>
                       <ArrowRight className="w-3 h-3" />
                     </div>
                   </td>
@@ -448,14 +474,14 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
           <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
             <TrendingDown className="w-5 h-5 text-[#EB5757]" />
-            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 PÃ©rdidas CrÃ­ticas</h3>
+            <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Top 5 Pérdidas Críticas</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-[#A7C4E0]">
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">ArtÃ­culo</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">VariaciÃ³n</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
                 </tr>
               </thead>
@@ -490,8 +516,8 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-[#A7C4E0]">
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">ArtÃ­culo</th>
-                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">VariaciÃ³n</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Variación</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
                 </tr>
               </thead>
@@ -523,10 +549,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
-              Productos con Mayor Riesgo Operativo {selectedSede ? `â ${selectedSede}` : ''}
+              Productos con Mayor Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
             </h2>
             <p className="text-[#A7C4E0] font-medium">
-              {selectedSede ? `AnÃ¡lisis de criticidad para ${selectedSede}` : 'ArtÃ­culos con mayor impacto en diferencias de inventario'}
+              {selectedSede ? `Análisis de criticidad para ${selectedSede}` : 'Artículos con mayor impacto en diferencias de inventario'}
             </p>
           </div>
           <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
@@ -539,7 +565,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-8">
               <Activity className="w-5 h-5 text-[#EB5757]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Productos mÃ¡s ProblemÃ¡ticos (Impacto $)</h3>
+              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Productos más Problemáticos (Impacto $)</h3>
             </div>
             <div className="flex-1 min-h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -593,7 +619,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-[#EB5757]" />
                 <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
-                  Ranking de Riesgo Operativo {selectedSede ? `â ${selectedSede}` : ''}
+                  Ranking de Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
                 </h3>
               </div>
             </div>
@@ -602,7 +628,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                 <thead>
                   <tr className="bg-[#A7C4E0]">
                     <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Pos</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">ArtÃ­culo</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Artículo</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto $</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Err.</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Riesgo</th>
@@ -641,159 +667,191 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
       </div>
 
-      {/* COMPARATIVO HISTÓRICO DE CONFIABILIDAD POR SEDE */}
+      {/* Comparativo Historico de Confiabilidad por Sede */}
       <div className="space-y-8">
-        <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg">
-          <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
-            Comparativo Histórico de Confiabilidad por Sede
-          </h2>
-          <p className="text-[#A7C4E0] mt-1 text-sm">
-            Evalúa si cada sede mejora o empeora entre inventarios consecutivos
-          </p>
+        <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
+              Comparativo Histórico de Confiabilidad por Sede
+            </h2>
+            <p className="text-[#A7C4E0] font-medium">
+              Evaluación de tendencias de confiabilidad entre inventarios consecutivos
+            </p>
+          </div>
+          <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+            <BarChart3 className="w-64 h-64" />
+          </div>
         </div>
 
-        {/* Bar Chart - Confiabilidad por Sede */}
+        {/* Selector de agrupacion */}
         <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#2F80ED]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">
-                Confiabilidad por Sede {selectedSede ? `— ${selectedSede}` : '(Todas)'}
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold text-slate-400 uppercase">Filtrar Sede:</label>
-              <select
-                value={historicalSedeFiler}
-                onChange={e => setHistoricalSedeFiler(e.target.value)}
-                className="text-sm border border-[#D6DEE6] rounded-lg px-3 py-1.5 text-[#1F3A5F] focus:outline-none"
-              >
-                <option value="">Todas</option>
-                {sedesForHistorical.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="flex-1 min-h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={historicalBarData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="sede" tick={{ fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }} angle={-35} textAnchor="end" height={80} />
-                <YAxis domain={[0, 100]} tickFormatter={v => v + '%'} tick={{ fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }} />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0]?.payload;
-                      return (
-                        <div className="bg-white p-3 border border-[#D6DEE6] shadow-xl rounded-lg">
-                          <p className="font-bold text-[#1F3A5F] mb-1">{d?.sede}</p>
-                          <p className="text-xs text-slate-500">Confiabilidad: <span className="font-bold">{d?.confiabilidad}%</span></p>
-                          <p className="text-xs text-slate-500">Con diferencia: <span className="font-bold">{d?.conDif}</span></p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <ReferenceLine y={98} stroke="#27AE60" strokeDasharray="5 5" />
-                <ReferenceLine y={90} stroke="#F2C94C" strokeDasharray="5 5" />
-                <ReferenceLine y={80} stroke="#EB5757" strokeDasharray="5 5" />
-                <Bar dataKey="confiabilidad" name="Confiabilidad %" radius={[4, 4, 0, 0]}>
-                  {historicalBarData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.confiabilidad >= 98 ? '#27AE60' : entry.confiabilidad >= 95 ? '#2F80ED' : entry.confiabilidad >= 90 ? '#F2C94C' : entry.confiabilidad >= 80 ? '#F2994A' : '#EB5757'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {historicalBarData.map(entry => (
-              <div key={entry.sede} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <p className="text-xs font-bold text-[#1F3A5F]">{entry.sede}</p>
-                <p className="text-lg font-bold" style={{ color: entry.confiabilidad >= 98 ? '#27AE60' : entry.confiabilidad >= 95 ? '#2F80ED' : entry.confiabilidad >= 90 ? '#D4A017' : entry.confiabilidad >= 80 ? '#F2994A' : '#EB5757' }}>
-                  {entry.confiabilidad}%
-                </p>
-                <span className={`text-xs px-1.5 py-0.5 rounded font-bold ${entry.confiabilidad >= 98 ? 'bg-green-100 text-green-700' : entry.confiabilidad >= 95 ? 'bg-blue-100 text-blue-700' : entry.confiabilidad >= 90 ? 'bg-yellow-100 text-yellow-700' : entry.confiabilidad >= 80 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
-                  {entry.confiabilidad >= 98 ? 'Excelente' : entry.confiabilidad >= 95 ? 'Buena' : entry.confiabilidad >= 90 ? 'Aceptable' : entry.confiabilidad >= 80 ? 'Riesgo' : 'Critica'}
-                </span>
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-[#1F3A5F] text-sm uppercase tracking-tight">Agrupar por:</span>
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="groupBy"
+                    value="mes"
+                    checked={groupBy === 'mes'}
+                    onChange={() => setGroupBy('mes')}
+                    className="accent-[#2F80ED]"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Por Mes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="groupBy"
+                    value="sede"
+                    checked={groupBy === 'sede'}
+                    onChange={() => setGroupBy('sede')}
+                    className="accent-[#2F80ED]"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Por Sede</span>
+                </label>
               </div>
-            ))}
+            </div>
+            {groupBy === 'mes' && sedesDisponibles.length > 0 && (
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-[#1F3A5F] text-sm uppercase tracking-tight">Filtrar sede:</span>
+                <select
+                  value={selectedSedeFilter}
+                  onChange={(e) => setSelectedSedeFilter(e.target.value)}
+                  className="border border-[#D6DEE6] rounded-lg px-3 py-1.5 text-sm text-[#1F3A5F] font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#2F80ED]"
+                >
+                  <option value="all">Todas las sedes</option>
+                  {sedesDisponibles.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Economic Analysis - Grouping by Sede/Mes */}
-        <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[#EB5757]" />
-              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Análisis Económico</h3>
+        {groupBy === 'mes' ? (
+          <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
+            <div className="flex items-center gap-2 mb-6">
+              <Activity className="w-5 h-5 text-[#2F80ED]" />
+              <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Confiabilidad por Inventario</h3>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Agrupar por:</span>
-              <button onClick={() => setAgrupacion('sede')} className={`px-3 py-1.5 text-xs rounded-full font-bold ${agrupacion === 'sede' ? 'bg-[#1F3A5F] text-white' : 'bg-slate-100 text-slate-500'}`}>○ Sede</button>
-              <button onClick={() => setAgrupacion('mes')} className={`px-3 py-1.5 text-xs rounded-full font-bold ${agrupacion === 'mes' ? 'bg-[#1F3A5F] text-white' : 'bg-slate-100 text-slate-500'}`}>○ Mes</button>
+            {chartDataByMes.length === 0 ? (
+              <div className="flex-1 min-h-[300px] flex items-center justify-center">
+                <p className="text-slate-400 text-sm font-medium">No hay datos de movimientos disponibles</p>
+              </div>
+            ) : (
+              <div className="flex-1 min-h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartDataByMes} margin={{ top: 10, right: 30, left: 0, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5EAF0" />
+                    <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#4A5568' }} angle={-35} textAnchor="end" interval={0} />
+                    <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: '#4A5568' }} />
+                    <Tooltip formatter={(value: number, name: string) => [value.toFixed(1) + '%', name]} contentStyle={{ borderRadius: 8, border: '1px solid #D6DEE6', fontSize: 12 }} />
+                    <Legend wrapperStyle={{ paddingTop: 16, fontSize: 11 }} />
+                    <ReferenceLine y={98} stroke="#27AE60" strokeDasharray="4 4" label={{ value: 'Excelente 98%', position: 'right', fontSize: 9, fill: '#27AE60' }} />
+                    <ReferenceLine y={90} stroke="#F2994A" strokeDasharray="4 4" label={{ value: 'Aceptable 90%', position: 'right', fontSize: 9, fill: '#F2994A' }} />
+                    <ReferenceLine y={80} stroke="#EB5757" strokeDasharray="4 4" label={{ value: 'Riesgo 80%', position: 'right', fontSize: 9, fill: '#EB5757' }} />
+                    {(selectedSedeFilter === 'all' ? sedesDisponibles : [selectedSedeFilter]).map(sede => (
+                      <Bar key={sede} dataKey={sede} fill={sedeColors[sede] || '#2F80ED'} radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-6">
+                <Building2 className="w-5 h-5 text-[#2F80ED]" />
+                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Confiabilidad Promedio por Sede</h3>
+              </div>
+              {sedeHistoricalData.length === 0 ? (
+                <div className="min-h-[300px] flex items-center justify-center">
+                  <p className="text-slate-400 text-sm font-medium">No hay datos de movimientos disponibles</p>
+                </div>
+              ) : (
+                <div className="min-h-[400px]">
+                  <ResponsiveContainer width="100%" height={Math.max(400, sedeHistoricalData.length * 50)}>
+                    <BarChart data={sedeHistoricalData} layout="vertical" margin={{ top: 10, right: 60, left: 80, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5EAF0" horizontal={false} />
+                      <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: '#4A5568' }} />
+                      <YAxis type="category" dataKey="sede" tick={{ fontSize: 11, fill: '#1F3A5F', fontWeight: 600 }} width={75} />
+                      <Tooltip formatter={(value: number) => [value.toFixed(1) + '%', 'Confiabilidad']} contentStyle={{ borderRadius: 8, border: '1px solid #D6DEE6', fontSize: 12 }} />
+                      <ReferenceLine x={98} stroke="#27AE60" strokeDasharray="4 4" />
+                      <ReferenceLine x={90} stroke="#F2994A" strokeDasharray="4 4" />
+                      <ReferenceLine x={80} stroke="#EB5757" strokeDasharray="4 4" />
+                      <Bar dataKey="confiabilidad" radius={[0, 4, 4, 0]} maxBarSize={32}>
+                        {sedeHistoricalData.map((entry) => (
+                          <Cell
+                            key={entry.sede}
+                            fill={
+                              entry.confiabilidad >= 98 ? '#27AE60' :
+                              entry.confiabilidad >= 95 ? '#2F80ED' :
+                              entry.confiabilidad >= 90 ? '#F2994A' :
+                              entry.confiabilidad >= 80 ? '#E2A03F' : '#EB5757'
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-          </div>
-          <div className="flex-1 min-h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={economicBarData} margin={{ top: 20, right: 30, left: 20, bottom: agrupacion === 'sede' ? 80 : 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fontWeight: 700, fill: '#1F3A5F' }} angle={agrupacion === 'sede' ? -35 : 0} textAnchor={agrupacion === 'sede' ? 'end' : 'middle'} height={agrupacion === 'sede' ? 80 : 40} />
-                <YAxis tick={{ fontSize: 9, fontWeight: 700, fill: '#1F3A5F' }} />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white p-3 border border-[#D6DEE6] shadow-xl rounded-lg">
-                          <p className="font-bold text-[#1F3A5F] mb-2">{payload[0]?.payload?.label}</p>
-                          {payload.map((p, i) => (
-                            <p key={i} className="text-xs" style={{ color: p.color }}>
-                              {p.name}: <span className="font-bold">{formatCurrency(Math.abs(Number(p.value || 0)))}</span>
-                            </p>
-                          ))}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="perdidas" name="Perdidas" fill="#EB5757" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="sobrantes" name="Sobrantes" fill="#27AE60" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="balance" name="Balance Neto" fill="#2F80ED" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead>
-                <tr className="bg-[#F5F7FA] border-b border-[#D6DEE6]">
-                  <th className="px-4 py-3 font-bold text-[#1F3A5F] uppercase">{agrupacion === 'sede' ? 'Sede' : 'Mes'}</th>
-                  <th className="px-4 py-3 font-bold text-[#1F3A5F] uppercase text-right">Valor Perdidas</th>
-                  <th className="px-4 py-3 font-bold text-[#1F3A5F] uppercase text-right">Valor Sobrantes</th>
-                  <th className="px-4 py-3 font-bold text-[#1F3A5F] uppercase text-right">Balance Final</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D6DEE6]">
-                {economicBarData.map(row => (
-                  <tr key={row.label} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-bold text-[#1F3A5F]">{row.label}</td>
-                    <td className="px-4 py-3 text-right font-bold text-rose-600">{formatCurrency(row.perdidas)}</td>
-                    <td className="px-4 py-3 text-right font-bold text-[#27AE60]">{formatCurrency(row.sobrantes)}</td>
-                    <td className={`px-4 py-3 text-right font-bold ${row.balance >= 0 ? 'text-[#2F80ED]' : 'text-rose-600'}`}>
-                      {formatCurrency(Math.abs(row.balance))} {row.balance >= 0 ? '(Favor)' : '(Deficit)'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
 
-        <div className="p-4 bg-slate-50 border-t border-[#D6DEE6] text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Sistema de Auditoría de Inventarios — Análisis generado automáticamente
-          </p>
-        </div>
+            <div className="bg-white rounded-[12px] border border-[#D6DEE6] shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-[#D6DEE6] bg-[#F5F7FA] flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-[#1F3A5F]" />
+                <h3 className="font-bold text-[#1F3A5F] uppercase tracking-tight">Análisis Económico por Sede</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-[#D6DEE6] bg-[#F8FAFC]">
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest">Sede</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Confiabilidad</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Total Pérdidas</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Total Sobrantes</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Balance Final</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sedeHistoricalData.map((sede, idx) => (
+                      <tr key={sede.sede} className={`border-b border-[#F0F4F8] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F8FAFC]'}`}>
+                        <td className="px-4 py-4 font-bold text-[#1F3A5F] text-sm">{sede.sede}</td>
+                        <td className="px-4 py-4 text-right">
+                          <span className={`font-bold text-sm ${
+                            sede.confiabilidad >= 98 ? 'text-emerald-600' :
+                            sede.confiabilidad >= 95 ? 'text-blue-600' :
+                            sede.confiabilidad >= 90 ? 'text-orange-500' :
+                            sede.confiabilidad >= 80 ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            {sede.confiabilidad.toFixed(1)}%
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right font-semibold text-red-600 text-sm">
+                          {formatCurrency(sede.perdidas)}
+                        </td>
+                        <td className="px-4 py-4 text-right font-semibold text-emerald-600 text-sm">
+                          {formatCurrency(sede.sobrantes)}
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm">
+                          <span className={`font-bold ${sede.balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {sede.balance >= 0 ? '+' : ''}{formatCurrency(sede.balance)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
   );
 };
