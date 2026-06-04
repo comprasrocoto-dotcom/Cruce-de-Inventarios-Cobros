@@ -1501,84 +1501,6 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         ))}
       </div>
 
-      {/* Heatmap Section */}
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="flex items-center space-x-2 mb-8 text-slate-400">
-          <PieChart className="w-5 h-5" />
-          <span className="text-xs font-bold uppercase tracking-widest">Mapa de Calor de Confiabilidad (Sede vs Centro de Costos)</span>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="p-4 bg-[#A7C4E0] border border-[#D6DEE6] text-left text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest sticky left-0 z-10 min-w-[180px]">
-                  Sede / Centro
-                </th>
-                {heatmapData.ccs.map(cc => (
-                  <th key={cc} className="p-4 bg-[#A7C4E0] border border-[#D6DEE6] text-center text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest min-w-[120px]">
-                    {cc}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {heatmapData.matrix.map((row) => (
-                <tr key={row.sede}>
-                  <td className="p-4 bg-white border border-slate-200 font-bold text-slate-700 text-sm sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                    {row.sede}
-                  </td>
-                  {heatmapData.ccs.map(cc => {
-                    const cell = row[cc];
-                    return (
-                      <td 
-                        key={cc} 
-                        className={`p-0 border border-slate-200 transition-all ${cell ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}
-                        onClick={() => handleHeatmapCellClick(row.sede, cc, cell)}
-                      >
-                        <div className={`w-full h-full min-h-[60px] flex flex-col items-center justify-center p-2 ${getHeatmapCellColor(cell?.reliability ?? null)}`}>
-                          {cell ? (
-                            <>
-                              <span className="text-lg font-black leading-none">{Math.round(cell.reliability)}%</span>
-                              <span className="text-[10px] font-bold opacity-80 mt-1 uppercase tracking-tighter">
-                                {getStatusLabel(cell.reliability)}
-                              </span>
-                              <span className="text-[9px] opacity-60 mt-0.5">
-                                {cell.sinDif}/{cell.count} art.
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-[10px] font-medium opacity-40 italic">N/A</span>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="mt-6 flex flex-wrap items-center gap-6 justify-center text-[11px] font-bold uppercase tracking-widest">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-[#27AE60]"></div>
-            <span className="text-slate-500">Confiable (≥95%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-[#F2C94C]"></div>
-            <span className="text-slate-500">Aceptable (80-94%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-[#F2994A]"></div>
-            <span className="text-slate-500">Riesgo (60-79%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-[#EB5757]"></div>
-            <span className="text-slate-500">Crítico ({'<'}60%)</span>
-          </div>
-        </div>
-      </div>
 
       {/* Ranking Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -2103,38 +2025,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-             {/* Intelligent Alerts Column */}
-             <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[700px]">
-                <div className="flex items-center gap-3 mb-6">
-                   <div className="bg-rose-50 p-2 rounded-lg text-rose-600">
-                     <AlertTriangle className="w-5 h-5" />
-                   </div>
-                   <h3 className="font-bold text-slate-800 uppercase tracking-tight">Centro de Alertas AI</h3>
-                </div>
-                <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                   {resumenFinanciero.todasAlertas.length > 0 ? (
-                     resumenFinanciero.todasAlertas.slice(0, 50).map((alerta, i) => (
-                       <div key={i} className={`p-4 rounded-xl border-l-4 transition-all hover:scale-[1.02] ${
-                         alerta.tipo === 'CRÍTICA' ? 'bg-rose-50 border-rose-500' :
-                         alerta.tipo === 'ALERTA' ? 'bg-amber-50 border-amber-500' :
-                         alerta.tipo === 'SOBRESTOCK' ? 'bg-blue-50 border-blue-500' :
-                         'bg-slate-50 border-slate-500'
-                       }`}>
-                         <p className="text-[10px] font-black uppercase tracking-wider mb-1 opacity-70">{alerta.tipo}</p>
-                         <p className="text-sm font-bold text-slate-700 leading-tight">{alerta.mensaje}</p>
-                       </div>
-                     ))
-                   ) : (
-                     <div className="h-full flex flex-col items-center justify-center opacity-40 italic py-20 text-sm">
-                       No hay alertas críticas detectadas
-                     </div>
-                   )}
-                </div>
-             </div>
 
-             {/* Risk Ranking Column */}
-             <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[700px]">
+             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[700px]">
                 <div className="flex items-center justify-between mb-6">
                    <div className="flex items-center gap-3">
                       <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
@@ -2181,7 +2073,6 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                    )}
                 </div>
              </div>
-          </div>
         </div>
       )}
 
