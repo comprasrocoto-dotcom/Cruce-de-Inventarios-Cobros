@@ -113,11 +113,11 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
       <div className="bg-white rounded-xl border border-brand-border p-4">
         <h3 className="font-bold text-brand-text mb-3">Clasificación por Severidad</h3>
         <div className="flex gap-4">
-          <div className="flex-1 bg-red-50 rounded-lg p-3 text-center">
+          <div className="flex-1 bg-[#2d0f0f] rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-red-600">{summary.sevAlta}</p>
             <p className="text-xs text-red-500 uppercase">ALTA</p>
           </div>
-          <div className="flex-1 bg-yellow-50 rounded-lg p-3 text-center">
+          <div className="flex-1 bg-[#2d2000] rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-yellow-600">{summary.sevMedia}</p>
             <p className="text-xs text-yellow-500 uppercase">MEDIA</p>
           </div>
@@ -137,7 +137,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#1a2d45]">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">#</th>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">Producto</th>
@@ -147,7 +147,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
               </thead>
               <tbody>
                 {summary.top10Diff.map((a, idx) => (
-                  <tr key={idx} className={`border-t border-gray-100 ${a.severidad === 'ALTA' ? 'bg-red-50' : a.severidad === 'MEDIA' ? 'bg-yellow-50' : ''}`}>
+                  <tr key={idx} className={`border-t border-brand-border ${a.severidad === 'ALTA' ? 'bg-[#2d0f0f]' : a.severidad === 'MEDIA' ? 'bg-[#2d2000]' : ''}`}>
                     <td className="px-3 py-2 text-brand-text-secondary">{idx + 1}</td>
                     <td className="px-3 py-2 font-medium text-brand-text max-w-[180px] truncate">{a.articulo}</td>
                     <td className={`px-3 py-2 text-right font-bold ${a.totalDiferencia < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -168,7 +168,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#1a2d45]">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">#</th>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">Producto</th>
@@ -178,7 +178,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
               </thead>
               <tbody>
                 {summary.top10Recurrentes.map((a, idx) => (
-                  <tr key={idx} className="border-t border-gray-100">
+                  <tr key={idx} className="border-t border-brand-border">
                     <td className="px-3 py-2 text-brand-text-secondary">{idx + 1}</td>
                     <td className="px-3 py-2 font-medium text-brand-text max-w-[180px] truncate">{a.articulo}</td>
                     <td className="px-3 py-2 text-right text-brand-text">{a.movements.length}</td>
