@@ -237,4 +237,4 @@ export const Filters: React.FC<FiltersProps> = ({
                 )}
           </div>
         );
-};</div>
+};
