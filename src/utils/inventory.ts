@@ -1255,7 +1255,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
 
 
-    if (Math.abs(summary.totalDiferencia) > 0.0001 && !summary.dentroDeTolerancia) {
+    if (summary.totalDiferencia < -0.0001 && !summary.dentroDeTolerancia) {
 
 
 
@@ -2095,7 +2095,7 @@ export function getHistoricalTraceability(
 
 
 
-        debeCobrar: Math.abs(totalDiferencia) > 0.0001 && !evaluado.dentroDeTolerancia,
+        debeCobrar: totalDiferencia < -0.0001 && !evaluado.dentroDeTolerancia,
 
 
 
@@ -2107,7 +2107,7 @@ export function getHistoricalTraceability(
 
 
 
-        totalCobro: (Math.abs(totalDiferencia) > 0.0001 && !evaluado.dentroDeTolerancia) ? absDiff * (ultimoCoste || costePromedio) : 0,
+        totalCobro: (totalDiferencia < -0.0001 && !evaluado.dentroDeTolerancia) ? absDiff * (ultimoCoste || costePromedio) : 0,
 
 
 
