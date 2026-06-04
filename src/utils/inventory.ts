@@ -704,7 +704,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
         // If first segment starts with 0 (e.g. 01, 06) or value > 12 => day-first (dd/MM/yyyy)
         // Otherwise single-digit or 10-12 without leading zero => month-first (M/d/yyyy)
-        const isDayFirst = firstSeg.charAt(0) === '0' || firstNum > 12;
+        const isDayFirst = firstSeg.charAt(0) === '0' || firstNum > 12 || secondSeg.charAt(0) === '0';
 
         if (isDayFirst) {
           // dd/MM/yyyy
