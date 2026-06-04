@@ -698,7 +698,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
 
 
 
-      const formats = ['dd/MM/yyyy', 'yyyy-MM-dd', 'd/M/yyyy', 'dd-MM-yyyy'];
+      const formats = ['MM/dd/yyyy', 'yyyy-MM-dd', 'M/d/yyyy', 'MM-dd-yyyy'];
 
 
 
