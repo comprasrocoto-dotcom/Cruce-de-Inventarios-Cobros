@@ -58,7 +58,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
     <div className="space-y-6">
       {/* KPIs Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl border border-brand-border p-4">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <Package className="w-4 h-4 text-brand-text" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Total Productos</span>
@@ -66,7 +66,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           <p className="text-2xl font-bold text-brand-text">{fmtNumber(summary.totalProductos)}</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-brand-border p-4">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-yellow-500" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Con Novedades</span>
@@ -74,7 +74,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           <p className="text-2xl font-bold text-yellow-600">{fmtNumber(summary.conNovedades)}</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-brand-border p-4">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="w-4 h-4 text-red-500" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Total Pérdidas</span>
@@ -82,7 +82,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           <p className="text-lg font-bold text-red-600">{fmtCurrency(summary.totalPerdidas)}</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-brand-border p-4">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-4 h-4 text-green-500" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Total Sobrantes</span>
@@ -90,7 +90,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           <p className="text-lg font-bold text-green-600">{fmtCurrency(summary.totalSobrantesVal)}</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-brand-border p-4">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-brand-text" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Balance Final</span>
@@ -100,7 +100,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-brand-border p-4">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 className="w-4 h-4 text-green-500" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">Sin Novedad</span>
@@ -110,7 +110,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
       </div>
 
       {/* Severity Indicators */}
-      <div className="bg-white rounded-xl border border-brand-border p-4">
+      <div className="bg-[#0d1b2a] rounded-xl border border-brand-border p-4">
         <h3 className="font-bold text-brand-text mb-3">Clasificación por Severidad</h3>
         <div className="flex gap-4">
           <div className="flex-1 bg-[#2d0f0f] rounded-lg p-3 text-center">
@@ -131,7 +131,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
       {/* Top 10 Tables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top 10 by difference */}
-        <div className="bg-white rounded-xl border border-brand-border overflow-hidden">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border overflow-hidden">
           <div className="px-4 py-3 border-b border-brand-border bg-brand-background">
             <h3 className="font-bold text-brand-text text-sm uppercase tracking-wide">Top 10 - Mayores Diferencias</h3>
           </div>
@@ -162,7 +162,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
         </div>
 
         {/* Top 10 by recurrence */}
-        <div className="bg-white rounded-xl border border-brand-border overflow-hidden">
+        <div className="bg-[#0d1b2a] rounded-xl border border-brand-border overflow-hidden">
           <div className="px-4 py-3 border-b border-brand-border bg-brand-background">
             <h3 className="font-bold text-brand-text text-sm uppercase tracking-wide">Top 10 - Más Recurrentes</h3>
           </div>
