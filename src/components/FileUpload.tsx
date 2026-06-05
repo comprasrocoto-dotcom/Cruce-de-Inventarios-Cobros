@@ -406,11 +406,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
 
 
 
-      <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+      <div className="flex items-center gap-3 px-4 py-2 bg-[#0A1A2A] border border-[#1A3A5A] rounded-xl">
 
 
 
-        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+        <Loader2 className="w-4 h-4 text-[#38BDF8] animate-spin" />
 
 
 
@@ -458,7 +458,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
 
 
 
-        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        <div className="flex items-center gap-2 px-4 py-2 bg-[#2A1010] border border-[#5A2020] rounded-xl text-[#EF4444] text-sm">
 
 
 
@@ -526,7 +526,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
 
 
 
-        <div className="flex-1 h-px bg-gray-200" />
+        <div className="flex-1 h-px bg-[#243A57]" />
 
 
 
@@ -534,7 +534,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
 
 
 
-        <div className="flex-1 h-px bg-gray-200" />
+        <div className="flex-1 h-px bg-[#243A57]" />
 
 
 
@@ -558,7 +558,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
 
 
 
-        className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors"
+        className="border-2 border-dashed border-[#243A57] rounded-xl p-4 text-center cursor-pointer hover:border-[#38BDF8] hover:bg-[#1A2E4A] transition-colors"
 
 
 
@@ -574,7 +574,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
 
 
 
-        <p className="text-xs font-medium text-gray-500">Cargar Excel local</p>
+        <p className="text-xs font-medium text-[#8EA3BF]">Cargar Excel local</p>
 
 
 
