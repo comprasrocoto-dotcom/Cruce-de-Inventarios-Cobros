@@ -306,9 +306,9 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
       {kpis && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Confiabilidad Actual</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Confiabilidad Actual</p>
             <div className="flex items-end gap-2">
-              <p className="text-2xl font-bold text-[#1F3A5F]">{kpis.currentReliability.toFixed(1)}%</p>
+              <p className="text-2xl font-bold text-text-main">{kpis.currentReliability.toFixed(1)}%</p>
               <span className={`text-[10px] font-bold mb-1 flex items-center ${kpis.accumulatedVariation >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {kpis.accumulatedVariation >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                 {Math.abs(kpis.accumulatedVariation).toFixed(1)}%
@@ -316,32 +316,32 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
             </div>
           </div>
           <div className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mejor Período</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Mejor Período</p>
             <p className="text-xl font-bold text-[#27AE60] truncate">{kpis.bestPeriod.period}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">{kpis.bestPeriod.confiabilidad.toFixed(1)}% confiabilidad</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase">{kpis.bestPeriod.confiabilidad.toFixed(1)}% confiabilidad</p>
           </div>
           <div className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Peor Período</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Peor Período</p>
             <p className="text-xl font-bold text-[#EB5757] truncate">{kpis.worstPeriod.period}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">{kpis.worstPeriod.confiabilidad.toFixed(1)}% confiabilidad</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase">{kpis.worstPeriod.confiabilidad.toFixed(1)}% confiabilidad</p>
           </div>
           <div className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Impacto Acumulado</p>
-            <p className="text-xl font-bold text-[#1F3A5F]">{formatCurrency(kpis.accumulatedImpact)}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Pérdida total en rango</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Impacto Acumulado</p>
+            <p className="text-xl font-bold text-text-main">{formatCurrency(kpis.accumulatedImpact)}</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase">Pérdida total en rango</p>
           </div>
           <div className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Variación Acumulada</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Variación Acumulada</p>
             <p className={`text-xl font-bold ${kpis.accumulatedVariation >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {kpis.accumulatedVariation >= 0 ? '+' : ''}{kpis.accumulatedVariation.toFixed(1)}%
             </p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Desde el inicio del rango</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase">Desde el inicio del rango</p>
           </div>
           <div className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tendencia General</p>
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Tendencia General</p>
             <div className="flex items-center gap-2">
-              {kpis.trend === 'Mejorando' ? <TrendingUp className="w-5 h-5 text-emerald-500" /> : kpis.trend === 'Empeoró' ? <TrendingDown className="w-5 h-5 text-rose-500" /> : <Minus className="w-5 h-5 text-slate-400" />}
-              <p className={`text-xl font-bold ${kpis.trend === 'Mejorando' ? 'text-emerald-600' : kpis.trend === 'Empeoró' ? 'text-rose-600' : 'text-slate-600'}`}>
+              {kpis.trend === 'Mejorando' ? <TrendingUp className="w-5 h-5 text-emerald-500" /> : kpis.trend === 'Empeoró' ? <TrendingDown className="w-5 h-5 text-rose-500" /> : <Minus className="w-5 h-5 text-text-secondary" />}
+              <p className={`text-xl font-bold ${kpis.trend === 'Mejorando' ? 'text-emerald-600' : kpis.trend === 'Empeoró' ? 'text-rose-600' : 'text-text-secondary'}`}>
                 {kpis.trend}
               </p>
             </div>
@@ -351,28 +351,28 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
       {/* Analysis Section (Conclusiones Historicas) */}
       {kpis && (
-        <div className="bg-[#F8FAFC] p-8 rounded-[12px] border border-brand-border shadow-inner">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-widest mb-6 flex items-center gap-2">
+        <div className="bg-[#0d1b2a] p-8 rounded-[12px] border border-brand-border shadow-inner">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
             <Activity className="w-4 h-4" /> Conclusiones Históricas
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
-                <p className="text-slate-600 leading-relaxed">
-                  En el rango analizado, la confiabilidad pasó de <span className="font-bold text-[#1F3A5F]">{firstStats.confiabilidad.toFixed(1)}%</span> a <span className="font-bold text-[#1F3A5F]">{currentStats.confiabilidad.toFixed(1)}%</span>, 
+                <p className="text-text-secondary leading-relaxed">
+                  En el rango analizado, la confiabilidad pasó de <span className="font-bold text-text-main">{firstStats.confiabilidad.toFixed(1)}%</span> a <span className="font-bold text-text-main">{currentStats.confiabilidad.toFixed(1)}%</span>, 
                   mejorando <span className={`font-bold ${kpis.accumulatedVariation >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{Math.abs(kpis.accumulatedVariation).toFixed(1)} puntos porcentuales</span>.
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
-                <p className="text-slate-600 leading-relaxed">
-                  El impacto económico disminuyó de <span className="font-bold text-[#1F3A5F]">{formatCurrency(firstStats.impactoEconomico)}</span> a <span className="font-bold text-rose-600">{formatCurrency(currentStats.impactoEconomico)}</span>.
+                <p className="text-text-secondary leading-relaxed">
+                  El impacto económico disminuyó de <span className="font-bold text-text-main">{formatCurrency(firstStats.impactoEconomico)}</span> a <span className="font-bold text-rose-600">{formatCurrency(currentStats.impactoEconomico)}</span>.
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-text-secondary leading-relaxed">
                   El período con peor desempeño fue <span className="font-bold text-rose-600 uppercase">{kpis.worstPeriod.period}</span> con un <span className="font-bold">{kpis.worstPeriod.confiabilidad.toFixed(1)}%</span>.
                 </p>
               </div>
@@ -381,7 +381,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
               {Object.entries(historicalData.bySede).length > 0 && (
                 <div className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
-                  <p className="text-slate-600 leading-relaxed">
+                  <p className="text-text-secondary leading-relaxed">
                     La sede con mejor evolución fue <span className="font-bold text-[#2F80ED] uppercase">{
                       Object.entries(historicalData.bySede)
                         .map(([name, s]) => ({ name, var: (s[s.length-1]?.confiabilidad || 0) - (s[0]?.confiabilidad || 0) }))
@@ -393,7 +393,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
               {Object.entries(historicalData.byCC).length > 0 && (
                 <div className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#2F80ED] mt-1.5 flex-shrink-0"></div>
-                  <p className="text-slate-600 leading-relaxed">
+                  <p className="text-text-secondary leading-relaxed">
                     El centro de costos con mayor mejora fue <span className="font-bold text-[#2F80ED] uppercase">{
                       Object.entries(historicalData.byCC)
                         .map(([name, s]) => ({ name, var: (s[s.length-1]?.confiabilidad || 0) - (s[0]?.confiabilidad || 0) }))
@@ -411,13 +411,13 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Reliability Evolution */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-wider mb-8 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-[#2F80ED]" /> Evolución de la Confiabilidad %
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
                 <XAxis dataKey="period" tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <Tooltip 
@@ -433,13 +433,13 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
         {/* Economic Impact */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-wider mb-8 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-rose-500" /> Impacto Económico Histórico
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
                 <XAxis dataKey="period" tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <YAxis tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <Tooltip 
@@ -454,13 +454,13 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
         {/* Faltantes vs Sobrantes */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-wider mb-8 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-[#F2C94C]" /> Faltantes vs Sobrantes por Período
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
                 <XAxis dataKey="period" tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <YAxis tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <Tooltip contentStyle={{ borderRadius: '8px' }} />
@@ -474,13 +474,13 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
         {/* Evolution by Sede */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-wider mb-8 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
             <Building2 className="w-4 h-4 text-[#2F80ED]" /> Evolución por Sede
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={[]}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
                 <XAxis 
                   dataKey="period" 
                   allowDuplicatedCategory={false} 
@@ -520,24 +520,24 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-[#A7C4E0]">
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Período</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Evaluados</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Sin diferencia</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Con diferencia</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Confiabilidad</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-right">Impacto Económico</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Faltantes</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Sobrantes</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest text-center">Var. vs período anterior</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-[#1F3A5F] uppercase tracking-widest">Tendencia</th>
+              <tr className="bg-[#1a2d45]">
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Período</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Evaluados</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Sin diferencia</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Con diferencia</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Confiabilidad</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Impacto Económico</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Faltantes</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Sobrantes</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Var. vs período anterior</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Tendencia</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border">
               {stats.map((s) => (
-                <tr key={s.period} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-4 font-bold text-[#1F3A5F] text-sm">{s.period}</td>
-                  <td className="px-4 py-4 text-center text-slate-600 text-sm font-bold">{s.evaluados}</td>
+                <tr key={s.period} className="hover:bg-[#0d1b2a] transition-colors">
+                  <td className="px-4 py-4 font-bold text-text-main text-sm">{s.period}</td>
+                  <td className="px-4 py-4 text-center text-text-secondary text-sm font-bold">{s.evaluados}</td>
                   <td className="px-4 py-4 text-center text-emerald-600 text-sm font-bold">{s.sinDiferencia}</td>
                   <td className="px-4 py-4 text-center text-rose-600 text-sm font-bold">{s.conDiferencia}</td>
                   <td className="px-4 py-4 text-center">
@@ -545,7 +545,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
                       {s.confiabilidad.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-right font-bold text-[#1F3A5F] text-sm">{formatCurrency(s.impactoEconomico)}</td>
+                  <td className="px-4 py-4 text-right font-bold text-text-main text-sm">{formatCurrency(s.impactoEconomico)}</td>
                   <td className="px-4 py-4 text-center text-rose-500 text-xs font-bold">{s.faltantes}</td>
                   <td className="px-4 py-4 text-center text-emerald-500 text-xs font-bold">{s.sobrantes}</td>
                   <td className="px-4 py-4 text-center">
@@ -560,7 +560,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
                       s.estado === 'Mejoró' ? 'bg-emerald-100 text-emerald-700' : 
                       s.estado === 'Empeoró' ? 'bg-rose-100 text-rose-700' : 
-                      'bg-slate-100 text-slate-600'
+                      'bg-[#1a2d45] text-text-secondary'
                     }`}>
                       {s.estado}
                     </span>
@@ -575,7 +575,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
       {/* Evolution by Sede & CC Cards */}
       <div className="space-y-8">
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-widest flex items-center gap-2">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-widest flex items-center gap-2">
             <Building2 className="w-4 h-4" /> Evolución por Sede
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -588,31 +588,31 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
               return (
                 <div key={sede} className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm hover:shadow-md transition-shadow">
-                  <h4 className="font-bold text-[#1F3A5F] text-sm uppercase mb-4 border-b pb-2">{sede}</h4>
+                  <h4 className="font-bold text-text-main text-sm uppercase mb-4 border-b pb-2">{sede}</h4>
                   <div className="space-y-2 mb-4">
                     {s.slice(-3).map(period => (
                       <div key={period.period} className="flex justify-between text-xs font-medium">
-                        <span className="text-slate-500">{period.period}</span>
+                        <span className="text-text-secondary">{period.period}</span>
                         <span className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}>
                           {period.confiabilidad.toFixed(0)}%
                         </span>
                       </div>
                     ))}
                   </div>
-                  <div className="pt-3 border-t border-slate-100 space-y-1">
+                  <div className="pt-3 border-t border-brand-border space-y-1">
                     <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span className="text-slate-400">Variación:</span>
+                      <span className="text-text-secondary">Variación:</span>
                       <span className={variation >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                         {variation >= 0 ? '+' : ''}{variation.toFixed(1)} pts
                       </span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span className="text-slate-400">Impacto:</span>
+                      <span className="text-text-secondary">Impacto:</span>
                       <span className="text-rose-600">{formatCurrency(totalImpact)}</span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span className="text-slate-400">Tendencia:</span>
-                      <span className={trend === 'Mejorando' ? 'text-emerald-600' : trend === 'Empeoró' ? 'text-rose-600' : 'text-slate-600'}>
+                      <span className="text-text-secondary">Tendencia:</span>
+                      <span className={trend === 'Mejorando' ? 'text-emerald-600' : trend === 'Empeoró' ? 'text-rose-600' : 'text-text-secondary'}>
                         {trend}
                       </span>
                     </div>
@@ -624,7 +624,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-[#1F3A5F] uppercase tracking-widest flex items-center gap-2">
+          <h3 className="text-sm font-bold text-text-main uppercase tracking-widest flex items-center gap-2">
             <LayoutGrid className="w-4 h-4" /> Evolución por Centro de Costos
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -637,31 +637,31 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
 
               return (
                 <div key={cc} className="bg-white p-5 rounded-[12px] border border-brand-border shadow-sm hover:shadow-md transition-shadow">
-                  <h4 className="font-bold text-[#1F3A5F] text-sm uppercase mb-4 border-b pb-2">{cc}</h4>
+                  <h4 className="font-bold text-text-main text-sm uppercase mb-4 border-b pb-2">{cc}</h4>
                   <div className="space-y-2 mb-4">
                     {s.slice(-3).map(period => (
                       <div key={period.period} className="flex justify-between text-xs font-medium">
-                        <span className="text-slate-500">{period.period}</span>
+                        <span className="text-text-secondary">{period.period}</span>
                         <span className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}>
                           {period.confiabilidad.toFixed(0)}%
                         </span>
                       </div>
                     ))}
                   </div>
-                  <div className="pt-3 border-t border-slate-100 space-y-1">
+                  <div className="pt-3 border-t border-brand-border space-y-1">
                     <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span className="text-slate-400">Variación:</span>
+                      <span className="text-text-secondary">Variación:</span>
                       <span className={variation >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                         {variation >= 0 ? '+' : ''}{variation.toFixed(1)} pts
                       </span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span className="text-slate-400">Impacto:</span>
+                      <span className="text-text-secondary">Impacto:</span>
                       <span className="text-rose-600">{formatCurrency(totalImpact)}</span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span className="text-slate-400">Tendencia:</span>
-                      <span className={trend === 'Mejorando' ? 'text-emerald-600' : trend === 'Empeoró' ? 'text-rose-600' : 'text-slate-600'}>
+                      <span className="text-text-secondary">Tendencia:</span>
+                      <span className={trend === 'Mejorando' ? 'text-emerald-600' : trend === 'Empeoró' ? 'text-rose-600' : 'text-text-secondary'}>
                         {trend}
                       </span>
                     </div>
