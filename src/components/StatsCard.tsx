@@ -27,4 +27,4 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
                             </div>
                       </motion.div>
                     );
-};</motion.div>
+};
