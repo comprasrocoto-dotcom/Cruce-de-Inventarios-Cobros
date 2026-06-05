@@ -174,21 +174,21 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-emerald-50 border border-emerald-100 p-6 rounded-[12px] flex items-center justify-between shadow-sm"
+          className="bg-[#0a2d1a] border border-emerald-100 p-6 rounded-[12px] flex items-center justify-between shadow-sm"
         >
           <div className="flex items-center gap-4">
-            <div className="bg-emerald-100 p-3 rounded-full">
+            <div className="bg-[#0a2d1a] p-3 rounded-full">
               <CheckCircle2 className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
               <h4 className="text-emerald-900 font-bold uppercase text-xs tracking-wider">ARCHIVO HISTÓRICO CARGADO CORRECTAMENTE</h4>
-              <p className="text-emerald-700 text-sm font-medium">{fileName}</p>
+              <p className="text-emerald-400 text-sm font-medium">{fileName}</p>
               <p className="text-emerald-600 text-[10px] font-bold uppercase mt-1">{data.length} registros históricos procesados con éxito</p>
             </div>
           </div>
           <button 
             onClick={onReset}
-            className="px-4 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors shadow-sm"
+            className="px-4 py-2 bg-white border border-emerald-200 text-emerald-400 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#0a2d1a] transition-colors shadow-sm"
           >
             Cargar otro
           </button>
@@ -558,7 +558,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({ 
                   </td>
                   <td className="px-4 py-4">
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
-                      s.estado === 'Mejoró' ? 'bg-emerald-100 text-emerald-700' : 
+                      s.estado === 'Mejoró' ? 'bg-[#0a2d1a] text-emerald-400' : 
                       s.estado === 'Empeoró' ? 'bg-rose-100 text-rose-700' : 
                       'bg-[#1a2d45] text-text-secondary'
                     }`}>
