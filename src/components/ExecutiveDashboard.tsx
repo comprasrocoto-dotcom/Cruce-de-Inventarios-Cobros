@@ -121,7 +121,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
             <p className="text-2xl font-bold text-yellow-600">{summary.sevMedia}</p>
             <p className="text-xs text-yellow-500 uppercase">MEDIA</p>
           </div>
-          <div className="flex-1 bg-green-50 rounded-lg p-3 text-center">
+          <div className="flex-1 bg-[#0a2d1a] rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-green-600">{summary.sevBaja}</p>
             <p className="text-xs text-green-500 uppercase">BAJA / SIN</p>
           </div>
