@@ -17,10 +17,10 @@ const fmtNum = (val: number) => new Intl.NumberFormat('es-CO').format(val);
 // Clasificación de confiabilidad
 const getConfiabilidadClasificacion = (pct: number): { label: string; color: string; bg: string; border: string } => {
   if (pct >= 98) return { label: 'Excelente', color: 'text-green-400', bg: 'bg-[#0a2d1a]', border: 'border-green-900' };
-  if (pct >= 95) return { label: 'Buena', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-300' };
-  if (pct >= 90) return { label: 'Aceptable', color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-300' };
-  if (pct >= 80) return { label: 'Riesgo', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-300' };
-  return { label: 'Critica', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-300' };
+  if (pct >= 95) return { label: 'Buena', color: 'text-[#38BDF8]', bg: 'bg-[#0A1A2A]', border: 'border-[#1A3A5A]' };
+  if (pct >= 90) return { label: 'Aceptable', color: 'text-[#FBC519]', bg: 'bg-[#1A1800]', border: 'border-[#3A3200]' };
+  if (pct >= 80) return { label: 'Riesgo', color: 'text-[#F59E0B]', bg: 'bg-[#1A1500]', border: 'border-[#3A2A00]' };
+  return { label: 'Critica', color: 'text-[#EF4444]', bg: 'bg-[#2A1010]', border: 'border-[#5A2020]' };
 };
 
 export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
@@ -88,9 +88,9 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
   }, [data]);
 
   const getSeverityStyle = (s: string) => {
-    if (s === 'CRITICO') return 'bg-red-100 text-red-800 border-red-300';
-    if (s === 'MEDIO') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    return 'bg-[#0a2d1a] text-green-800 border-green-900';
+    if (s === 'CRITICO') return 'bg-[#2A1010] text-[#EF4444] border-[#5A2020]';
+    if (s === 'MEDIO') return 'bg-[#2A2010] text-[#FBC519] border-[#5A4A10]';
+    return 'bg-[#0A2A15] text-[#22C55E] border-[#1A4A25]';
   };
 
   const tabs = [
@@ -105,42 +105,42 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
     <div className="space-y-4">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-xs text-red-500 font-bold uppercase mb-1">Total Perdidas</p>
-          <p className="text-2xl font-bold text-red-700">{fmtCurrency(totals.valorPerdidas)}</p>
-          <p className="text-xs text-red-400">{perdidas.length} productos con faltantes</p>
+        <div className="bg-[#132238] border border-[#3A1A1A] rounded-xl p-4">
+          <p className="text-xs text-[#EF4444] font-bold uppercase mb-1">Total Perdidas</p>
+          <p className="text-2xl font-bold text-[#EF4444]">{fmtCurrency(totals.valorPerdidas)}</p>
+          <p className="text-xs text-[#8EA3BF]">{perdidas.length} productos con faltantes</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs text-blue-500 font-bold uppercase mb-1">Total Sobrantes</p>
-          <p className="text-2xl font-bold text-blue-700">{fmtCurrency(totals.valorSobrantes)}</p>
-          <p className="text-xs text-blue-400">{sobrantes.length} productos con sobrantes</p>
+        <div className="bg-[#132238] border border-[#1A2E4A] rounded-xl p-4">
+          <p className="text-xs text-[#38BDF8] font-bold uppercase mb-1">Total Sobrantes</p>
+          <p className="text-2xl font-bold text-[#38BDF8]">{fmtCurrency(totals.valorSobrantes)}</p>
+          <p className="text-xs text-[#8EA3BF]">{sobrantes.length} productos con sobrantes</p>
         </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-          <p className="text-xs text-orange-500 font-bold uppercase mb-1">Total a Cobrar</p>
-          <p className="text-2xl font-bold text-orange-700">{fmtCurrency(totals.valorTotalCobros)}</p>
-          <p className="text-xs text-orange-400">{cobrosItems.length} productos con faltantes netos</p>
+        <div className="bg-[#132238] border border-[#2A1D10] rounded-xl p-4">
+          <p className="text-xs text-[#F59E0B] font-bold uppercase mb-1">Total a Cobrar</p>
+          <p className="text-2xl font-bold text-[#F59E0B]">{fmtCurrency(totals.valorTotalCobros)}</p>
+          <p className="text-xs text-[#8EA3BF]">{cobrosItems.length} productos con faltantes netos</p>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8EA3BF]" />
         <input
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           placeholder="Buscar por producto, familia, sede..."
-          className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-4 py-2 border border-[#243A57] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#FBC519] bg-[#0F1C2E] text-white"
         />
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-[#243A57]">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveSection(id)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
-              activeSection === id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+              activeSection === id ? 'border-[#FBC519] text-[#FBC519]' : 'border-transparent text-[#8EA3BF] hover:text-[#C9D4E3]'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -163,15 +163,15 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                 >
                   <div className="flex items-center gap-3">
                     {art.tipo === 'FALTANTE' ? (
-                      <TrendingDown className="w-5 h-5 text-red-500" />
+                      <TrendingDown className="w-5 h-5 text-[#EF4444]" />
                     ) : art.tipo === 'SOBRANTE' ? (
-                      <TrendingUp className="w-5 h-5 text-blue-500" />
+                      <TrendingUp className="w-5 h-5 text-[#38BDF8]" />
                     ) : (
-                      <Minus className="w-5 h-5 text-gray-400" />
+                      <Minus className="w-5 h-5 text-[#8EA3BF]" />
                     )}
                     <div className="text-left">
-                      <p className="font-semibold text-gray-800 text-sm">{art.articulo}</p>
-                      <p className="text-xs text-gray-500">{art.sede} | {art.familia} - {art.subfamilia}</p>
+                      <p className="font-semibold text-white text-sm">{art.articulo}</p>
+                      <p className="text-xs text-[#8EA3BF]">{art.sede} | {art.familia} - {art.subfamilia}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -179,12 +179,12 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                       {art.severidad}
                     </span>
                     <div className="text-right">
-                      <p className={`text-sm font-bold ${art.totalDiferencia < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                      <p className={`text-sm font-bold ${art.totalDiferencia < 0 ? 'text-[#EF4444]' : 'text-[#38BDF8]'}`}>
                         {art.totalDiferencia > 0 ? '+' : ''}{fmtNum(art.totalDiferencia)} {art.subarticulo}
                       </p>
-                      <p className="text-xs text-gray-500">{fmtCurrency(art.valorPerdida + art.valorSobrante)}</p>
+                      <p className="text-xs text-[#8EA3BF]">{fmtCurrency(art.valorPerdida + art.valorSobrante)}</p>
                     </div>
-                    {expandido ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                    {expandido ? <ChevronDown className="w-4 h-4 text-[#8EA3BF]" /> : <ChevronRight className="w-4 h-4 text-[#8EA3BF]" />}
                   </div>
                 </button>
                 <AnimatePresence>
@@ -195,11 +195,11 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                       salida={{ altura: 0, opacidad: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-4 border-t border-gray-200 pt-3">
-                        <p className="text-xs font-bold text-gray-600 mb-2 mayusculas">Historico de movimientos</p>
+                      <div className="mt-4 border-t border-[#243A57] pt-3">
+                        <p className="text-xs font-bold text-[#C9D4E3] mb-2 uppercase">Historico de movimientos</p>
                         <table className="w-full text-xs">
                           <encabezado>
-                            <tr className="text-left text-gray-500">
+                            <tr className="text-left text-[#8EA3BF]">
                               <th className="pb-1">Fecha</th>
                               <th className="pb-1 text-right">Stock Fecha</th>
                               <th className="pb-1 text-right">Stock Inventario</th>
@@ -209,11 +209,11 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                           </encabezado>
                           <tbody>
                             {art.movements.map((m, i) => (
-                              <tr key={i} className="border-t border-gray-100">
+                              <tr key={i} className="border-t border-[#243A57]">
                                 <td className="py-1">{format(m.fecha, 'dd/MM/yyyy', { locale: es })}</td>
                                 <td className="py-1 text-right">{fmtNum(m.stockFecha)}</td>
                                 <td className="py-1 text-right">{fmtNum(m.stockInventario)}</td>
-                                <td className={`py-1 text-right font-bold ${m.variacion < 0 ? 'text-red-600' : m.variacion > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+                                <td className={`py-1 text-right font-bold ${m.variacion < 0 ? 'text-[#EF4444]' : m.variacion > 0 ? 'text-[#38BDF8]' : 'text-[#8EA3BF]'}`}>
                                   {m.variacion > 0 ? '+' : ''}{fmtNum(m.variacion)}
                                 </td>
                                 <td className="py-1 text-right">{fmtCurrency(m.costeLinea)}</td>
@@ -237,25 +237,25 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-[#132238] border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Producto</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Sede</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-600">Familia</th>
+                <th className="text-left py-3 px-4 font-semibold text-white">Producto</th>
+                <th className="text-left py-3 px-4 font-semibold text-white">Sede</th>
+                <th className="text-left py-3 px-4 font-semibold text-white">Familia</th>
                 <th className="text-right py-3 px-4 font-semibold text-red-600">Total Faltantes</th>
                 <th className="text-right py-3 px-4 font-semibold text-blue-600">Total Sobrantes</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Variacion Neta</th>
+                <th className="text-right py-3 px-4 font-semibold text-white">Variacion Neta</th>
                 <th className="text-right py-3 px-4 font-semibold text-orange-600">A Cobrar</th>
-                <th className="text-center py-3 px-4 font-semibold text-gray-600">Severidad</th>
+                <th className="text-center py-3 px-4 font-semibold text-white">Severidad</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((art, i) => (
-                <tr key={i} className="border-b border-gray-100 hover:bg-[#132238]">
-                  <td className="py-3 px-4 font-semibold text-gray-800 text-xs">{art.articulo}</td>
-                  <td className="py-3 px-4 text-gray-600 text-xs">{art.sede}</td>
-                  <td className="py-3 px-4 text-gray-600 text-xs">{art.familia}</td>
+                <tr key={i} className="border-b border-[#243A57] hover:bg-[#1A2E4A]">
+                  <td className="py-3 px-4 font-semibold text-white text-xs">{art.articulo}</td>
+                  <td className="py-3 px-4 text-[#C9D4E3] text-xs">{art.sede}</td>
+                  <td className="py-3 px-4 text-[#C9D4E3] text-xs">{art.familia}</td>
                   <td className="py-3 px-4 text-right font-bold text-red-600">{fmtNum(art.totalFaltantes)}</td>
                   <td className="py-3 px-4 text-right font-bold text-blue-600">{fmtNum(art.totalSobrantes)}</td>
-                  <td className={`py-3 px-4 text-right font-bold ${art.totalDiferencia < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                  <td className={`py-3 px-4 text-right font-bold ${art.totalDiferencia < 0 ? 'text-[#EF4444]' : 'text-[#38BDF8]'}`}>
                     {art.totalDiferencia > 0 ? '+' : ''}{fmtNum(art.totalDiferencia)}
                   </td>
                   <td className="py-3 px-4 text-right font-bold text-orange-600">{fmtNum(art.cantidadACobrar)}</td>
@@ -274,18 +274,18 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
       {/* COBROS - SOLO FALTANTES (variacion negativa) */}
       {activeSection === 'cobros' && (
         <div className="space-y-4">
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
-            <p className="text-sm font-bold text-orange-800 mb-1">Regla de Cobro</p>
-            <p className="text-xs text-orange-600">
+          <div className="bg-[#132238] border border-[#243A57] rounded-xl p-4 mb-4">
+            <p className="text-sm font-bold text-[#FBC519] mb-1">Regla de Cobro</p>
+            <p className="text-xs text-[#C9D4E3]">
               Solo se incluyen productos con Variacion NEGATIVA (faltantes reales). Los sobrantes NO se incluyen en el cobro.
             </p>
           </div>
 
           {/* Total general de cobros */}
-          <div className="bg-orange-100 border-2 border-orange-400 rounded-xl p-4">
-            <p className="text-sm font-bold text-orange-800 uppercase mb-2">Total General de Cobros</p>
-            <p className="text-3xl font-bold text-orange-700">{fmtCurrency(totals.valorTotalCobros)}</p>
-            <p className="text-xs text-orange-600 mt-1">{cobrosItems.length} productos con faltantes | {fmtNum(totals.cantidadCobrar)} unidades totales</p>
+          <div className="bg-[#1A2E4A] border-2 border-[#F59E0B] rounded-xl p-4">
+            <p className="text-sm font-bold text-white uppercase mb-2">Total General de Cobros</p>
+            <p className="text-3xl font-bold text-[#F59E0B]">{fmtCurrency(totals.valorTotalCobros)}</p>
+            <p className="text-xs text-[#C9D4E3] mt-1">{cobrosItems.length} productos con faltantes | {fmtNum(totals.cantidadCobrar)} unidades totales</p>
           </div>
 
           {/* Tabla de cobros */}
@@ -293,11 +293,11 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#132238] border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-600">Producto</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-600">Sede</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-600">Fecha</th>
+                  <th className="text-left py-3 px-4 font-semibold text-white">Producto</th>
+                  <th className="text-left py-3 px-4 font-semibold text-white">Sede</th>
+                  <th className="text-left py-3 px-4 font-semibold text-white">Fecha</th>
                   <th className="text-right py-3 px-4 font-semibold text-red-600">Cantidad Faltante</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-600">Valor Unitario</th>
+                  <th className="text-right py-3 px-4 font-semibold text-white">Valor Unitario</th>
                   <th className="text-right py-3 px-4 font-semibold text-orange-600">Valor a Cobrar</th>
                 </tr>
               </thead>
@@ -309,14 +309,14 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                     ? art.movements[art.movements.length - 1].fecha
                     : null;
                   return (
-                    <tr key={i} className="border-b border-gray-100 hover:bg-orange-50">
-                      <td className="py-3 px-4 font-semibold text-gray-800 text-xs">{art.articulo}</td>
-                      <td className="py-3 px-4 text-gray-600 text-xs">{art.sede}</td>
-                      <td className="py-3 px-4 text-gray-500 text-xs">
+                    <tr key={i} className="border-b border-[#243A57] hover:bg-[#1A2E4A]">
+                      <td className="py-3 px-4 font-semibold text-white text-xs">{art.articulo}</td>
+                      <td className="py-3 px-4 text-[#C9D4E3] text-xs">{art.sede}</td>
+                      <td className="py-3 px-4 text-[#8EA3BF] text-xs">
                         {ultimaFecha ? format(ultimaFecha, 'dd/MM/yyyy', { locale: es }) : '-'}
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-red-600">{fmtNum(cantFaltante)} {art.subarticulo}</td>
-                      <td className="py-3 px-4 text-right text-gray-600">{fmtCurrency(valorUnit)}</td>
+                      <td className="py-3 px-4 text-right text-[#C9D4E3]">{fmtCurrency(valorUnit)}</td>
                       <td className="py-3 px-4 text-right font-bold text-orange-600">{fmtCurrency(art.valorPerdida)}</td>
                     </tr>
                   );
@@ -327,13 +327,13 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
 
           {/* Total por sede */}
           <div className="mt-6">
-            <h3 className="text-sm font-bold text-gray-700 uppercase mb-3">Total de Cobros por Sede</h3>
+            <h3 className="text-sm font-bold text-white uppercase mb-3">Total de Cobros por Sede</h3>
             <div className="space-y-2">
               {cobrosPorSede.map(({ sede, items, total }) => (
-                <div key={sede} className="bg-white border border-orange-200 rounded-lg p-3 flex items-center justify-between">
+                <div key={sede} className="bg-[#132238] border border-[#243A57] rounded-lg p-3 flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-gray-800 text-sm">{sede}</p>
-                    <p className="text-xs text-gray-500">{items.length} producto(s) con faltantes</p>
+                    <p className="font-semibold text-white text-sm">{sede}</p>
+                    <p className="text-xs text-[#8EA3BF]">{items.length} producto(s) con faltantes</p>
                   </div>
                   <p className="text-lg font-bold text-orange-600">{fmtCurrency(total)}</p>
                 </div>
@@ -346,7 +346,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
       {/* RESUMEN EJECUTIVO POR SEDE */}
       {activeSection === 'ejecutivo' && (
         <div className="space-y-6">
-          <h3 className="text-base font-bold text-gray-800">Resumen Ejecutivo por Sede</h3>
+          <h3 className="text-base font-bold text-white">Resumen Ejecutivo por Sede</h3>
 
           {/* Tarjetas agrupadas por categoria */}
           {(['Critica', 'Riesgo', 'Aceptable', 'Buena', 'Excelente'] as const).map(categoria => {
@@ -354,11 +354,11 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
             if (sedesFiltradas.length === 0) return null;
 
             const catConfig: Record<string, { title: string; range: string; bg: string; border: string; headerBg: string }> = {
-              'Critica': { title: 'SEDES CRITICAS', range: '< 80%', bg: 'bg-red-50', border: 'border-red-300', headerBg: 'bg-red-600' },
-              'Riesgo': { title: 'SEDES EN RIESGO', range: '80% a 89.99%', bg: 'bg-orange-50', border: 'border-orange-300', headerBg: 'bg-orange-500' },
-              'Aceptable': { title: 'SEDES ACEPTABLES', range: '90% a 94.99%', bg: 'bg-yellow-50', border: 'border-yellow-300', headerBg: 'bg-yellow-500' },
-              'Buena': { title: 'SEDES CON BUENA CONFIABILIDAD', range: '95% a 97.99%', bg: 'bg-blue-50', border: 'border-blue-300', headerBg: 'bg-blue-500' },
-              'Excelente': { title: 'SEDES EXCELENTES', range: '98% o superior', bg: 'bg-[#0a2d1a]', border: 'border-green-900', headerBg: 'bg-green-600' },
+              'Critica': { title: 'SEDES CRITICAS', range: '< 80%', bg: 'bg-[#2A1010]', border: 'border-[#5A2020]', headerBg: 'bg-red-700' },
+              'Riesgo': { title: 'SEDES EN RIESGO', range: '80% a 89.99%', bg: 'bg-[#1A1500]', border: 'border-[#3A2A00]', headerBg: 'bg-[#F59E0B]' },
+              'Aceptable': { title: 'SEDES ACEPTABLES', range: '90% a 94.99%', bg: 'bg-[#1A1800]', border: 'border-[#3A3200]', headerBg: 'bg-[#FBC519]' },
+              'Buena': { title: 'SEDES CON BUENA CONFIABILIDAD', range: '95% a 97.99%', bg: 'bg-[#0A1A2A]', border: 'border-[#1A3A5A]', headerBg: 'bg-[#38BDF8]' },
+              'Excelente': { title: 'SEDES EXCELENTES', range: '98% o superior', bg: 'bg-[#0A2A15]', border: 'border-[#1A4A25]', headerBg: 'bg-[#22C55E]' },
             };
 
             const cfg = catConfig[categoria];
@@ -370,35 +370,35 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                 </div>
                 <div className={`${cfg.bg} p-4 space-y-3`}>
                   {sedesFiltradas.map(s => (
-                    <div key={s.sede} className="bg-white rounded-lg border border-gray-200 p-4">
+                    <div key={s.sede} className="bg-[#132238] rounded-lg border border-[#243A57] p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <p className="font-bold text-gray-800">{s.sede}</p>
+                        <p className="font-bold text-white">{s.sede}</p>
                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${s.clasif.bg} ${s.clasif.color} ${s.clasif.border} border`}>
                           {s.clasif.label}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div>
-                          <p className="text-gray-500">Productos Contados</p>
-                          <p className="font-bold text-gray-800 text-sm">{fmtNum(s.total)}</p>
+                          <p className="text-[#8EA3BF]">Productos Contados</p>
+                          <p className="font-bold text-white text-sm">{fmtNum(s.total)}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Con Diferencia</p>
+                          <p className="text-[#8EA3BF]">Con Diferencia</p>
                           <p className="font-bold text-red-600 text-sm">{fmtNum(s.conDif)}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Margen de Error</p>
+                          <p className="text-[#8EA3BF]">Margen de Error</p>
                           <p className="font-bold text-orange-600 text-sm">{s.margenError.toFixed(2)}%</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Confiabilidad</p>
+                          <p className="text-[#8EA3BF]">Confiabilidad</p>
                           <p className={`font-bold text-sm ${s.clasif.color}`}>{s.confiabilidad.toFixed(2)}%</p>
                         </div>
                       </div>
                       {/* Barra de confiabilidad */}
-                      <div className="mt-2 bg-gray-200 rounded-full h-2">
+                      <div className="mt-2 bg-[#243A57] rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full ${s.confiabilidad >= 98 ? 'bg-[#0a2d1a]0' : s.confiabilidad >= 95 ? 'bg-blue-500' : s.confiabilidad >= 90 ? 'bg-yellow-500' : s.confiabilidad >= 80 ? 'bg-orange-500' : 'bg-red-500'}`}
+                          className={`h-2 rounded-full ${s.confiabilidad >= 98 ? 'bg-[#22C55E]' : s.confiabilidad >= 95 ? 'bg-blue-500' : s.confiabilidad >= 90 ? 'bg-yellow-500' : s.confiabilidad >= 80 ? 'bg-orange-500' : 'bg-red-500'}`}
                           style={{ width: `${Math.min(s.confiabilidad, 100)}%` }}
                         />
                       </div>
@@ -416,36 +416,36 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Perdidas */}
           <div>
-            <h4 className="font-bold text-red-700 text-sm mb-3 flex items-center gap-2">
+            <h4 className="font-bold text-[#EF4444] text-sm mb-3 flex items-center gap-2">
               <TrendingDown className="w-4 h-4" />
               PERDIDAS ({perdidas.length} productos)
             </h4>
             <div className="space-y-2">
               {perdidas.slice(0, 20).map((art, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-lg">
+                <div key={i} className="flex items-center justify-between p-3 bg-[#2A1010] border border-[#4A2020] rounded-lg">
                   <div>
-                    <p className="text-xs font-bold text-red-800">{art.articulo}</p>
-                    <p className="text-xs text-red-400">{art.sede} | -{fmtNum(art.totalFaltantes)} {art.subarticulo}</p>
+                    <p className="text-xs font-bold text-white">{art.articulo}</p>
+                    <p className="text-xs text-[#8EA3BF]">{art.sede} | -{fmtNum(art.totalFaltantes)} {art.subarticulo}</p>
                   </div>
-                  <span className="text-sm font-bold text-red-600">{fmtCurrency(art.valorPerdida)}</span>
+                  <span className="text-sm font-bold text-[#EF4444]">{fmtCurrency(art.valorPerdida)}</span>
                 </div>
               ))}
             </div>
           </div>
           {/* Sobrantes */}
           <div>
-            <h4 className="font-bold text-blue-700 text-sm mb-3 flex items-center gap-2">
+            <h4 className="font-bold text-[#38BDF8] text-sm mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               SOBRANTES ({sobrantes.length} productos)
             </h4>
             <div className="space-y-2">
               {sobrantes.slice(0, 20).map((art, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <div key={i} className="flex items-center justify-between p-3 bg-[#0A1A2A] border border-[#1A3A5A] rounded-lg">
                   <div>
-                    <p className="text-xs font-bold text-blue-800">{art.articulo}</p>
-                    <p className="text-xs text-blue-400">{art.sede} | +{fmtNum(art.totalSobrantes)} {art.subarticulo}</p>
+                    <p className="text-xs font-bold text-white">{art.articulo}</p>
+                    <p className="text-xs text-[#8EA3BF]">{art.sede} | +{fmtNum(art.totalSobrantes)} {art.subarticulo}</p>
                   </div>
-                  <span className="text-sm font-bold text-blue-600">{fmtCurrency(art.valorSobrante)}</span>
+                  <span className="text-sm font-bold text-[#38BDF8]">{fmtCurrency(art.valorSobrante)}</span>
                 </div>
               ))}
             </div>
