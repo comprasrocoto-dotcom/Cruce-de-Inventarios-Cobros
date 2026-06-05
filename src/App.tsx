@@ -114,7 +114,7 @@ export default function App() {
     if (articles.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-          <div className="bg-[#0d1b2a] p-8 rounded-full">
+          <div className="bg-[#132238] p-8 rounded-full">
             <Package className="w-16 h-16 text-secondary opacity-30" />
           </div>
           <div>
@@ -156,28 +156,28 @@ export default function App() {
                     title="Artículos Revisados" 
                     value={dashboardStats.totalArticulos} 
                     icon={Package} 
-                    color="bg-kpi-revisados" 
+                    color="bg-[#38BDF8]" 
                     description="Artículos evaluados en el cruce"
                   />
                   <StatsCard 
                     title="Artículos Faltantes" 
                     value={dashboardStats.totalFaltantes} 
                     icon={AlertTriangle} 
-                    color="bg-kpi-faltantes" 
+                    color="bg-[#F59E0B]" 
                     description="Artículos con diferencia negativa"
                   />
                   <StatsCard 
                     title="Artículos Cobrables" 
                     value={dashboardStats.totalCobrables} 
                     icon={TrendingDown} 
-                    color="bg-kpi-cobrables" 
+                    color="bg-[#EF4444]" 
                     description="Faltantes que superan el margen"
                   />
                   <StatsCard 
                     title="Valor Total a Cobrar" 
                     value={formatCurrency(dashboardStats.valorTotalCobro)} 
                     icon={DollarSign} 
-                    color="bg-kpi-valor" 
+                    color="bg-[#22C55E]" 
                     description="Impacto económico total"
                   />
                 </div>
@@ -192,7 +192,7 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.sedes.map(sede => (
-                      <div key={sede.sede} className="p-5 rounded-[8px] border border-brand-border bg-[#162338]">
+                      <div key={sede.sede} className="p-5 rounded-[8px] border border-brand-border bg-[#132238]">
                         <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">{sede.sede}</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
@@ -289,14 +289,14 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <header className="bg-[#1F3A5F] text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
+      <header className="bg-[#081423] text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
         <div className="flex items-center gap-3">
-          <div className="bg-[#2F80ED] p-2 rounded-lg">
+          <div className="bg-[#FBC519] p-2 rounded-lg">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight leading-none uppercase">Cruces de Inventario</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7C4E0] font-bold">Auditoría y Cobros por Sede</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">Auditoría y Cobros por Sede</p>
           </div>
         </div>
         
@@ -314,7 +314,7 @@ export default function App() {
             <>
               <div className="h-8 w-px bg-white/10"></div>
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-[#5DADE2] uppercase">Estado</p>
+                <p className="text-xs font-bold text-[#38BDF8] uppercase">Estado</p>
                 <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Activo
                 </p>
@@ -326,7 +326,7 @@ export default function App() {
 
       {/* Navigation Tabs */}
       {articles.length > 0 && (
-        <nav className="bg-[#0a1628] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
+        <nav className="bg-[#0F1C2E] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
           {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD', 'EJECUTIVO'] as Tab[]).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
@@ -344,7 +344,7 @@ export default function App() {
                 onClick={() => setActiveTab(tab)}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
                   activeTab === tab 
-                    ? 'border-[#2F80ED] text-secondary' 
+                    ? 'border-[#FBC519] text-secondary' 
                     : 'border-transparent text-text-secondary hover:text-text-main'
                 }`}
               >
@@ -362,7 +362,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#0a1628] border-t border-brand-border p-4 text-center text-[10px] text-[#4a6a8a] font-bold uppercase tracking-widest">
+      <footer className="bg-[#0F1C2E] border-t border-brand-border p-4 text-center text-[10px] text-[#8EA3BF] font-bold uppercase tracking-widest">
         © {new Date().getFullYear()} PROMPT MAESTRO – SISTEMA DE AUDITORÍA DE INVENTARIOS
       </footer>
     </div>
