@@ -256,7 +256,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
   const getLevelColor = (nivel: string) => {
     switch (nivel) {
-      case 'Confiable': return 'text-[#27AE60] bg-emerald-50 border-[#27AE60]/20';
+      case 'Confiable': return 'text-[#27AE60] bg-[#0a2d1a] border-[#27AE60]/20';
       case 'Aceptable': return 'text-[#F2C94C] bg-[#2d2000] border-[#F2C94C]/20';
       case 'Riesgo': return 'text-[#F2994A] bg-[#1a0f00] border-[#F2994A]/20';
       case 'Crítico': return 'text-[#EB5757] bg-[#2d0f0f] border-[#EB5757]/20';
@@ -1212,7 +1212,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="flex items-start space-x-3">
-            <div className="bg-emerald-50 p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
+            <div className="bg-[#0a2d1a] p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
@@ -1530,7 +1530,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               {summary.sedesStats.map((s, idx) => (
                 <tr key={s.sede} className="hover:bg-[#0d1b2a]/50 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-emerald-100 text-emerald-700' : idx === summary.sedesStats.length - 1 ? 'bg-rose-100 text-rose-400' : 'bg-[#1a2d45] text-text-secondary'}`}>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#0a2d1a] text-emerald-400' : idx === summary.sedesStats.length - 1 ? 'bg-rose-100 text-rose-400' : 'bg-[#1a2d45] text-text-secondary'}`}>
                       {idx + 1}
                     </span>
                   </td>
@@ -1664,7 +1664,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         <p className="text-[8px] font-bold text-text-secondary uppercase leading-none mt-1">{a.reglaAplicada}</p>
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
+                        <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
                           {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
                         </span>
                       </td>
@@ -1696,7 +1696,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           {/* Stability KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
-              <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
+              <div className="bg-[#0a2d1a] p-3 rounded-xl text-emerald-600">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
@@ -1806,7 +1806,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${
                         item.estado === 'Crítico' ? 'bg-rose-100 text-rose-600' : 
                         item.estado === 'Inestable' ? 'bg-amber-100 text-amber-600' : 
-                        'bg-emerald-100 text-emerald-600'
+                        'bg-[#0a2d1a] text-emerald-600'
                       }`}>
                         {Math.round(item.confiabilidad)}%
                       </div>
@@ -1957,7 +1957,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                          item.confiabilidad >= 95 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                          item.confiabilidad >= 95 ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 
                           item.confiabilidad >= 80 ? 'bg-[#2d2000] text-amber-600 border-amber-100' : 
                           item.confiabilidad >= 60 ? 'bg-[#1a0f00] text-orange-600 border-orange-100' : 
                           'bg-[#2d0f0f] text-rose-600 border-rose-100'
@@ -2134,7 +2134,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     </button>
                     <button 
                       onClick={() => downloadGainsPDF(selectedSede)}
-                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#27AE60] hover:bg-emerald-50 transition-all border-r border-brand-border"
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#27AE60] hover:bg-[#0a2d1a] transition-all border-r border-brand-border"
                       title="Top Ganancias"
                     >
                       <TrendingUp className="w-3 h-3" />
@@ -2257,7 +2257,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                   {a.dineroRecuperable > 0 ? formatCurrency(a.dineroRecuperable) : '-'}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
+                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
                                     {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
                                   </span>
                                 </td>
@@ -2315,7 +2315,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                   )}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
+                                  <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
                                     {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
                                   </div>
                                 </td>
@@ -2377,7 +2377,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <span className={`ml-2 px-2 py-0.5 rounded-[4px] text-white ${
                         selectedProduct.estado === 'Crítico' ? 'bg-[#2d0f0f]0' : 
                         selectedProduct.estado === 'Inestable' ? 'bg-[#2d2000]0' : 
-                        'bg-emerald-500'
+                        'bg-[#0a2d1a]0'
                       }`}>
                         {selectedProduct.estado}
                       </span>
@@ -2420,7 +2420,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                             {formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))}
                           </td>
                           <td className="px-4 py-4 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
                               {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
                             </span>
                           </td>
