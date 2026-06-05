@@ -75,7 +75,7 @@ export const Filters: React.FC<FiltersProps> = ({
                   {hasActiveFilters && (
                       <button
                                     onClick={clearFilters}
-                                    className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-[#1e3a5c] rounded-lg transition-colors border border-rose-900"
+                                    className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-[#1A2E4A] rounded-lg transition-colors border border-rose-900"
                                   >
                                   <RotateCcw className="w-3 h-3" />
                                   Limpiar Filtros
@@ -92,7 +92,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                                                 if (e.target.value) handleMultiSelect('sedes', e.target.value);
                                                                 e.target.value = "";
                                                 }}
-                                                className="w-full bg-[#0d1b2a] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
+                                                className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
                                               >
                                               <option value="">Seleccionar sedes...</option>
                                     {sedes.map(s => (
@@ -111,7 +111,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                                                 if (e.target.value) handleMultiSelect('ccs', e.target.value);
                                                                 e.target.value = "";
                                                 }}
-                                                className="w-full bg-[#0d1b2a] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
+                                                className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
                                               >
                                               <option value="">Seleccionar CC...</option>
                                     {ccs.map(c => (
@@ -130,7 +130,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                                                 if (e.target.value) handleMultiSelect('responsables', e.target.value);
                                                                 e.target.value = "";
                                                 }}
-                                                className="w-full bg-[#0d1b2a] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
+                                                className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
                                               >
                                               <option value="">Seleccionar responsable...</option>
                                     {responsables.map(r => (
@@ -147,7 +147,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                   <select
                                                 value={filters.status}
                                                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                                                className="w-full bg-[#0d1b2a] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-bold text-text-main"
+                                                className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-bold text-text-main"
                                               >
                                               <option value="all">Todos los registros</option>
                                               <option value="cobrables">Solo cobrables</option>
@@ -166,7 +166,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                                                               type="date"
                                                                               value={filters.fechaInicio}
                                                                               onChange={(e) => setFilters({ ...filters, fechaInicio: e.target.value })}
-                                                                              className="w-full bg-[#0d1b2a] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                                                              className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                                                                               style={{ colorScheme: 'dark' }}
                                                                             />
                                               </div>
@@ -176,7 +176,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                                                               type="date"
                                                                               value={filters.fechaFin}
                                                                               onChange={(e) => setFilters({ ...filters, fechaFin: e.target.value })}
-                                                                              className="w-full bg-[#0d1b2a] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                                                              className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                                                                               style={{ colorScheme: 'dark' }}
                                                                             />
                                               </div>
@@ -193,7 +193,7 @@ export const Filters: React.FC<FiltersProps> = ({
                                                               placeholder="Ej: Carne de Res, 770123..."
                                                               value={filters.search}
                                                               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                                                              className="w-full bg-[#0d1b2a] border border-brand-border rounded-2xl pl-12 pr-4 py-4 text-sm text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                                              className="w-full bg-[#132238] border border-brand-border rounded-2xl pl-12 pr-4 py-4 text-sm text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                                                             />
                                   </div>
                         </div>
@@ -203,32 +203,32 @@ export const Filters: React.FC<FiltersProps> = ({
             {hasActiveFilters && (
                     <div className="mt-6 flex flex-wrap gap-2 pt-6 border-t border-brand-border">
                       {filters.sedes.map(s => (
-                                  <div key={s} className="flex items-center gap-2 px-3 py-1.5 bg-[#1a2d45] text-primary rounded-full text-xs font-bold border border-brand-border">
+                                  <div key={s} className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-primary rounded-full text-xs font-bold border border-brand-border">
                                                 <span className="opacity-60 uppercase text-[9px]">Sede:</span> {s}
                                                 <button onClick={() => removeChip('sedes', s)}><X className="w-3 h-3 hover:text-white" /></button>
                                   </div>
                                 ))}
                       {filters.ccs.map(c => (
-                                  <div key={c} className="flex items-center gap-2 px-3 py-1.5 bg-[#1a2d45] text-secondary rounded-full text-xs font-bold border border-brand-border">
+                                  <div key={c} className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-secondary rounded-full text-xs font-bold border border-brand-border">
                                                 <span className="opacity-60 uppercase text-[9px]">CC:</span> {c}
                                                 <button onClick={() => removeChip('ccs', c)}><X className="w-3 h-3 hover:text-white" /></button>
                                   </div>
                                 ))}
                       {filters.responsables.map(r => (
-                                  <div key={r} className="flex items-center gap-2 px-3 py-1.5 bg-[#1a2d45] text-text-main rounded-full text-xs font-bold border border-brand-border">
+                                  <div key={r} className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-text-main rounded-full text-xs font-bold border border-brand-border">
                                                 <User className="w-3 h-3 opacity-50" />
                                     {r}
                                                 <button onClick={() => removeChip('responsables', r)}><X className="w-3 h-3 hover:text-white" /></button>
                                   </div>
                                 ))}
                       {filters.fechaInicio && (
-                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a2d45] text-warning rounded-full text-xs font-bold border border-brand-border">
+                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-warning rounded-full text-xs font-bold border border-brand-border">
                                                 <span className="opacity-60 uppercase text-[9px]">Desde:</span> {filters.fechaInicio}
                                                 <button onClick={() => setFilters({ ...filters, fechaInicio: '' })}><X className="w-3 h-3 hover:text-white" /></button>
                                   </div>
                               )}
                       {filters.fechaFin && (
-                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a2d45] text-warning rounded-full text-xs font-bold border border-brand-border">
+                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-warning rounded-full text-xs font-bold border border-brand-border">
                                                 <span className="opacity-60 uppercase text-[9px]">Hasta:</span> {filters.fechaFin}
                                                 <button onClick={() => setFilters({ ...filters, fechaFin: '' })}><X className="w-3 h-3 hover:text-white" /></button>
                                   </div>
