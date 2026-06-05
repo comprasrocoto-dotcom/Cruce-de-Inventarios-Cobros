@@ -16,7 +16,7 @@ const fmtNum = (val: number) => new Intl.NumberFormat('es-CO').format(val);
 
 // Clasificación de confiabilidad
 const getConfiabilidadClasificacion = (pct: number): { label: string; color: string; bg: string; border: string } => {
-  if (pct >= 98) return { label: 'Excelente', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-300' };
+  if (pct >= 98) return { label: 'Excelente', color: 'text-green-400', bg: 'bg-[#0a2d1a]', border: 'border-green-900' };
   if (pct >= 95) return { label: 'Buena', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-300' };
   if (pct >= 90) return { label: 'Aceptable', color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-300' };
   if (pct >= 80) return { label: 'Riesgo', color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-300' };
@@ -90,7 +90,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
   const getSeverityStyle = (s: string) => {
     if (s === 'CRITICO') return 'bg-red-100 text-red-800 border-red-300';
     if (s === 'MEDIO') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    return 'bg-green-100 text-green-800 border-green-300';
+    return 'bg-[#0a2d1a] text-green-800 border-green-900';
   };
 
   const tabs = [
@@ -236,7 +236,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-[#0d1b2a] border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-semibold text-gray-600">Producto</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-600">Sede</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-600">Familia</th>
@@ -249,7 +249,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
             </thead>
             <tbody>
               {filtered.map((art, i) => (
-                <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={i} className="border-b border-gray-100 hover:bg-[#0d1b2a]">
                   <td className="py-3 px-4 font-semibold text-gray-800 text-xs">{art.articulo}</td>
                   <td className="py-3 px-4 text-gray-600 text-xs">{art.sede}</td>
                   <td className="py-3 px-4 text-gray-600 text-xs">{art.familia}</td>
@@ -292,7 +292,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
+                <tr className="bg-[#0d1b2a] border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Producto</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Sede</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Fecha</th>
@@ -358,7 +358,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
               'Riesgo': { title: 'SEDES EN RIESGO', range: '80% a 89.99%', bg: 'bg-orange-50', border: 'border-orange-300', headerBg: 'bg-orange-500' },
               'Aceptable': { title: 'SEDES ACEPTABLES', range: '90% a 94.99%', bg: 'bg-yellow-50', border: 'border-yellow-300', headerBg: 'bg-yellow-500' },
               'Buena': { title: 'SEDES CON BUENA CONFIABILIDAD', range: '95% a 97.99%', bg: 'bg-blue-50', border: 'border-blue-300', headerBg: 'bg-blue-500' },
-              'Excelente': { title: 'SEDES EXCELENTES', range: '98% o superior', bg: 'bg-green-50', border: 'border-green-300', headerBg: 'bg-green-600' },
+              'Excelente': { title: 'SEDES EXCELENTES', range: '98% o superior', bg: 'bg-[#0a2d1a]', border: 'border-green-900', headerBg: 'bg-green-600' },
             };
 
             const cfg = catConfig[categoria];
@@ -398,7 +398,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
                       {/* Barra de confiabilidad */}
                       <div className="mt-2 bg-gray-200 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full ${s.confiabilidad >= 98 ? 'bg-green-500' : s.confiabilidad >= 95 ? 'bg-blue-500' : s.confiabilidad >= 90 ? 'bg-yellow-500' : s.confiabilidad >= 80 ? 'bg-orange-500' : 'bg-red-500'}`}
+                          className={`h-2 rounded-full ${s.confiabilidad >= 98 ? 'bg-[#0a2d1a]0' : s.confiabilidad >= 95 ? 'bg-blue-500' : s.confiabilidad >= 90 ? 'bg-yellow-500' : s.confiabilidad >= 80 ? 'bg-orange-500' : 'bg-red-500'}`}
                           style={{ width: `${Math.min(s.confiabilidad, 100)}%` }}
                         />
                       </div>
