@@ -226,7 +226,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
   return (
     <div className="space-y-8 pb-12">
       {/* Header Section */}
-      <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
+      <div className="bg-[#0F1C2E] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
             Análisis Gerencial de Inventarios {selectedSede ? `— ${selectedSede}` : ''}
@@ -242,9 +242,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
 
       {/* KPI Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#0d1b2a] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#EB5757] shadow-sm">
+        <div className="bg-[#132238] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#EB5757] shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
+            <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {selectedSede ? 'CC Críticos' : 'Sedes Críticas'}
             </span>
@@ -252,9 +252,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad < 70).length}</p>
           <p className="text-sm text-text-secondary mt-1">Requieren auditoría inmediata</p>
         </div>
-        <div className="bg-[#0d1b2a] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#F2C94C] shadow-sm">
+        <div className="bg-[#132238] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#F2C94C] shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <AlertTriangle className="w-5 h-5 text-[#F2C94C]" />
+            <AlertTriangle className="w-5 h-5 text-[#FBC519]" />
             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {selectedSede ? 'CC en Alerta' : 'Sedes en Alerta'}
             </span>
@@ -262,9 +262,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <p className="text-3xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 70 && s.confiabilidad < 85).length}</p>
           <p className="text-sm text-text-secondary mt-1">Necesitan seguimiento preventivo</p>
         </div>
-        <div className="bg-[#0d1b2a] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#27AE60] shadow-sm">
+        <div className="bg-[#132238] p-6 rounded-[12px] border border-brand-border border-l-4 border-[#27AE60] shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <CheckCircle2 className="w-5 h-5 text-[#27AE60]" />
+            <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
               {selectedSede ? 'CC Confiables' : 'Sedes Confiables'}
             </span>
@@ -276,10 +276,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Ranking Table */}
-        <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center justify-between">
+        <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-brand-border bg-[#132238] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-[#2F80ED]" />
+              <Trophy className="w-5 h-5 text-[#38BDF8]" />
               <h3 className="font-bold text-text-main uppercase tracking-tight">
                 Ranking de Confiabilidad {selectedSede ? `— ${selectedSede}` : ''}
               </h3>
@@ -289,7 +289,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-[#1a2d45]">
+                <tr className="bg-[#0F1C2E]">
                   <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Pos</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">
                     {selectedSede ? 'Centro de Costos' : 'Sede'}
@@ -302,7 +302,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
               </thead>
               <tbody className="divide-y divide-brand-border">
                 {rankingData.map((s, idx) => (
-                  <tr key={s.sede} className="hover:bg-[#1a2d45] transition-colors">
+                  <tr key={s.sede} className="hover:bg-[#0F1C2E] transition-colors">
                     <td className="px-4 py-4">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#2d0f0f] text-rose-400' : idx === rankingData.length - 1 ? 'bg-[#0a2d1a] text-emerald-400' : 'bg-slate-100 text-text-secondary'}`}>
                         {idx + 1}
@@ -330,9 +330,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
 
         {/* Bar Chart Comparison */}
-        <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
+        <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-8">
-            <BarChart3 className="w-5 h-5 text-[#2F80ED]" />
+            <BarChart3 className="w-5 h-5 text-[#38BDF8]" />
             <h3 className="font-bold text-text-main uppercase tracking-tight">Comparativa Visual de Confiabilidad</h3>
           </div>
           <div className="flex-1 min-h-[400px]">
@@ -356,7 +356,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                     if (active && payload && payload.length) {
                       const data = payload[0].payload as ReliabilityStats;
                       return (
-                        <div className="bg-[#0d1b2a] p-3 border border-brand-border shadow-xl rounded-lg bg-[#0d1b2a]">
+                        <div className="bg-[#132238] p-3 border border-brand-border shadow-xl rounded-lg bg-[#132238]">
                           <p className="font-bold text-text-main mb-1">{data.sede}</p>
                           <p className="text-xs text-text-secondary">Confiabilidad: <span className="font-bold" style={{ color: getStatusColor(data.confiabilidad) }}>{Math.round(data.confiabilidad)}%</span></p>
                           <p className="text-xs text-text-secondary">Impacto: <span className="font-bold text-rose-600">{formatCurrency(data.impactoEconomico)}</span></p>
@@ -381,15 +381,15 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           </div>
           <div className="mt-6 flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-widest">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#27AE60]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#22C55E]"></div>
               <span className="text-text-secondary">Confiable</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#F2C94C]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#FBC519]"></div>
               <span className="text-text-secondary">Alerta</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#EB5757]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#EF4444]"></div>
               <span className="text-text-secondary">Crítico</span>
             </div>
           </div>
@@ -397,9 +397,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
       </div>
 
       {/* Top Economic Impact */}
-      <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center gap-2">
-          <TrendingDown className="w-5 h-5 text-[#EB5757]" />
+      <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-brand-border bg-[#132238] flex items-center gap-2">
+          <TrendingDown className="w-5 h-5 text-[#EF4444]" />
           <h3 className="font-bold text-text-main uppercase tracking-tight">
             {selectedSede ? `Top Impacto Económico en ${selectedSede}` : 'Top 5 Sedes con Mayor Impacto Económico (Pérdida)'}
           </h3>
@@ -407,7 +407,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-[#1a2d45]">
+              <tr className="bg-[#0F1C2E]">
                 <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">
                   {selectedSede ? 'Centro de Costos' : 'Sede'}
                 </th>
@@ -419,10 +419,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             </thead>
             <tbody className="divide-y divide-brand-border">
               {topLossesData.map((s) => (
-                <tr key={s.sede} className="hover:bg-[#1a2d45] transition-colors">
+                <tr key={s.sede} className="hover:bg-[#0F1C2E] transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="bg-[#1a2d45] p-2 rounded-lg">
+                      <div className="bg-[#0F1C2E] p-2 rounded-lg">
                         <Building2 className="w-4 h-4 text-text-main" />
                       </div>
                       <span className="font-bold text-text-main">{s.sede}</span>
@@ -443,7 +443,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-[#2F80ED] font-bold text-xs uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-[#38BDF8] font-bold text-xs uppercase tracking-wider">
                       <span>Auditoría Prioritaria</span>
                       <ArrowRight className="w-3 h-3" />
                     </div>
@@ -457,10 +457,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
 
 
           {/* Problematic Table */}
-          <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center justify-between">
+          <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-brand-border bg-[#132238] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-[#EB5757]" />
+                <ShieldAlert className="w-5 h-5 text-[#EF4444]" />
                 <h3 className="font-bold text-text-main uppercase tracking-tight">
                   Ranking de Riesgo Operativo {selectedSede ? `— ${selectedSede}` : ''}
                 </h3>
@@ -469,7 +469,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-[#1a2d45]">
+                  <tr className="bg-[#0F1C2E]">
                     <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Pos</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">Artículo</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Impacto $</th>
@@ -479,7 +479,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                 </thead>
                 <tbody className="divide-y divide-brand-border">
                   {problematicProducts.map((p, idx) => (
-                    <tr key={p.articulo} className="hover:bg-[#1a2d45] transition-colors">
+                    <tr key={p.articulo} className="hover:bg-[#0F1C2E] transition-colors">
                       <td className="px-4 py-4">
                         <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-text-secondary">
                           {idx + 1}
@@ -511,7 +511,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
 
       {/* Comparativo Historico de Confiabilidad por Sede */}
       <div className="space-y-8">
-        <div className="bg-[#1F3A5F] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
+        <div className="bg-[#0F1C2E] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
               Comparativo Histórico de Confiabilidad por Sede
@@ -526,7 +526,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
 
         {/* Selector de agrupacion */}
-        <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6">
+        <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm p-6">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-3">
               <span className="font-bold text-text-main text-sm uppercase tracking-tight">Agrupar por:</span>
@@ -561,7 +561,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                 <select
                   value={selectedSedeFilter}
                   onChange={(e) => setSelectedSedeFilter(e.target.value)}
-                  className="border border-brand-border rounded-lg px-3 py-1.5 text-sm text-text-main font-medium bg-[#0d1b2a] focus:outline-none focus:ring-2 focus:ring-[#2F80ED]"
+                  className="border border-brand-border rounded-lg px-3 py-1.5 text-sm text-text-main font-medium bg-[#132238] focus:outline-none focus:ring-2 focus:ring-[#2F80ED]"
                 >
                   <option value="all">Todas las sedes</option>
                   {sedesDisponibles.map(s => (
@@ -574,9 +574,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         </div>
 
         {groupBy === 'mes' ? (
-          <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
+          <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-6">
-              <Activity className="w-5 h-5 text-[#2F80ED]" />
+              <Activity className="w-5 h-5 text-[#38BDF8]" />
               <h3 className="font-bold text-text-main uppercase tracking-tight">Confiabilidad por Inventario</h3>
             </div>
             {chartDataByMes.length === 0 ? (
@@ -605,9 +605,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
+            <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-6">
-                <Building2 className="w-5 h-5 text-[#2F80ED]" />
+                <Building2 className="w-5 h-5 text-[#38BDF8]" />
                 <h3 className="font-bold text-text-main uppercase tracking-tight">Confiabilidad Promedio por Sede</h3>
               </div>
               {sedeHistoricalData.length === 0 ? (
@@ -644,15 +644,15 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
               )}
             </div>
 
-            <div className="bg-[#0d1b2a] rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-brand-border bg-[#0d1b2a] flex items-center gap-2">
+            <div className="bg-[#132238] rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-brand-border bg-[#132238] flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-text-main" />
                 <h3 className="font-bold text-text-main uppercase tracking-tight">Análisis Económico por Sede</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-brand-border bg-[#0d1b2a]">
+                    <tr className="border-b border-brand-border bg-[#132238]">
                       <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest">Sede</th>
                       <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest text-right">Confiabilidad</th>
                       <th className="px-4 py-3 text-xs font-bold text-text-secondary uppercase tracking-widest text-right">Total Pérdidas</th>
@@ -662,7 +662,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                   </thead>
                   <tbody>
                     {sedeHistoricalData.map((sede, idx) => (
-                      <tr key={sede.sede} className={`border-b border-[#F0F4F8] ${idx % 2 === 0 ? 'bg-[#0d1b2a]' : 'bg-[#0d1b2a]'}`}>
+                      <tr key={sede.sede} className={`border-b border-[#F0F4F8] ${idx % 2 === 0 ? 'bg-[#132238]' : 'bg-[#132238]'}`}>
                         <td className="px-4 py-4 font-bold text-text-main text-sm">{sede.sede}</td>
                         <td className="px-4 py-4 text-right">
                           <span className={`font-bold text-sm ${
