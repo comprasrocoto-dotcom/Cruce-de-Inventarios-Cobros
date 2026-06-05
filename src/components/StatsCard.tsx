@@ -21,9 +21,9 @@ export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, 
                                     <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
                             </div>
                             <div>
-                                    <p className="text-[11px] font-bold text-[#8EA3BF] uppercase tracking-widest">{title}</p>p>
-                                    <h3 className="text-2xl font-bold text-white mt-1">{value}</h3>h3>
-                                    {description && <p className="text-[10px] text-[#8EA3BF] mt-1 font-medium">{description}</p>p>}
+                                    <p className="text-[11px] font-bold text-[#8EA3BF] uppercase tracking-widest">{title}</p>
+                                    <h3 className="text-2xl font-bold text-white mt-1">{value}</h3>
+                                    {description && <p className="text-[10px] text-[#8EA3BF] mt-1 font-medium">{description}</p>}
                             </div>
                       </motion.div>
                     );
