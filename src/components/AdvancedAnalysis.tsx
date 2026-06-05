@@ -236,7 +236,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="bg-[#0d1b2a] border-b border-gray-200">
+              <tr className="bg-[#132238] border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-semibold text-gray-600">Producto</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-600">Sede</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-600">Familia</th>
@@ -249,7 +249,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
             </thead>
             <tbody>
               {filtered.map((art, i) => (
-                <tr key={i} className="border-b border-gray-100 hover:bg-[#0d1b2a]">
+                <tr key={i} className="border-b border-gray-100 hover:bg-[#132238]">
                   <td className="py-3 px-4 font-semibold text-gray-800 text-xs">{art.articulo}</td>
                   <td className="py-3 px-4 text-gray-600 text-xs">{art.sede}</td>
                   <td className="py-3 px-4 text-gray-600 text-xs">{art.familia}</td>
@@ -292,7 +292,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-[#0d1b2a] border-b border-gray-200">
+                <tr className="bg-[#132238] border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Producto</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Sede</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Fecha</th>
