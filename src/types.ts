@@ -47,20 +47,27 @@ export interface ArticleSummary {
 }
 export interface SedeSummary {
   sede: string;
+  articulos: ArticleSummary[];
+  totalCobroSede: number;
   totalArticulos: number;
   totalFaltantes: number;
-  totalSobrantes: number;
   totalCobrables: number;
-  articulosConDiferencia: number;
-  variacionTotal: number;
-  impactoEconomico: number;
-  topArticulosCriticos: { articulo: string; variacion: number; impacto: number; unidad: string }[];
-  topArticulosConfiables: { articulo: string; variacion: number; impacto: number; unidad: string }[];
 }
+export interface DashboardStats {
+  totalArticulos: number;
+  totalFaltantes: number;
+  totalCobrables: number;
+  valorTotalCobro: number;
+  sedes: SedeSummary[];
+}
+
 
 export interface ReliabilityStats {
   sede: string;
-  totalArticulos: number;
+  confiabilidad: number;
+  nivel: 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico';
+  articulosEvaluados: number;
+  totalArticulos?: number;
   articulosSinDiferencia: number;
   articulosConDiferencia: number;
   variacionTotal: number;
@@ -92,7 +99,7 @@ export interface HistoricalPeriodStats {
   cobrables: number;
   valorCobro: number;
   variacionVsAnterior?: number;
-  estado: 'Mejoro' | 'Empeoro' | 'Estable';
+  estado: 'Mejoró' | 'Empeoró' | 'Estable';
 }
 
 export interface HistoricalTraceabilityData {
@@ -108,7 +115,7 @@ export interface ProductStability {
   porcentajeFueraMargen: number;
   confiabilidad: number;
   impactoTotal: number;
-  estado: 'Estable' | 'Inestable' | 'Critico';
+  estado: 'Estable' | 'Inestable' | 'Crítico';
 }
 
 export interface ResponsableStability {
