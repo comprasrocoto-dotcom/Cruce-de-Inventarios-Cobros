@@ -30,7 +30,7 @@ const SHEET_NAME = 'BASE DE DATOS';
 
 
 
-const CSV_URL = '/api/sheets';
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbw2ZgwjldaN23gCgUXEX4TqKrZc6E2fwiks6UHALc9p3HTifRlcmaAlUDWbjFKJbm4P/exec';
 
 
 
