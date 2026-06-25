@@ -1,4 +1,4 @@
-import { RawInventoryRow, ArticleSummary, SedeSummary, DashboardStats, InventoryMovement, ReliabilitySummary, ReliabilityStats, HistoricalPeriodStats, HistoricalTraceabilityData, ProductStability, ResponsableStability } from '../types';
+import { RawInventoryRow, ArticleSummary, SedeSummary, DashboardStats, InventoryMovement, ReliabilitySummary, ReliabilityStats, HistoricalPeriodStats, HistoricalTraceabilityData, ProductStability, ResponsableStability, ExecutiveSummary } from '../types';
 
 
 
@@ -380,6 +380,8 @@ function findInternalName(header: string, index: number): string | null {
 
 
 
+      // Evita falsos positivos con alias muy cortos (cc, um, u m, cod)
+      if (normalizedSynonym.length < 4) continue;
       if (normalized.includes(normalizedSynonym) || normalizedSynonym.includes(normalized)) {
 
 
@@ -700,7 +702,9 @@ export function normalizeData(rawRows: RawInventoryRow[]): { articles: ArticleSu
       if (slashParts.length === 3) {
         const firstSeg = slashParts[0];
         const secondSeg = slashParts[1];
-        const yearNum = Number(slashParts[2]);
+        let yearNum = Number(slashParts[2]);
+        // Normaliza años de 2 dígitos (ej. "26" -> 2026) antes de validar
+        if (yearNum < 100) yearNum += yearNum < 70 ? 2000 : 1900;
         const firstNum = Number(firstSeg);
         const secondNum = Number(secondSeg);
 
@@ -2656,7 +2660,7 @@ export function getResponsableStabilityAnalysis(articles: ArticleSummary[]): Res
 
 
 
-export function getExecutiveSummary(articles) {
+export function getExecutiveSummary(articles: ArticleSummary[]): ExecutiveSummary {
 
 
 
@@ -2721,6 +2725,3 @@ export function getExecutiveSummary(articles) {
 
 
 }
-
-
-
