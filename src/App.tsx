@@ -9,14 +9,14 @@ import { StatsCard } from './components/StatsCard';
 import { ArticleSummary, GlobalFilters } from './types';
 import { getDashboardStats } from './utils/inventory';
 import { useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  BarChart2, 
-  DollarSign, 
-  ShieldCheck, 
-  Package, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  LayoutDashboard,
+  BarChart2,
+  DollarSign,
+  ShieldCheck,
+  Package,
+  AlertTriangle,
+  CheckCircle2,
   TrendingDown,
   BarChart3,
   Activity
@@ -63,37 +63,75 @@ export default function App() {
     localStorage.setItem('inventory_filters', JSON.stringify(filters));
   }, [filters]);
 
- const filteredArticles = useMemo(() => {
-      // Filtros multi-selección
-      const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
-      const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
-      const matchesSubfamilia = filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
-      const matchesResponsable = filters.responsables.length === 0 || filters.responsables.includes(art.responsable || 'Sin asignar');
-      
-      // Búsqueda
-      const matchesSearch = !filters.search || 
-        art.articulo.toLowerCase().includes(filters.search.toLowerCase()) ||
-        art.codBarras.toLowerCase().includes(filters.search.toLowerCase());
-      
-      // Estado
-      let matchesStatus = true;
-      if (filters.status === 'cobrables') matchesStatus = art.debeCobrar;
-      else if (filters.status === 'faltantes') matchesStatus = art.tipo === 'FALTANTE';
-      else if (filters.status === 'sobrantes') matchesStatus = art.tipo === 'SOBRANTE';
+  const filteredArticles = useMemo(() => {
+    const startDate = filters.fechaInicio ? new Date(filters.fechaInicio + 'T00:00:00') : null;
+    const endDate = filters.fechaFin ? new Date(filters.fechaFin + 'T23:59:59') : null;
 
-      // Fechas
-      let matchesFecha = true;
-      if (filters.fechaInicio || filters.fechaFin) {
-        const itemDate = new Date(art.fecha);
-        if (filters.fechaInicio && itemDate < new Date(filters.fechaInicio)) matchesFecha = false;
-        if (filters.fechaFin && itemDate > new Date(filters.fechaFin)) matchesFecha = false;
-      }
+    return articles
+      .filter(art => {
+        const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
+        const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
+        const matchesSubfamilia = filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
+        const matchesResponsable = filters.responsables.length === 0 || filters.responsables.includes(art.responsable || 'Sin asignar');
 
-      const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);
-      const matchesSubArticulo = !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo);
-      const matchesProveedor = !filters.proveedores?.length || filters.proveedores.includes(art.proveedor);
-      return matchesSede && matchesCC && matchesSubfamilia && matchesFamilia && matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch && matchesStatus && matchesFecha;
-    });
+        const matchesSearch = !filters.search ||
+          art.articulo.toLowerCase().includes(filters.search.toLowerCase()) ||
+          art.codBarras.toLowerCase().includes(filters.search.toLowerCase());
+
+        const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);
+        const matchesSubArticulo = !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo);
+        const matchesProveedor = !filters.proveedores?.length || filters.proveedores.includes(art.proveedor);
+
+        return matchesSede && matchesCC && matchesSubfamilia && matchesFamilia &&
+          matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch;
+      })
+      .map(art => {
+        if (!startDate && !endDate) return art;
+
+        const movements = art.movements.filter(m => {
+          const d = new Date(m.fecha);
+          if (startDate && d < startDate) return false;
+          if (endDate && d > endDate) return false;
+          return true;
+        });
+
+        if (movements.length === 0) return null;
+
+        const totalDiferencia = movements.reduce((acc, m) => acc + m.variacion, 0);
+        const totalFaltantes = movements.filter(m => m.variacion < 0).reduce((acc, m) => acc + Math.abs(m.variacion), 0);
+        const totalSobrantes = movements.filter(m => m.variacion > 0).reduce((acc, m) => acc + m.variacion, 0);
+        const ultimoCoste = movements[movements.length - 1].costeLinea;
+        const valorUnitario = ultimoCoste || art.costePromedio;
+
+        let tipo: ArticleSummary['tipo'] = 'SIN_VARIACION';
+        if (totalDiferencia < -0.0001) tipo = 'FALTANTE';
+        else if (totalDiferencia > 0.0001) tipo = 'SOBRANTE';
+
+        const debeCobrar = totalDiferencia < -0.0001 && !art.dentroDeTolerancia;
+
+        return {
+          ...art,
+          movements,
+          fecha: movements[movements.length - 1].fecha,
+          totalDiferencia,
+          totalFaltantes,
+          totalSobrantes,
+          cantidadACobrar: Math.max(0, totalFaltantes - totalSobrantes),
+          ultimoCoste,
+          tipo,
+          debeCobrar,
+          totalCobro: debeCobrar ? Math.abs(totalDiferencia) * valorUnitario : 0,
+          valorPerdida: totalFaltantes * valorUnitario,
+          valorSobrante: totalSobrantes * valorUnitario,
+        } as ArticleSummary;
+      })
+      .filter((art): art is ArticleSummary => art !== null)
+      .filter(art => {
+        if (filters.status === 'cobrables') return art.debeCobrar;
+        if (filters.status === 'faltantes') return art.tipo === 'FALTANTE';
+        if (filters.status === 'sobrantes') return art.tipo === 'SOBRANTE';
+        return true;
+      });
   }, [articles, filters]);
 
   const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
@@ -106,7 +144,7 @@ export default function App() {
   const uniqueSubfamilias = useMemo(() => Array.from(new Set(articles.map(a => a.subfamilia))).filter(Boolean).sort(), [articles]);
   const uniqueResponsables = useMemo(() => Array.from(new Set(articles.map(a => a.responsable || 'Sin asignar'))).sort(), [articles]);
 
-  const formatCurrency = (val: number) => 
+  const formatCurrency = (val: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
 
   const renderContent = () => {
@@ -128,7 +166,7 @@ export default function App() {
 
     return (
       <div className="space-y-8">
-        <Filters 
+        <Filters
           sedes={uniqueSedes}
           ccs={uniqueCCs}
           familias={uniqueFamilias}
@@ -151,36 +189,36 @@ export default function App() {
             {activeTab === 'RESUMEN' && (
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <StatsCard 
-                    title="Artículos Revisados" 
-                    value={dashboardStats.totalArticulos} 
-                    icon={Package} 
-                    color="bg-[#38BDF8]" 
+                  <StatsCard
+                    title="Artículos Revisados"
+                    value={dashboardStats.totalArticulos}
+                    icon={Package}
+                    color="bg-[#38BDF8]"
                     description="Artículos evaluados en el cruce"
                   />
-                  <StatsCard 
-                    title="Artículos Faltantes" 
-                    value={dashboardStats.totalFaltantes} 
-                    icon={AlertTriangle} 
-                    color="bg-[#F59E0B]" 
+                  <StatsCard
+                    title="Artículos Faltantes"
+                    value={dashboardStats.totalFaltantes}
+                    icon={AlertTriangle}
+                    color="bg-[#F59E0B]"
                     description="Artículos con diferencia negativa"
                   />
-                  <StatsCard 
-                    title="Artículos Cobrables" 
-                    value={dashboardStats.totalCobrables} 
-                    icon={TrendingDown} 
-                    color="bg-[#EF4444]" 
+                  <StatsCard
+                    title="Artículos Cobrables"
+                    value={dashboardStats.totalCobrables}
+                    icon={TrendingDown}
+                    color="bg-[#EF4444]"
                     description="Faltantes que superan el margen"
                   />
-                  <StatsCard 
-                    title="Valor Total a Cobrar" 
-                    value={formatCurrency(dashboardStats.valorTotalCobro)} 
-                    icon={DollarSign} 
-                    color="bg-[#22C55E]" 
+                  <StatsCard
+                    title="Valor Total a Cobrar"
+                    value={formatCurrency(dashboardStats.valorTotalCobro)}
+                    icon={DollarSign}
+                    color="bg-[#22C55E]"
                     description="Impacto económico total"
                   />
                 </div>
-                
+
                 <div className="bg-card p-8 rounded-[12px] shadow-sm border border-brand-border">
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -249,7 +287,7 @@ export default function App() {
             )}
 
             {activeTab === 'GERENCIAL' && (
-                <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
+              <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
             )}
 
             {activeTab === 'EJECUTIVO' && (
@@ -260,18 +298,18 @@ export default function App() {
                     <p className="text-sm text-brand-text-secondary">KPIs, tendencias y top productos</p>
                   </div>
                   <ExportButtons data={filteredArticles} />
-                                    <PDFReport data={filteredArticles} filters={filters} />
+                  <PDFReport data={filteredArticles} filters={filters} />
                 </div>
                 <ExecutiveDashboard data={filteredArticles} />
               </div>
             )}
 
             {activeTab === 'TRAZABILIDAD' && (
-              <HistoricalTraceability 
-                data={filteredArticles} 
-                sedes={uniqueSedes} 
-                ccs={uniqueCCs} 
-                subfamilias={uniqueSubfamilias} 
+              <HistoricalTraceability
+                data={filteredArticles}
+                sedes={uniqueSedes}
+                ccs={uniqueCCs}
+                subfamilias={uniqueSubfamilias}
                 fileName={fileName}
                 onReset={() => {
                   setArticles([]);
@@ -298,10 +336,10 @@ export default function App() {
             <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">Auditoría y Cobros por Sede</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-6">
-          <FileUpload 
-            onDataLoaded={(data) => setArticles(data)} 
+          <FileUpload
+            onDataLoaded={(data) => setArticles(data)}
             onReset={() => {
               setArticles([]);
               setFileName('');
@@ -342,8 +380,8 @@ export default function App() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
-                  activeTab === tab 
-                    ? 'border-[#FBC519] text-secondary' 
+                  activeTab === tab
+                    ? 'border-[#FBC519] text-secondary'
                     : 'border-transparent text-text-secondary hover:text-text-main'
                 }`}
               >
