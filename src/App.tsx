@@ -63,8 +63,7 @@ export default function App() {
     localStorage.setItem('inventory_filters', JSON.stringify(filters));
   }, [filters]);
 
-  const filteredArticles = useMemo(() => {
-    return articles.filter(art => {
+ const filteredArticles = useMemo(() => {
       // Filtros multi-selección
       const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
       const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
