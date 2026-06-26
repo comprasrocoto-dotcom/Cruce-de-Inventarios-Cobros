@@ -1,3 +1,14 @@
+/**
+ * Componente raíz / shell de la aplicación.
+ *
+ * Responsabilidades:
+ *  - Mantener el estado global: artículos cargados, filtros y pestaña activa.
+ *  - Aplicar el pipeline de filtrado (sede, CC, familia, fechas, búsqueda...)
+ *    y recalcular las métricas derivadas por rango de fechas.
+ *  - Persistir los filtros en localStorage.
+ *  - Orquestar las 7 pestañas: Resumen, Análisis, Cobros, Confiabilidad,
+ *    Gerencial, Trazabilidad y Ejecutivo.
+ */
 import React, { useState, useMemo } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { Filters } from './components/Filters';
@@ -19,7 +30,7 @@ import {
   CheckCircle2,
   TrendingDown,
   BarChart3,
-  Activity
+  Activity,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
@@ -27,7 +38,14 @@ import { AdvancedAnalysis } from './components/AdvancedAnalysis';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { PDFReport } from './components/PDFReport';
 
-type Tab = 'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
+type Tab =
+  | 'RESUMEN'
+  | 'ANÁLISIS'
+  | 'COBROS'
+  | 'CONFIABILIDAD'
+  | 'GERENCIAL'
+  | 'TRAZABILIDAD'
+  | 'EJECUTIVO';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
@@ -44,7 +62,7 @@ export default function App() {
     status: 'all',
     search: '',
     fechaInicio: '',
-    fechaFin: ''
+    fechaFin: '',
   });
 
   // Persistencia de filtros
@@ -54,7 +72,7 @@ export default function App() {
       try {
         setFilters(JSON.parse(saved));
       } catch (e) {
-        console.error("Error loading filters", e);
+        console.error('Error loading filters', e);
       }
     }
   }, []);
@@ -68,27 +86,41 @@ export default function App() {
     const endDate = filters.fechaFin ? new Date(filters.fechaFin + 'T23:59:59') : null;
 
     return articles
-      .filter(art => {
+      .filter((art) => {
         const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
         const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
-        const matchesSubfamilia = filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
-        const matchesResponsable = filters.responsables.length === 0 || filters.responsables.includes(art.responsable || 'Sin asignar');
+        const matchesSubfamilia =
+          filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
+        const matchesResponsable =
+          filters.responsables.length === 0 ||
+          filters.responsables.includes(art.responsable || 'Sin asignar');
 
-        const matchesSearch = !filters.search ||
+        const matchesSearch =
+          !filters.search ||
           art.articulo.toLowerCase().includes(filters.search.toLowerCase()) ||
           art.codBarras.toLowerCase().includes(filters.search.toLowerCase());
 
         const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);
-        const matchesSubArticulo = !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo);
-        const matchesProveedor = !filters.proveedores?.length || filters.proveedores.includes(art.proveedor);
+        const matchesSubArticulo =
+          !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo);
+        const matchesProveedor =
+          !filters.proveedores?.length || filters.proveedores.includes(art.proveedor);
 
-        return matchesSede && matchesCC && matchesSubfamilia && matchesFamilia &&
-          matchesSubArticulo && matchesProveedor && matchesResponsable && matchesSearch;
+        return (
+          matchesSede &&
+          matchesCC &&
+          matchesSubfamilia &&
+          matchesFamilia &&
+          matchesSubArticulo &&
+          matchesProveedor &&
+          matchesResponsable &&
+          matchesSearch
+        );
       })
-      .map(art => {
+      .map((art) => {
         if (!startDate && !endDate) return art;
 
-        const movements = art.movements.filter(m => {
+        const movements = art.movements.filter((m) => {
           const d = new Date(m.fecha);
           if (startDate && d < startDate) return false;
           if (endDate && d > endDate) return false;
@@ -98,8 +130,12 @@ export default function App() {
         if (movements.length === 0) return null;
 
         const totalDiferencia = movements.reduce((acc, m) => acc + m.variacion, 0);
-        const totalFaltantes = movements.filter(m => m.variacion < 0).reduce((acc, m) => acc + Math.abs(m.variacion), 0);
-        const totalSobrantes = movements.filter(m => m.variacion > 0).reduce((acc, m) => acc + m.variacion, 0);
+        const totalFaltantes = movements
+          .filter((m) => m.variacion < 0)
+          .reduce((acc, m) => acc + Math.abs(m.variacion), 0);
+        const totalSobrantes = movements
+          .filter((m) => m.variacion > 0)
+          .reduce((acc, m) => acc + m.variacion, 0);
         const ultimoCoste = movements[movements.length - 1].costeLinea;
         const valorUnitario = ultimoCoste || art.costePromedio;
 
@@ -126,7 +162,7 @@ export default function App() {
         } as ArticleSummary;
       })
       .filter((art): art is ArticleSummary => art !== null)
-      .filter(art => {
+      .filter((art) => {
         if (filters.status === 'cobrables') return art.debeCobrar;
         if (filters.status === 'faltantes') return art.tipo === 'FALTANTE';
         if (filters.status === 'sobrantes') return art.tipo === 'SOBRANTE';
@@ -136,16 +172,56 @@ export default function App() {
 
   const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
 
-  const uniqueSedes = useMemo(() => Array.from(new Set(articles.map(a => a.sede))).sort(), [articles]);
-  const uniqueFamilias = useMemo(() => Array.from(new Set(articles.map(a => a.familia))).filter(Boolean).sort(), [articles]);
-  const uniqueProveedores = useMemo(() => Array.from(new Set(articles.map(a => a.proveedor))).filter(Boolean).sort(), [articles]);
-  const uniqueSubArticulos = useMemo(() => Array.from(new Set(articles.map(a => a.subarticulo))).filter(Boolean).sort(), [articles]);
-  const uniqueCCs = useMemo(() => Array.from(new Set(articles.map(a => a.cc))).filter(Boolean).sort(), [articles]);
-  const uniqueSubfamilias = useMemo(() => Array.from(new Set(articles.map(a => a.subfamilia))).filter(Boolean).sort(), [articles]);
-  const uniqueResponsables = useMemo(() => Array.from(new Set(articles.map(a => a.responsable || 'Sin asignar'))).sort(), [articles]);
+  const uniqueSedes = useMemo(
+    () => Array.from(new Set(articles.map((a) => a.sede))).sort(),
+    [articles]
+  );
+  const uniqueFamilias = useMemo(
+    () =>
+      Array.from(new Set(articles.map((a) => a.familia)))
+        .filter(Boolean)
+        .sort(),
+    [articles]
+  );
+  const uniqueProveedores = useMemo(
+    () =>
+      Array.from(new Set(articles.map((a) => a.proveedor)))
+        .filter(Boolean)
+        .sort(),
+    [articles]
+  );
+  const uniqueSubArticulos = useMemo(
+    () =>
+      Array.from(new Set(articles.map((a) => a.subarticulo)))
+        .filter(Boolean)
+        .sort(),
+    [articles]
+  );
+  const uniqueCCs = useMemo(
+    () =>
+      Array.from(new Set(articles.map((a) => a.cc)))
+        .filter(Boolean)
+        .sort(),
+    [articles]
+  );
+  const uniqueSubfamilias = useMemo(
+    () =>
+      Array.from(new Set(articles.map((a) => a.subfamilia)))
+        .filter(Boolean)
+        .sort(),
+    [articles]
+  );
+  const uniqueResponsables = useMemo(
+    () => Array.from(new Set(articles.map((a) => a.responsable || 'Sin asignar'))).sort(),
+    [articles]
+  );
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(val);
 
   const renderContent = () => {
     if (articles.length === 0) {
@@ -157,7 +233,8 @@ export default function App() {
           <div>
             <h2 className="text-2xl font-bold text-text-main mb-2">No hay datos cargados</h2>
             <p className="text-text-secondary max-w-md mx-auto">
-              Utiliza el botón <span className="font-bold text-secondary">Cargar Excel</span> en la esquina superior derecha para comenzar el análisis de inventarios.
+              Utiliza el botón <span className="font-bold text-secondary">Cargar Excel</span> en la
+              esquina superior derecha para comenzar el análisis de inventarios.
             </p>
           </div>
         </div>
@@ -223,30 +300,51 @@ export default function App() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-brand-text">Resumen por Sede</h3>
-                      <p className="text-sm text-brand-text-secondary">Distribución de cobros y faltantes por almacén</p>
+                      <p className="text-sm text-brand-text-secondary">
+                        Distribución de cobros y faltantes por almacén
+                      </p>
                     </div>
                     <ExportButtons data={filteredArticles} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {dashboardStats.sedes.map(sede => (
-                      <div key={sede.sede} className="p-5 rounded-[8px] border border-brand-border bg-[#132238]">
-                        <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">{sede.sede}</h4>
+                    {dashboardStats.sedes.map((sede) => (
+                      <div
+                        key={sede.sede}
+                        className="p-5 rounded-[8px] border border-brand-border bg-[#132238]"
+                      >
+                        <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">
+                          {sede.sede}
+                        </h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-brand-text-secondary font-medium">Artículos:</span>
+                            <span className="text-brand-text-secondary font-medium">
+                              Artículos:
+                            </span>
                             <span className="font-bold text-brand-text">{sede.totalArticulos}</span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-brand-text-secondary font-medium">Faltantes:</span>
-                            <span className="font-bold text-status-faltante">{sede.totalFaltantes}</span>
+                            <span className="text-brand-text-secondary font-medium">
+                              Faltantes:
+                            </span>
+                            <span className="font-bold text-status-faltante">
+                              {sede.totalFaltantes}
+                            </span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-brand-text-secondary font-medium">Cobrables:</span>
-                            <span className="font-bold text-status-cobra">{sede.totalCobrables}</span>
+                            <span className="text-brand-text-secondary font-medium">
+                              Cobrables:
+                            </span>
+                            <span className="font-bold text-status-cobra">
+                              {sede.totalCobrables}
+                            </span>
                           </div>
                           <div className="pt-2 border-t border-brand-border flex justify-between items-center">
-                            <span className="text-[10px] font-bold text-brand-text-secondary uppercase">Total Cobro</span>
-                            <span className="text-sm font-bold text-status-sobrante">{formatCurrency(sede.totalCobroSede)}</span>
+                            <span className="text-[10px] font-bold text-brand-text-secondary uppercase">
+                              Total Cobro
+                            </span>
+                            <span className="text-sm font-bold text-status-sobrante">
+                              {formatCurrency(sede.totalCobroSede)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -261,7 +359,9 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">Detalle de Cobros</h3>
-                    <p className="text-sm text-brand-text-secondary">Listado jerárquico de artículos y variaciones</p>
+                    <p className="text-sm text-brand-text-secondary">
+                      Listado jerárquico de artículos y variaciones
+                    </p>
                   </div>
                   <ExportButtons data={filteredArticles} />
                 </div>
@@ -274,7 +374,9 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">Análisis de Variaciones</h3>
-                    <p className="text-sm text-brand-text-secondary">Exploración detallada de movimientos</p>
+                    <p className="text-sm text-brand-text-secondary">
+                      Exploración detallada de movimientos
+                    </p>
                   </div>
                 </div>
                 <InventoryTable data={filteredArticles} />
@@ -287,7 +389,10 @@ export default function App() {
             )}
 
             {activeTab === 'GERENCIAL' && (
-              <ManagementAnalysis data={filteredArticles} selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined} />
+              <ManagementAnalysis
+                data={filteredArticles}
+                selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined}
+              />
             )}
 
             {activeTab === 'EJECUTIVO' && (
@@ -295,7 +400,9 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">Dashboard Ejecutivo</h3>
-                    <p className="text-sm text-brand-text-secondary">KPIs, tendencias y top productos</p>
+                    <p className="text-sm text-brand-text-secondary">
+                      KPIs, tendencias y top productos
+                    </p>
                   </div>
                   <ExportButtons data={filteredArticles} />
                   <PDFReport data={filteredArticles} filters={filters} />
@@ -332,8 +439,12 @@ export default function App() {
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight leading-none uppercase">Cruces de Inventario</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">Auditoría y Cobros por Sede</p>
+            <h1 className="text-lg font-bold tracking-tight leading-none uppercase">
+              Cruces de Inventario
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">
+              Auditoría y Cobros por Sede
+            </p>
           </div>
         </div>
 
@@ -353,7 +464,8 @@ export default function App() {
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-[#38BDF8] uppercase">Estado</p>
                 <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Activo
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>{' '}
+                  Sistema Activo
                 </p>
               </div>
             </>
@@ -364,7 +476,17 @@ export default function App() {
       {/* Navigation Tabs */}
       {articles.length > 0 && (
         <nav className="bg-[#0F1C2E] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
-          {(['RESUMEN', 'ANÁLISIS', 'COBROS', 'CONFIABILIDAD', 'GERENCIAL', 'TRAZABILIDAD', 'EJECUTIVO'] as Tab[]).map((tab) => {
+          {(
+            [
+              'RESUMEN',
+              'ANÁLISIS',
+              'COBROS',
+              'CONFIABILIDAD',
+              'GERENCIAL',
+              'TRAZABILIDAD',
+              'EJECUTIVO',
+            ] as Tab[]
+          ).map((tab) => {
             const Icon = {
               RESUMEN: LayoutDashboard,
               ANÁLISIS: BarChart2,
@@ -372,7 +494,7 @@ export default function App() {
               CONFIABILIDAD: ShieldCheck,
               GERENCIAL: BarChart3,
               TRAZABILIDAD: Activity,
-              EJECUTIVO: LayoutDashboard
+              EJECUTIVO: LayoutDashboard,
             }[tab];
 
             return (
@@ -394,9 +516,7 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        {renderContent()}
-      </main>
+      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">{renderContent()}</main>
 
       {/* Footer */}
       <footer className="bg-[#0F1C2E] border-t border-brand-border p-4 text-center text-[10px] text-[#8EA3BF] font-bold uppercase tracking-widest">

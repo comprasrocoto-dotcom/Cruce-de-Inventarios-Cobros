@@ -1,3 +1,7 @@
+/**
+ * Botones de exportación. Genera salidas (Excel/CSV) del conjunto de artículos
+ * actualmente filtrado para su descarga, agrupando y formateando los datos.
+ */
 import React from 'react';
 import { FileDown, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -15,15 +19,17 @@ interface ExportButtonsProps {
 export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrables = false }) => {
   const exportToExcel = () => {
     const workbook = XLSX.utils.book_new();
-    
+
     // 1. Identify all unique dates (normalized to start of day) and group them by month
-    const allMovements = data.flatMap(a => a.movements);
-    const uniqueDates = (Array.from(new Set(allMovements.map(m => startOfDay(m.fecha).getTime()))) as number[])
+    const allMovements = data.flatMap((a) => a.movements);
+    const uniqueDates = (
+      Array.from(new Set(allMovements.map((m) => startOfDay(m.fecha).getTime()))) as number[]
+    )
       .sort((a, b) => a - b)
-      .map(t => new Date(t));
+      .map((t) => new Date(t));
 
     const monthsMap = new Map<string, Date[]>();
-    uniqueDates.forEach(date => {
+    uniqueDates.forEach((date) => {
       const monthKey = format(startOfMonth(date), 'MMMM yyyy', { locale: es });
       if (!monthsMap.has(monthKey)) monthsMap.set(monthKey, []);
       monthsMap.get(monthKey)!.push(date);
@@ -31,67 +37,63 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
 
     const sortedMonths = Array.from(monthsMap.keys());
 
-    // Debug Logs as requested
-    console.log("Fechas únicas detectadas:", uniqueDates.map(d => format(d, 'yyyy-MM-dd')));
-    console.log("Meses detectados:", sortedMonths.map(m => m.split(' ')[0]));
-    
     // Group by Sede
-    const sedes = Array.from(new Set(data.map(a => a.sede))) as string[];
+    const sedes = Array.from(new Set(data.map((a) => a.sede))) as string[];
 
-    sedes.forEach(sedeName => {
+    sedes.forEach((sedeName) => {
       // Filter only cobrable articles for this sede
-      const sedeArticles = data.filter(a => a.sede === sedeName && a.debeCobrar);
+      const sedeArticles = data.filter((a) => a.sede === sedeName && a.debeCobrar);
       if (sedeArticles.length === 0) return;
 
       const rows: any[][] = [];
       const merges: XLSX.Range[] = [];
-      
+
       // --- HEADER SECTION (Rows 0-3) ---
-      rows.push(["REPORTE DE COBROS POR AJUSTES DE INVENTARIO"]);
+      rows.push(['REPORTE DE COBROS POR AJUSTES DE INVENTARIO']);
       rows.push([`Sede / Almacén: ${sedeName}`]);
       rows.push([`Fecha de generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`]);
       rows.push([]); // Spacer
 
       // --- DYNAMIC TABLE HEADERS (Rows 4-5) ---
-      const row4: any[] = ["Artículo", "Unidad"];
-      const row5: any[] = ["", ""];
-      
+      const row4: any[] = ['Artículo', 'Unidad'];
+      const row5: any[] = ['', ''];
+
       let currentCol = 2;
 
-      sortedMonths.forEach(monthKey => {
+      sortedMonths.forEach((monthKey) => {
         const dates = monthsMap.get(monthKey)!;
         const monthName = format(dates[0], 'MMM', { locale: es }).replace('.', '');
-        
+
         // Month Header (Level 1)
         row4.push(monthName);
         // Fill row4 with empty strings for the merge
         for (let i = 0; i < dates.length; i++) {
-          if (i > 0) row4.push("");
+          if (i > 0) row4.push('');
         }
-        
+
         // Dates (Level 2)
-        dates.forEach(date => {
+        dates.forEach((date) => {
           row5.push(format(date, 'd-MMM', { locale: es }).replace('.', ''));
         });
 
         // Monthly Total Column
         const totalLabel = `Total ${monthName}`;
-        row4.push(""); // Part of the merge
+        row4.push(''); // Part of the merge
         row5.push(totalLabel);
 
         // Merge month header across dates + total column
         merges.push({
           s: { r: 4, c: currentCol },
-          e: { r: 4, c: currentCol + dates.length }
+          e: { r: 4, c: currentCol + dates.length },
         });
 
         currentCol += dates.length + 1;
       });
 
       // Final Static Columns
-      row4.push("Total General", "Coste Línea", "Total Cobro");
-      row5.push("", "", "");
-      
+      row4.push('Total General', 'Coste Línea', 'Total Cobro');
+      row5.push('', '', '');
+
       // Merge static headers vertically
       merges.push({ s: { r: 4, c: 0 }, e: { r: 5, c: 0 } }); // Artículo
       merges.push({ s: { r: 4, c: 1 }, e: { r: 5, c: 1 } }); // Unidad
@@ -103,27 +105,27 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
       rows.push(row5);
 
       // --- DATA ROWS ---
-      sedeArticles.forEach(art => {
+      sedeArticles.forEach((art) => {
         const dateValues = new Map<number, number>();
-        art.movements.forEach(m => {
+        art.movements.forEach((m) => {
           const t = startOfDay(m.fecha).getTime();
           dateValues.set(t, (dateValues.get(t) || 0) + m.variacion);
         });
 
         const row: any[] = [art.articulo, art.subarticulo];
         let pivotTotal = 0;
-        
-        sortedMonths.forEach(monthKey => {
+
+        sortedMonths.forEach((monthKey) => {
           const dates = monthsMap.get(monthKey)!;
           let monthSum = 0;
-          
-          dates.forEach(date => {
+
+          dates.forEach((date) => {
             const val = dateValues.get(startOfDay(date).getTime()) || 0;
             row.push(val);
             monthSum += val;
             pivotTotal += val;
           });
-          
+
           row.push(monthSum);
         });
 
@@ -132,7 +134,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
           console.warn(`Discrepancia detectada en ${art.articulo}:`, {
             rawTotal: art.totalDiferencia,
             pivotTotal: pivotTotal,
-            diff: art.totalDiferencia - pivotTotal
+            diff: art.totalDiferencia - pivotTotal,
           });
         }
 
@@ -151,14 +153,14 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
       merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: row4.length - 1 } });
       merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: row4.length - 1 } });
       merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: row4.length - 1 } });
-      
+
       worksheet['!merges'] = merges;
 
       // Auto-width
       const wscols = row4.map((_, i) => {
         let maxLen = 10;
-        rows.slice(4).forEach(r => {
-          const val = r[i]?.toString() || "";
+        rows.slice(4).forEach((r) => {
+          const val = r[i]?.toString() || '';
           if (val.length > maxLen) maxLen = val.length;
         });
         return { wch: Math.min(maxLen + 2, 50) };
@@ -170,7 +172,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
     });
 
     if (workbook.SheetNames.length === 0) {
-      alert("No hay datos de cobros para exportar.");
+      alert('No hay datos de cobros para exportar.');
       return;
     }
 
@@ -179,27 +181,31 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
 
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
-    const filteredData = data.filter(a => a.debeCobrar);
-    
+    const filteredData = data.filter((a) => a.debeCobrar);
+
     if (filteredData.length === 0) {
-      alert("No hay datos de cobros para exportar.");
+      alert('No hay datos de cobros para exportar.');
       return;
     }
 
     doc.setFontSize(18);
-    doc.text("Reporte Final de Cobros por Sede", 14, 22);
-    
+    doc.text('Reporte Final de Cobros por Sede', 14, 22);
+
     doc.setFontSize(10);
     doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
 
-    const tableData = filteredData.map(a => [
+    const tableData = filteredData.map((a) => [
       a.sede,
       a.articulo,
       a.subarticulo,
       a.totalDiferencia.toLocaleString(),
       'COBRA',
-      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(a.ultimoCoste || a.costePromedio),
-      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(
+        a.ultimoCoste || a.costePromedio
+      ),
+      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(
+        Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)
+      ),
     ]);
 
     (doc as any).autoTable({
@@ -212,11 +218,11 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
       columnStyles: {
         3: { halign: 'right' },
         5: { halign: 'right' },
-        6: { halign: 'right' }
-      }
+        6: { halign: 'right' },
+      },
     });
 
-    doc.save("Reporte_Cobros.pdf");
+    doc.save('Reporte_Cobros.pdf');
   };
 
   return (

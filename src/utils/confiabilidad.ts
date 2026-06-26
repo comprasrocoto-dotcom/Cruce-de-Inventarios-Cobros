@@ -1,3 +1,12 @@
+/**
+ * Reglas de tolerancia, confiabilidad y pérdida económica por ítem.
+ *
+ * Define el margen de error permitido según la unidad de medida (unidades y
+ * copas sin margen, onzas ±1, gramos ±2.5% del consumo teórico), evalúa si un
+ * ítem está dentro de tolerancia, calcula su confiabilidad gradual y genera
+ * alertas y proyecciones de pérdida. Es la fuente de verdad económica usada
+ * por inventory.ts.
+ */
 import { ArticleSummary } from '../types';
 
 /**
@@ -10,13 +19,13 @@ export const calcularMargenError = (item: Partial<ArticleSummary>) => {
   const baseConsumo = Math.abs(item.stockEsperado || 0);
 
   // ❌ SIN margen para unidades exactas o copas
-  if (unidad.includes("UNIDAD") || unidad.includes("COPA")) return 0;
+  if (unidad.includes('UNIDAD') || unidad.includes('COPA')) return 0;
 
   // ✅ ONZAS → ±1 permitido
-  if (unidad.includes("ONZA")) return 1;
+  if (unidad.includes('ONZA')) return 1;
 
   // ✅ GRAMOS → 2.5% de margen sobre el consumo teórico (stock esperado)
-  if (unidad.includes("GRAMO")) {
+  if (unidad.includes('GRAMO')) {
     return baseConsumo * 0.025;
   }
 
@@ -39,24 +48,24 @@ export const generarAlertasInsumo = (item: ArticleSummary): AlertaInsumo[] => {
   // 🔴 PÉRDIDA CRÍTICA
   if (fueraMargen && diferencia < 0) {
     alertas.push({
-      tipo: "CRÍTICA",
-      mensaje: `${item.articulo} – pérdida crítica en la evaluación actual`
+      tipo: 'CRÍTICA',
+      mensaje: `${item.articulo} – pérdida crítica en la evaluación actual`,
     });
   }
 
   // 🟡 SOBRECONSUMO (Muy fuera de margen)
   if (diferencia < 0 && Math.abs(diferencia) > item.margenError * 3) {
     alertas.push({
-      tipo: "ALERTA",
-      mensaje: `${item.articulo} – consumo fuera de control histórico`
+      tipo: 'ALERTA',
+      mensaje: `${item.articulo} – consumo fuera de control histórico`,
     });
   }
 
   // ⚫ QUIEBRE
   if (item.stockFisico <= 0) {
     alertas.push({
-      tipo: "QUIEBRE",
-      mensaje: `${item.articulo} – sin inventario físico registrado`
+      tipo: 'QUIEBRE',
+      mensaje: `${item.articulo} – sin inventario físico registrado`,
     });
   }
 
@@ -72,13 +81,13 @@ export const analizarEstabilidadProducto = (item: ArticleSummary) => {
 
   const ratio = variacion / stockBase;
 
-  let estado: 'ESTABLE' | 'INESTABLE' | 'CRÍTICO' = "ESTABLE";
-  if (ratio > 0.3) estado = "CRÍTICO";
-  else if (ratio > 0.15) estado = "INESTABLE";
+  let estado: 'ESTABLE' | 'INESTABLE' | 'CRÍTICO' = 'ESTABLE';
+  if (ratio > 0.3) estado = 'CRÍTICO';
+  else if (ratio > 0.15) estado = 'INESTABLE';
 
   return {
     ratioVariacion: ratio,
-    estabilidad: estado
+    estabilidad: estado,
   };
 };
 
@@ -87,16 +96,17 @@ export const analizarEstabilidadProducto = (item: ArticleSummary) => {
  */
 export const predecirPerdidasMensuales = (item: ArticleSummary) => {
   const costoUnitario = item.ultimoCoste || item.costePromedio || 0;
-  const perdidaActual = !item.dentroDeTolerancia && item.totalDiferencia < 0 
-    ? Math.abs(item.totalDiferencia) * costoUnitario 
-    : 0;
+  const perdidaActual =
+    !item.dentroDeTolerancia && item.totalDiferencia < 0
+      ? Math.abs(item.totalDiferencia) * costoUnitario
+      : 0;
 
   // Proyección a 30 días
   const perdidaProyectada = perdidaActual * 30;
 
   return {
     perdidaHoy: perdidaActual,
-    perdidaProyectada
+    perdidaProyectada,
   };
 };
 
@@ -105,11 +115,11 @@ export const predecirPerdidasMensuales = (item: ArticleSummary) => {
  */
 export const obtenerRankingRiesgo = (data: ArticleSummary[], limit = 10) => {
   return data
-    .map(item => ({
+    .map((item) => ({
       ...item,
-      ...predecirPerdidasMensuales(item)
+      ...predecirPerdidasMensuales(item),
     }))
-    .filter(item => item.perdidaProyectada > 0)
+    .filter((item) => item.perdidaProyectada > 0)
     .sort((a, b) => b.perdidaProyectada - a.perdidaProyectada)
     .slice(0, limit);
 };
@@ -122,7 +132,7 @@ export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
   const esperado = Math.abs(item.stockEsperado || 0);
   const real = Math.abs(item.stockFisico || 0);
   const diferencia = item.totalDiferencia || 0;
-  
+
   const margenError = calcularMargenError(item);
 
   // Diferencia que excede el margen permitido
@@ -139,13 +149,13 @@ export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
   if (confiabilidad > 100) confiabilidad = 100;
 
   // Un item se considera "dentro de tolerancia" si su diferencia no excede el margen
-  const fueraMargen = Math.abs(diferencia) > (margenError + 0.0001);
+  const fueraMargen = Math.abs(diferencia) > margenError + 0.0001;
 
   return {
     ...item,
     margenError,
     dentroDeTolerancia: !fueraMargen,
-    confiabilidad: Number(confiabilidad.toFixed(2))
+    confiabilidad: Number(confiabilidad.toFixed(2)),
   };
 };
 
@@ -160,7 +170,7 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
   }
 
   const evaluados = data.map(evaluarItem);
-  const dentro = evaluados.filter(i => i.dentroDeTolerancia).length;
+  const dentro = evaluados.filter((i) => i.dentroDeTolerancia).length;
   const fuera = total - dentro;
 
   // La confiabilidad global ahora es el promedio de las confiabilidades individuales
@@ -174,18 +184,20 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
     dentro,
     fuera,
     confiabilidad: Number(confiabilidadPromedio.toFixed(2)),
-    porcentajeFuera
+    porcentajeFuera,
   };
 };
 
 /**
  * Determina el estado categórico basado en el porcentaje de confiabilidad (Gradual).
  */
-export const obtenerEstado = (confiabilidad: number): "Confiable" | "Aceptable" | "Riesgo" | "Crítico" => {
-  if (confiabilidad >= 95) return "Confiable";
-  if (confiabilidad >= 80) return "Aceptable";
-  if (confiabilidad >= 60) return "Riesgo";
-  return "Crítico";
+export const obtenerEstado = (
+  confiabilidad: number
+): 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico' => {
+  if (confiabilidad >= 95) return 'Confiable';
+  if (confiabilidad >= 80) return 'Aceptable';
+  if (confiabilidad >= 60) return 'Riesgo';
+  return 'Crítico';
 };
 
 /**
@@ -196,11 +208,11 @@ export const calcularPerdidaEconomica = (item: ArticleSummary): number => {
   if (item.dentroDeTolerancia) return 0;
 
   const costoUnitario = item.ultimoCoste || item.costePromedio || 0;
-  
+
   // Solo se considera pérdida real lo que supera el margen si es faltante
   if (item.totalDiferencia < 0) {
     return Math.abs(item.totalDiferencia) * costoUnitario;
   }
-  
+
   return 0;
 };

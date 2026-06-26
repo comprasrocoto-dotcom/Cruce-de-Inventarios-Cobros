@@ -1,21 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, FileSpreadsheet, X, AlertCircle, Loader2, RefreshCw, Cloud } from 'lucide-react';
+import { Upload, AlertCircle, Loader2, RefreshCw, Cloud } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { normalizeData } from '../utils/inventory';
 import { ArticleSummary } from '../types';
-import { motion } from 'motion/react';
-
-/**
- * Nombre lógico de la hoja de origen. Se usa solo para mostrar información
- * al usuario (etiquetas / fileInfo), no para seleccionar la hoja en el backend.
- */
-const SHEET_NAME = 'BASE DE DATOS';
-
-/**
- * Endpoint del Web App de Google Apps Script (deployment /exec).
- * Devuelve los datos de la hoja ya serializados como JSON (array de objetos).
- */
-const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbw2ZgwjldaN23gCgUXEX4TqKrZc6E2fwiks6UHALc9p3HTifRlcmaAlUDWbjFKJbm4P/exec';
+import { SHEET_API_URL, SHEET_NAME } from '../config';
 
 /**
  * Props del componente FileUpload.
@@ -48,13 +36,20 @@ interface FileUploadProps {
  * En ambos casos los datos crudos se pasan por `normalizeData` antes de
  * entregarse al padre mediante `onDataLoaded`.
  */
-export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, onFileNameChange, hasData }) => {
+export const FileUpload: React.FC<FileUploadProps> = ({
+  onDataLoaded,
+  onReset,
+  onFileNameChange,
+  hasData,
+}) => {
   // Estado de carga (muestra spinner mientras se obtienen / procesan datos).
   const [loading, setLoading] = useState(false);
   // Mensaje de error visible para el usuario; null si no hay error.
   const [error, setError] = useState<string | null>(null);
   // Metadatos de la última fuente cargada (nombre, hoja y nº de filas).
-  const [fileInfo, setFileInfo] = useState<{ name: string; sheet: string; rows: number } | null>(null);
+  const [fileInfo, setFileInfo] = useState<{ name: string; sheet: string; rows: number } | null>(
+    null
+  );
   // Referencia al <input type="file"> oculto, para disparar el diálogo nativo.
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +78,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
       const { articles: items, errors, debug } = normalizeData(rawData);
       if (items.length === 0) throw new Error('No se encontraron articulos validos.');
 
-      setFileInfo({ name: `Google Sheets - ${SHEET_NAME}`, sheet: SHEET_NAME, rows: rawData.length });
+      setFileInfo({
+        name: `Google Sheets - ${SHEET_NAME}`,
+        sheet: SHEET_NAME,
+        rows: rawData.length,
+      });
       if (onFileNameChange) onFileNameChange(`Google Sheets - ${SHEET_NAME}`);
       onDataLoaded(items, debug);
     } catch (err) {
@@ -120,16 +119,26 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-      const sheetName = workbook.SheetNames.find(n => n.toUpperCase().includes('BASE DE DATOS')) || workbook.SheetNames[0];
+      const sheetName =
+        workbook.SheetNames.find((n) => n.toUpperCase().includes('BASE DE DATOS')) ||
+        workbook.SheetNames[0];
       if (!sheetName) throw new Error('No se encontraron hojas en el archivo Excel');
       const worksheet = workbook.Sheets[sheetName];
-      const rawData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+      const rawData: any[][] = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        raw: false,
+        dateNF: 'yyyy-mm-dd',
+      });
       if (rawData.length < 2) throw new Error('El archivo Excel no tiene datos suficientes');
       const headers = rawData[0] as string[];
-      const dataRows = rawData.slice(1).filter(row => row.some((cell: any) => cell !== '' && cell != null));
-      const formattedData: any[] = dataRows.map(row => {
+      const dataRows = rawData
+        .slice(1)
+        .filter((row) => row.some((cell: any) => cell !== '' && cell != null));
+      const formattedData: any[] = dataRows.map((row) => {
         const obj: any = {};
-        headers.forEach((header, index) => { obj[header] = (row as any[])[index] ?? ''; });
+        headers.forEach((header, index) => {
+          obj[header] = (row as any[])[index] ?? '';
+        });
         return obj;
       });
       const { articles: items, errors, debug } = normalizeData(formattedData);
@@ -145,24 +154,33 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
   };
 
   // Handler del <input type="file">: toma el primer archivo y lo procesa.
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) handleFile(file); };
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
   // Handler de drag & drop: evita el comportamiento por defecto y procesa el archivo soltado.
-  const handleDrop = (e: React.DragEvent) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) handleFile(file); };
-  // Limpia el estado local (fileInfo/error), resetea el input y notifica al padre.
-  const handleReset = () => { setFileInfo(null); setError(null); if (fileInputRef.current) fileInputRef.current.value = ''; onReset(); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
 
   // --- Render: estado de carga -------------------------------------------------
   if (loading) {
     return (
       <div className="flex items-center gap-3 px-4 py-2 bg-[#0A1A2A] border border-[#1A3A5A] rounded-xl">
         <Loader2 className="w-4 h-4 text-[#38BDF8] animate-spin" />
-        <span className="text-sm text-blue-700 font-medium">Cargando datos desde Google Sheets...</span>
+        <span className="text-sm text-blue-700 font-medium">
+          Cargando datos desde Google Sheets...
+        </span>
       </div>
     );
   }
 
   // Si ya hay datos cargados y metadatos disponibles, el panel se oculta.
-  if (hasData && fileInfo) { return null; }
+  if (hasData && fileInfo) {
+    return null;
+  }
 
   // --- Render: panel de carga (Google Sheets + Excel local) --------------------
   return (
@@ -172,7 +190,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
         <div className="flex items-center gap-2 px-4 py-2 bg-[#2A1010] border border-[#5A2020] rounded-xl text-[#EF4444] text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
-          <button onClick={loadFromGoogleSheets} className="ml-auto flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-800 underline">
+          <button
+            onClick={loadFromGoogleSheets}
+            className="ml-auto flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-800 underline"
+          >
             <RefreshCw className="w-3 h-3" /> Reintentar
           </button>
         </div>
@@ -202,10 +223,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, onReset, o
         onClick={() => fileInputRef.current?.click()}
         className="border-2 border-dashed border-[#243A57] rounded-xl p-4 text-center cursor-pointer hover:border-[#38BDF8] hover:bg-[#1A2E4A] transition-colors"
       >
-        <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileInput} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={handleFileInput}
+        />
         <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
         <p className="text-xs font-medium text-[#8EA3BF]">Cargar Excel local</p>
-        <p className="text-xs text-gray-400">Arrastra tu archivo .xlsx o haz clic para seleccionar</p>
+        <p className="text-xs text-gray-400">
+          Arrastra tu archivo .xlsx o haz clic para seleccionar
+        </p>
       </div>
     </div>
   );

@@ -1,20 +1,44 @@
+/**
+ * Vista de Confiabilidad. Calcula y muestra indicadores de confiabilidad de
+ * inventario por sede y por centro de costo (porcentajes, semáforos, ranking
+ * de productos/responsables más inestables) y permite exportar el detalle.
+ * Es la pestaña Confiabilidad y el componente más extenso de la app.
+ */
 import React, { useMemo, useState } from 'react';
-import { ArticleSummary, ReliabilitySummary, ReliabilityStats, ProductStability, ResponsableStability, GlobalFilters } from '../types';
-import { getReliabilitySummary, getProductStabilityAnalysis, getResponsableStabilityAnalysis } from '../utils/inventory';
-import { calcularEstadisticasConfiabilidad, obtenerEstado, predecirPerdidasMensuales, generarAlertasInsumo, obtenerRankingRiesgo, AlertaInsumo } from '../utils/confiabilidad';
+import {
+  ArticleSummary,
+  ReliabilitySummary,
+  ReliabilityStats,
+  ProductStability,
+  ResponsableStability,
+  GlobalFilters,
+} from '../types';
+import {
+  getReliabilitySummary,
+  getProductStabilityAnalysis,
+  getResponsableStabilityAnalysis,
+} from '../utils/inventory';
+import {
+  calcularEstadisticasConfiabilidad,
+  obtenerEstado,
+  predecirPerdidasMensuales,
+  generarAlertasInsumo,
+  obtenerRankingRiesgo,
+  AlertaInsumo,
+} from '../utils/confiabilidad';
 import { motion, AnimatePresence } from 'motion/react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  AlertTriangle, 
-  DollarSign, 
-  Building2, 
-  ChevronRight, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  AlertTriangle,
+  DollarSign,
+  Building2,
+  ChevronRight,
   ArrowRight,
   PieChart,
   BarChart3,
@@ -29,20 +53,20 @@ import {
   Activity,
   Award,
   Zap,
-  Users
+  Users,
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
   Cell,
   PieChart as RePieChart,
   Pie,
-  Legend
+  Legend,
 } from 'recharts';
 
 interface ReliabilityViewProps {
@@ -52,7 +76,9 @@ interface ReliabilityViewProps {
 }
 
 export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters, setFilters }) => {
-  const [mainTab, setMainTab] = useState<'operativo' | 'tecnico' | 'estabilidad' | 'gerencial'>('operativo');
+  const [mainTab, setMainTab] = useState<'operativo' | 'tecnico' | 'estabilidad' | 'gerencial'>(
+    'operativo'
+  );
   const [viewMode, setViewMode] = useState<'sede' | 'cc'>('sede');
   const [selectedSede, setSelectedSede] = useState<ReliabilityStats | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductStability | null>(null);
@@ -60,7 +86,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   const [levelFilter, setLevelFilter] = useState<string>('all');
 
   // Modal specific states
-  const [modalFilter, setModalFilter] = useState<'Todos' | 'Faltantes' | 'Sobrantes' | 'Sin diferencia'>('Todos');
+  const [modalFilter, setModalFilter] = useState<
+    'Todos' | 'Faltantes' | 'Sobrantes' | 'Sin diferencia'
+  >('Todos');
   const [showOnlyFaltantes, setShowOnlyFaltantes] = useState(false);
   const [modalTab, setModalTab] = useState<'operacion' | 'tecnico'>('operacion');
 
@@ -75,15 +103,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     let perdidaMensualProyectada = 0;
     const todasAlertas: (AlertaInsumo & { articulo: string })[] = [];
 
-    data.forEach(item => {
-      totalPerdidaMargen += (item.perdidaPorMargen || 0);
-      totalRecuperable += (item.dineroRecuperable || 0);
-      
+    data.forEach((item) => {
+      totalPerdidaMargen += item.perdidaPorMargen || 0;
+      totalRecuperable += item.dineroRecuperable || 0;
+
       const prediccion = predecirPerdidasMensuales(item);
       perdidaMensualProyectada += prediccion.perdidaProyectada;
 
       const alertas = generarAlertasInsumo(item);
-      alertas.forEach(a => todasAlertas.push({ ...a, articulo: item.articulo }));
+      alertas.forEach((a) => todasAlertas.push({ ...a, articulo: item.articulo }));
     });
 
     const rankingRiesgo = obtenerRankingRiesgo(data);
@@ -93,23 +121,23 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       totalRecuperable,
       perdidaMensualProyectada,
       todasAlertas,
-      rankingRiesgo
+      rankingRiesgo,
     };
   }, [data]);
 
   const allItemsForSede = useMemo(() => {
     if (!selectedSede) return [];
-    return data.filter(a => {
+    return data.filter((a) => {
       if (selectedCCFilter) {
         return a.sede === selectedSede.sede && (a.cc || 'SIN CC') === selectedCCFilter;
       }
-      const key = viewMode === 'sede' ? a.sede : (a.cc || 'SIN CC');
+      const key = viewMode === 'sede' ? a.sede : a.cc || 'SIN CC';
       return key === selectedSede.sede;
     });
   }, [data, selectedSede, viewMode, selectedCCFilter]);
 
   const filteredItems = useMemo(() => {
-    let items = [...allItemsForSede].filter(a => {
+    let items = [...allItemsForSede].filter((a) => {
       if (showOnlyFaltantes) return a.totalDiferencia < -0.0001;
       if (modalFilter === 'Faltantes') return a.totalDiferencia < -0.0001;
       if (modalFilter === 'Sobrantes') return a.totalDiferencia > 0.0001;
@@ -132,32 +160,24 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     return items;
   }, [allItemsForSede, modalFilter, showOnlyFaltantes]);
 
-  React.useEffect(() => {
-    if (selectedSede) {
-      console.log("totalItemsSede", allItemsForSede.length);
-      console.log("filteredItems", filteredItems.length);
-      console.log("sampleFiltered", filteredItems.slice(0, 5));
-    }
-  }, [selectedSede, allItemsForSede, filteredItems]);
-
   const heatmapData = useMemo(() => {
-    const sedes: string[] = Array.from(new Set<string>(data.map(a => a.sede))).sort();
-    const ccs: string[] = Array.from(new Set<string>(data.map(a => a.cc || 'SIN CC'))).sort();
+    const sedes: string[] = Array.from(new Set<string>(data.map((a) => a.sede))).sort();
+    const ccs: string[] = Array.from(new Set<string>(data.map((a) => a.cc || 'SIN CC'))).sort();
 
-    const matrix = sedes.map(sede => {
+    const matrix = sedes.map((sede) => {
       const row: any = { sede };
-      ccs.forEach(cc => {
-          const rowItems = data.filter(a => a.sede === sede && (a.cc || 'SIN CC') === cc);
-          if (rowItems.length === 0) {
-            row[cc] = null;
-          } else {
-            const stats = calcularEstadisticasConfiabilidad(rowItems);
-            row[cc] = {
-              reliability: stats.confiabilidad,
-              count: stats.total,
-              sinDif: stats.dentro
-            };
-          }
+      ccs.forEach((cc) => {
+        const rowItems = data.filter((a) => a.sede === sede && (a.cc || 'SIN CC') === cc);
+        if (rowItems.length === 0) {
+          row[cc] = null;
+        } else {
+          const stats = calcularEstadisticasConfiabilidad(rowItems);
+          row[cc] = {
+            reliability: stats.confiabilidad,
+            count: stats.total,
+            sinDif: stats.dentro,
+          };
+        }
       });
       return row;
     });
@@ -175,12 +195,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
   const handleHeatmapCellClick = (sedeName: string, ccName: string, reliabilityData: any) => {
     if (!reliabilityData) return;
-    
+
     // Find the ReliabilityStats for this sede to open the modal
     // We use the 'sede' view summary to get the base stats
     const sedeStatsSummary = getReliabilitySummary(data, 'sede');
-    const sedeStats = sedeStatsSummary.sedesStats.find(s => s.sede === sedeName);
-    
+    const sedeStats = sedeStatsSummary.sedesStats.find((s) => s.sede === sedeName);
+
     if (sedeStats) {
       setViewMode('sede');
       setSelectedSede(sedeStats);
@@ -189,43 +209,48 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   };
 
   const exportarPDF = async () => {
-    const input = document.getElementById("reporte-confiabilidad");
+    const input = document.getElementById('reporte-confiabilidad');
     if (!input) return;
 
     try {
-      const canvas = await html2canvas(input, { 
+      const canvas = await html2canvas(input, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#F8FAFC' // Matching bg-[#132238]
+        backgroundColor: '#F8FAFC', // Matching bg-[#132238]
       });
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL('image/png');
 
-      const pdf = new jsPDF("p", "mm", "a4");
+      const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Reporte_Confiabilidad_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
-      console.error("Error al exportar PDF:", error);
+      console.error('Error al exportar PDF:', error);
     }
   };
 
   const entityLabel = viewMode === 'sede' ? 'Sede' : 'Centro de Costos';
   const entitiesLabel = viewMode === 'sede' ? 'Sedes' : 'Centros de Costos';
-  const reportTitle = viewMode === 'sede' ? 'Confiabilidad por Sede' : 'Confiabilidad por Centro de Costos';
+  const reportTitle =
+    viewMode === 'sede' ? 'Confiabilidad por Sede' : 'Confiabilidad por Centro de Costos';
 
   const filteredSedes = useMemo(() => {
-    return summary.sedesStats.filter(s => {
+    return summary.sedesStats.filter((s) => {
       const matchesSearch = s.sede.toLowerCase().includes(filters.search.toLowerCase());
       const matchesLevel = levelFilter === 'all' || s.nivel === levelFilter;
       return matchesSearch && matchesLevel;
     });
   }, [summary, filters.search, levelFilter]);
 
-  const formatCurrency = (val: number) => 
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(val);
 
   const formatVariation = (val: number, unidad: string = 'UNIDADES') => {
     const absVal = Math.abs(val);
@@ -245,7 +270,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     // toLocaleString with es-CO will use . for thousands and , for decimals
     return formatted.toLocaleString('es-CO', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
   };
 
@@ -256,11 +281,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
   const getLevelColor = (nivel: string) => {
     switch (nivel) {
-      case 'Confiable': return 'text-[#22C55E] bg-[#0a2d1a] border-[#27AE60]/20';
-      case 'Aceptable': return 'text-[#FBC519] bg-[#2d2000] border-[#F2C94C]/20';
-      case 'Riesgo': return 'text-[#F59E0B] bg-[#1a0f00] border-[#F2994A]/20';
-      case 'Crítico': return 'text-[#EF4444] bg-[#2d0f0f] border-[#EB5757]/20';
-      default: return 'text-brand-text-secondary bg-[#132238] border-brand-border';
+      case 'Confiable':
+        return 'text-[#22C55E] bg-[#0a2d1a] border-[#27AE60]/20';
+      case 'Aceptable':
+        return 'text-[#FBC519] bg-[#2d2000] border-[#F2C94C]/20';
+      case 'Riesgo':
+        return 'text-[#F59E0B] bg-[#1a0f00] border-[#F2994A]/20';
+      case 'Crítico':
+        return 'text-[#EF4444] bg-[#2d0f0f] border-[#EB5757]/20';
+      default:
+        return 'text-brand-text-secondary bg-[#132238] border-brand-border';
     }
   };
 
@@ -292,7 +322,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
             className="h-full rounded-[8px]"
             style={{ backgroundColor: getColor(percentage) }}
           />
@@ -303,7 +333,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
   const distributionData = useMemo(() => {
     const counts = { Confiable: 0, Aceptable: 0, Riesgo: 0, Crítico: 0 };
-    summary.sedesStats.forEach(s => {
+    summary.sedesStats.forEach((s) => {
       if (counts.hasOwnProperty(s.nivel)) {
         counts[s.nivel as keyof typeof counts]++;
       }
@@ -313,14 +343,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       { name: 'Aceptable', value: counts.Aceptable, color: '#F2C94C' },
       { name: 'Riesgo', value: counts.Riesgo, color: '#F2994A' },
       { name: 'Crítico', value: counts.Crítico, color: '#EB5757' },
-    ].filter(d => d.value > 0);
+    ].filter((d) => d.value > 0);
   }, [summary]);
 
   const chartData = useMemo(() => {
-    return summary.sedesStats.slice(0, 10).map(s => ({
+    return summary.sedesStats.slice(0, 10).map((s) => ({
       name: s.sede,
       confiabilidad: Math.round(s.confiabilidad),
-      impacto: s.impactoEconomico
+      impacto: s.impactoEconomico,
     }));
   }, [summary]);
 
@@ -334,7 +364,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const dateStr = new Date().toLocaleString();
-    const sedeItems = data.filter(a => a.sede === sede.sede);
+    const sedeItems = data.filter((a) => a.sede === sede.sede);
 
     // Header
     doc.setFontSize(18);
@@ -352,7 +382,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     let currentY = 40;
     doc.setFillColor(245, 247, 250);
     doc.roundedRect(14, currentY, pageWidth - 28, 22, 3, 3, 'F');
-    
+
     const colWidth = (pageWidth - 28) / 5;
     doc.setFontSize(8);
     doc.setTextColor(107, 114, 128);
@@ -366,13 +396,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.setFontSize(11);
     doc.setTextColor(getStatusColor(sede.confiabilidad));
     doc.text(`${Math.round(sede.confiabilidad)}%`, 20, currentY + 15);
-    
+
     doc.setTextColor(31, 58, 95);
     doc.text(`${sede.articulosEvaluados}`, 20 + colWidth, currentY + 15);
     doc.text(`${sede.articulosConDiferencia}`, 20 + colWidth * 2, currentY + 15);
     doc.text(formatCurrency(sede.impactoEconomico), 20 + colWidth * 3, currentY + 15);
-    
-    const riskLevel = sede.confiabilidad >= 85 ? 'BAJO' : sede.confiabilidad >= 70 ? 'MEDIO' : 'ALTO';
+
+    const riskLevel =
+      sede.confiabilidad >= 85 ? 'BAJO' : sede.confiabilidad >= 70 ? 'MEDIO' : 'ALTO';
     doc.setTextColor(getStatusColor(sede.confiabilidad));
     doc.text(riskLevel, 20 + colWidth * 4, currentY + 15);
 
@@ -385,18 +416,27 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.text('1. CONFIABILIDAD POR CENTRO DE COSTOS', 14, currentY);
     currentY += 6;
 
-    const ccStatsMap = new Map<string, {
-      evaluados: number;
-      sinDiferencia: number;
-      conDiferencia: number;
-      impacto: number;
-      items: ArticleSummary[];
-    }>();
+    const ccStatsMap = new Map<
+      string,
+      {
+        evaluados: number;
+        sinDiferencia: number;
+        conDiferencia: number;
+        impacto: number;
+        items: ArticleSummary[];
+      }
+    >();
 
-    sedeItems.forEach(a => {
+    sedeItems.forEach((a) => {
       const cc = a.cc || 'SIN CC';
       if (!ccStatsMap.has(cc)) {
-        ccStatsMap.set(cc, { evaluados: 0, sinDiferencia: 0, conDiferencia: 0, impacto: 0, items: [] });
+        ccStatsMap.set(cc, {
+          evaluados: 0,
+          sinDiferencia: 0,
+          conDiferencia: 0,
+          impacto: 0,
+          items: [],
+        });
       }
       const stats = ccStatsMap.get(cc)!;
       stats.evaluados++;
@@ -410,36 +450,52 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       stats.impacto += diff * (a.ultimoCoste || a.costePromedio);
     });
 
-    const ccStatsArray = Array.from(ccStatsMap.entries()).map(([cc, stats]) => {
-      const confiabilidad = stats.evaluados > 0 ? (stats.sinDiferencia / stats.evaluados) * 100 : 0;
-      return {
-        cc,
-        ...stats,
-        confiabilidad,
-        estado: getStatusLabel(confiabilidad),
-        emoji: getSemaphoreEmoji(confiabilidad)
-      };
-    }).sort((a, b) => a.confiabilidad - b.confiabilidad);
+    const ccStatsArray = Array.from(ccStatsMap.entries())
+      .map(([cc, stats]) => {
+        const confiabilidad =
+          stats.evaluados > 0 ? (stats.sinDiferencia / stats.evaluados) * 100 : 0;
+        return {
+          cc,
+          ...stats,
+          confiabilidad,
+          estado: getStatusLabel(confiabilidad),
+          emoji: getSemaphoreEmoji(confiabilidad),
+        };
+      })
+      .sort((a, b) => a.confiabilidad - b.confiabilidad);
 
     autoTable(doc, {
       startY: currentY,
-      head: [['Centro de Costos', 'Evaluados', 'Sin Dif.', 'Con Dif.', 'Impacto $', 'Confiabilidad', 'Estado']],
-      body: ccStatsArray.map(c => [
+      head: [
+        [
+          'Centro de Costos',
+          'Evaluados',
+          'Sin Dif.',
+          'Con Dif.',
+          'Impacto $',
+          'Confiabilidad',
+          'Estado',
+        ],
+      ],
+      body: ccStatsArray.map((c) => [
         c.cc,
         c.evaluados,
         c.sinDiferencia,
         c.conDiferencia,
         formatCurrency(c.impacto),
-        { content: `${Math.round(c.confiabilidad)}%`, styles: { textColor: getStatusColor(c.confiabilidad), fontStyle: 'bold' } },
-        `${c.emoji} ${c.estado}`
+        {
+          content: `${Math.round(c.confiabilidad)}%`,
+          styles: { textColor: getStatusColor(c.confiabilidad), fontStyle: 'bold' },
+        },
+        `${c.emoji} ${c.estado}`,
       ]),
       theme: 'striped',
       headStyles: { fillColor: [31, 58, 95] },
       styles: { fontSize: 8 },
       columnStyles: {
         4: { halign: 'right' },
-        5: { halign: 'center' }
-      }
+        5: { halign: 'center' },
+      },
     });
 
     // 2. DETALLE DE ARTÍCULOS
@@ -450,27 +506,32 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     currentY += 10;
 
     ccStatsArray.forEach((ccData) => {
-      if (currentY > 240) { doc.addPage(); currentY = 20; }
+      if (currentY > 240) {
+        doc.addPage();
+        currentY = 20;
+      }
       doc.setFontSize(11);
       doc.setTextColor(31, 58, 95);
       doc.text(`CENTRO DE COSTOS: ${ccData.cc.toUpperCase()}`, 14, currentY);
       currentY += 5;
 
-      const items = ccData.items.sort((a, b) => Math.abs(b.totalDiferencia) - Math.abs(a.totalDiferencia));
-      
+      const items = ccData.items.sort(
+        (a, b) => Math.abs(b.totalDiferencia) - Math.abs(a.totalDiferencia)
+      );
+
       autoTable(doc, {
         startY: currentY,
         head: [['Artículo', 'Unidad', 'Variación', 'Impacto $']],
-        body: items.map(a => [
+        body: items.map((a) => [
           a.articulo,
           a.subarticulo,
           formatVariation(a.totalDiferencia, a.subarticulo),
-          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+          formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)),
         ]),
         theme: 'striped',
         headStyles: { fillColor: [107, 114, 128] },
         styles: { fontSize: 7 },
-        columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } }
+        columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
       });
       currentY = (doc as any).lastAutoTable.finalY + 10;
     });
@@ -482,7 +543,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   const downloadLossesPDF = (sede: ReliabilityStats) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const sedeItems = data.filter(a => a.sede === sede.sede);
+    const sedeItems = data.filter((a) => a.sede === sede.sede);
 
     doc.setFontSize(18);
     doc.setTextColor(235, 87, 87);
@@ -495,17 +556,24 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.text('Análisis detallado de faltantes críticos por centro de costos.', 14, 28);
 
     let currentY = 40;
-    const ccs = Array.from(new Set(sedeItems.map(a => a.cc || 'SIN CC')));
+    const ccs = Array.from(new Set(sedeItems.map((a) => a.cc || 'SIN CC')));
 
-    ccs.forEach(cc => {
+    ccs.forEach((cc) => {
       const ccStr = String(cc);
       const losses = sedeItems
-        .filter(a => (a.cc || 'SIN CC') === ccStr && a.totalDiferencia < -0.0001)
-        .sort((a, b) => (Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio)) - (Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)))
+        .filter((a) => (a.cc || 'SIN CC') === ccStr && a.totalDiferencia < -0.0001)
+        .sort(
+          (a, b) =>
+            Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio) -
+            Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)
+        )
         .slice(0, 10);
 
       if (losses.length > 0) {
-        if (currentY > 240) { doc.addPage(); currentY = 20; }
+        if (currentY > 240) {
+          doc.addPage();
+          currentY = 20;
+        }
         doc.setFontSize(12);
         doc.setTextColor(235, 87, 87);
         doc.setFont('helvetica', 'bold');
@@ -515,15 +583,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         autoTable(doc, {
           startY: currentY,
           head: [['Artículo', 'Variación', 'Impacto Económico']],
-          body: losses.map(a => [
+          body: losses.map((a) => [
             a.articulo,
             formatVariation(a.totalDiferencia, a.subarticulo),
-            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)),
           ]),
           theme: 'striped',
           headStyles: { fillColor: [235, 87, 87] },
           styles: { fontSize: 8 },
-          columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right', fontStyle: 'bold' } }
+          columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right', fontStyle: 'bold' } },
         });
         currentY = (doc as any).lastAutoTable.finalY + 15;
       }
@@ -536,7 +604,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   const downloadGainsPDF = (sede: ReliabilityStats) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const sedeItems = data.filter(a => a.sede === sede.sede);
+    const sedeItems = data.filter((a) => a.sede === sede.sede);
 
     doc.setFontSize(18);
     doc.setTextColor(39, 174, 96);
@@ -549,17 +617,24 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.text('Análisis de sobrantes encontrados en los conteos físicos.', 14, 28);
 
     let currentY = 40;
-    const ccs = Array.from(new Set(sedeItems.map(a => a.cc || 'SIN CC')));
+    const ccs = Array.from(new Set(sedeItems.map((a) => a.cc || 'SIN CC')));
 
-    ccs.forEach(cc => {
+    ccs.forEach((cc) => {
       const ccStr = String(cc);
       const gains = sedeItems
-        .filter(a => (a.cc || 'SIN CC') === ccStr && a.totalDiferencia > 0.0001)
-        .sort((a, b) => (b.totalDiferencia * (b.ultimoCoste || b.costePromedio)) - (a.totalDiferencia * (a.ultimoCoste || a.costePromedio)))
+        .filter((a) => (a.cc || 'SIN CC') === ccStr && a.totalDiferencia > 0.0001)
+        .sort(
+          (a, b) =>
+            b.totalDiferencia * (b.ultimoCoste || b.costePromedio) -
+            a.totalDiferencia * (a.ultimoCoste || a.costePromedio)
+        )
         .slice(0, 10);
 
       if (gains.length > 0) {
-        if (currentY > 240) { doc.addPage(); currentY = 20; }
+        if (currentY > 240) {
+          doc.addPage();
+          currentY = 20;
+        }
         doc.setFontSize(12);
         doc.setTextColor(39, 174, 96);
         doc.setFont('helvetica', 'bold');
@@ -569,16 +644,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         autoTable(doc, {
           startY: currentY,
           head: [['Artículo', 'Unidad', 'Variación', 'Impacto Económico']],
-          body: gains.map(a => [
+          body: gains.map((a) => [
             a.articulo,
             a.subarticulo,
             `+${formatVariation(a.totalDiferencia, a.subarticulo)}`,
-            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))
+            formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)),
           ]),
           theme: 'striped',
           headStyles: { fillColor: [39, 174, 96] },
           styles: { fontSize: 8 },
-          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } }
+          columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } },
         });
         currentY = (doc as any).lastAutoTable.finalY + 15;
       }
@@ -591,7 +666,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   const downloadProblematicPDF = (sede: ReliabilityStats) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const sedeItems = data.filter(a => a.sede === sede.sede);
+    const sedeItems = data.filter((a) => a.sede === sede.sede);
 
     doc.setFontSize(18);
     doc.setTextColor(31, 58, 95);
@@ -603,23 +678,32 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.setFont('helvetica', 'normal');
     doc.text('Artículos con mayor impacto y frecuencia de errores.', 14, 28);
 
-    const problemItems = sedeItems.map(a => {
+    const problemItems = sedeItems.map((a) => {
       const impacto = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);
       const variacionAbs = Math.abs(a.totalDiferencia);
-      const frecuencia = a.movements ? a.movements.filter(m => Math.abs(m.variacion) > 0.0001).length : 1;
+      const frecuencia = a.movements
+        ? a.movements.filter((m) => Math.abs(m.variacion) > 0.0001).length
+        : 1;
       return { ...a, impacto, variacionAbs, frecuencia };
     });
 
-    const maxImpacto = Math.max(...problemItems.map(i => i.impacto), 1);
-    const maxVariacion = Math.max(...problemItems.map(i => i.variacionAbs), 1);
-    const maxFrecuencia = Math.max(...problemItems.map(i => i.frecuencia), 1);
+    const maxImpacto = Math.max(...problemItems.map((i) => i.impacto), 1);
+    const maxVariacion = Math.max(...problemItems.map((i) => i.variacionAbs), 1);
+    const maxFrecuencia = Math.max(...problemItems.map((i) => i.frecuencia), 1);
 
-    const scoredItems = problemItems.map(i => {
-      const score = ((i.impacto / maxImpacto * 0.6) + (i.variacionAbs / maxVariacion * 0.3) + (i.frecuencia / maxFrecuencia * 0.1)) * 100;
-      let nivel = score >= 80 ? 'CRÍTICO' : score >= 50 ? 'MEDIO' : 'BAJO';
-      let emoji = score >= 80 ? '🔴' : score >= 50 ? '🟠' : '🟢';
-      return { ...i, score, nivel, emoji };
-    }).sort((a, b) => b.score - a.score).slice(0, 10);
+    const scoredItems = problemItems
+      .map((i) => {
+        const score =
+          ((i.impacto / maxImpacto) * 0.6 +
+            (i.variacionAbs / maxVariacion) * 0.3 +
+            (i.frecuencia / maxFrecuencia) * 0.1) *
+          100;
+        let nivel = score >= 80 ? 'CRÍTICO' : score >= 50 ? 'MEDIO' : 'BAJO';
+        let emoji = score >= 80 ? '🔴' : score >= 50 ? '🟠' : '🟢';
+        return { ...i, score, nivel, emoji };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
 
     autoTable(doc, {
       startY: 40,
@@ -630,12 +714,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         a.cc || 'SIN CC',
         formatCurrency(a.impacto),
         a.frecuencia,
-        `${a.emoji} ${a.nivel}`
+        `${a.emoji} ${a.nivel}`,
       ]),
       theme: 'striped',
       headStyles: { fillColor: [31, 58, 95] },
       styles: { fontSize: 8 },
-      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'center' } }
+      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'center' } },
     });
 
     addFooter(doc, pageWidth);
@@ -648,8 +732,17 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text(`Página ${i} de ${totalPages}`, pageWidth - 25, doc.internal.pageSize.getHeight() - 10);
-      doc.text('Sistema de Auditoría de Inventarios - Reporte generado automáticamente', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+      doc.text(
+        `Página ${i} de ${totalPages}`,
+        pageWidth - 25,
+        doc.internal.pageSize.getHeight() - 10
+      );
+      doc.text(
+        'Sistema de Auditoría de Inventarios - Reporte generado automáticamente',
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
     }
   };
 
@@ -688,7 +781,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.setTextColor(100, 116, 139);
     doc.text('DETALLES DEL REPORTE', 20, coverY);
     coverY += 8;
-    
+
     doc.setDrawColor(226, 232, 240);
     doc.line(20, coverY, pageWidth - 20, coverY);
     coverY += 10;
@@ -806,23 +899,23 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.setFontSize(12);
     doc.text('HALLAZGOS PRINCIPALES', 14, currentY);
     currentY += 8;
-    
+
     const findings = [
       { label: `${entityLabel} más confiable`, value: summary.sedeMasConfiable },
       { label: `${entityLabel} menos confiable`, value: summary.sedeMenosConfiable },
       { label: 'Mayor Impacto Económico', value: formatCurrency(summary.impactoEconomicoTotal) },
-      { label: 'Diferencias Detectadas', value: `${summary.totalDiferencias} artículos` }
+      { label: 'Diferencias Detectadas', value: `${summary.totalDiferencias} artículos` },
     ];
 
     autoTable(doc, {
       startY: currentY,
       head: [['Indicador', 'Valor']],
-      body: findings.map(f => [f.label, f.value]),
+      body: findings.map((f) => [f.label, f.value]),
       theme: 'grid',
       headStyles: { fillColor: [31, 58, 95] },
-      styles: { fontSize: 10 }
+      styles: { fontSize: 10 },
     });
-    
+
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
     // Indicadores Generales
@@ -834,7 +927,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       { label: `${entitiesLabel.toUpperCase()}`, value: summary.totalSedes.toString() },
       { label: 'CONFIABILIDAD', value: `${Math.round(summary.promedioConfiabilidad)}%` },
       { label: 'DIFERENCIAS', value: summary.totalDiferencias.toString() },
-      { label: 'IMPACTO TOTAL', value: formatCurrency(summary.impactoEconomicoTotal) }
+      { label: 'IMPACTO TOTAL', value: formatCurrency(summary.impactoEconomicoTotal) },
     ];
 
     autoTable(doc, {
@@ -843,7 +936,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       body: [[kpis[0].value, kpis[1].value, kpis[2].value, kpis[3].value]],
       theme: 'grid',
       headStyles: { fillColor: [31, 58, 95] },
-      styles: { fontSize: 10, halign: 'center' }
+      styles: { fontSize: 10, halign: 'center' },
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 15;
@@ -854,7 +947,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     currentY += 8;
 
     const counts = { Confiable: 0, Aceptable: 0, Riesgo: 0, Crítico: 0 };
-    summary.sedesStats.forEach(s => {
+    summary.sedesStats.forEach((s) => {
       if (counts.hasOwnProperty(s.nivel)) {
         counts[s.nivel as keyof typeof counts]++;
       }
@@ -867,17 +960,20 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         ['Confiables', counts.Confiable, 'Sedes con precisión alta (>=95%)'],
         ['Aceptables', counts.Aceptable, 'Sedes con precisión media (80-94%)'],
         ['Riesgo', counts.Riesgo, 'Sedes con desviaciones (60-79%)'],
-        ['Críticos', counts.Crítico, 'Sedes con desviaciones graves (<60%)']
+        ['Críticos', counts.Crítico, 'Sedes con desviaciones graves (<60%)'],
       ],
       theme: 'grid',
       headStyles: { fillColor: [31, 58, 95] },
-      styles: { fontSize: 9 }
+      styles: { fontSize: 9 },
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
     // Gráficos (Representación visual simplificada)
-    if (currentY > 200) { doc.addPage(); currentY = 20; }
+    if (currentY > 200) {
+      doc.addPage();
+      currentY = 20;
+    }
     doc.setFontSize(12);
     doc.text('CONFIABILIDAD POR SEDE (%)', 14, currentY);
     currentY += 8;
@@ -909,14 +1005,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     autoTable(doc, {
       startY: currentY,
       head: [['Sede', 'Evaluados', 'Sin Dif.', 'Con Dif.', 'Confiabilidad', 'Impacto $', 'Estado']],
-      body: sortedSedes.map(s => [
+      body: sortedSedes.map((s) => [
         s.sede,
         s.articulosEvaluados,
         s.articulosSinDiferencia,
         s.articulosConDiferencia,
         `${Math.round(s.confiabilidad)}%`,
         formatCurrency(s.impactoEconomico),
-        s.nivel
+        s.nivel,
       ]),
       theme: 'striped',
       headStyles: { fillColor: [31, 58, 95] },
@@ -924,7 +1020,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       columnStyles: {
         4: { halign: 'center', fontStyle: 'bold' },
         5: { halign: 'right' },
-        6: { halign: 'center' }
+        6: { halign: 'center' },
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 4) {
@@ -933,7 +1029,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           else if (val >= 70) data.cell.styles.textColor = [242, 201, 76];
           else data.cell.styles.textColor = [235, 87, 87];
         }
-      }
+      },
     });
 
     // --- PÁGINA 4: ANÁLISIS DE ESTABILIDAD POR PRODUCTO ---
@@ -952,16 +1048,28 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
     autoTable(doc, {
       startY: currentY,
-      head: [['Pos', 'Producto', 'Evaluaciones', '% Fuera Margen', 'Confiabilidad %', 'Impacto $', 'Estado']],
-      body: analisisEstabilidad.slice(0, 30).map((p, i) => [
-        i + 1,
-        p.producto,
-        p.totalInstancias,
-        `${Math.round(p.porcentajeFueraMargen)}%`,
-        `${Math.round(p.confiabilidad)}%`,
-        formatCurrency(p.impactoTotal),
-        p.estado
-      ]),
+      head: [
+        [
+          'Pos',
+          'Producto',
+          'Evaluaciones',
+          '% Fuera Margen',
+          'Confiabilidad %',
+          'Impacto $',
+          'Estado',
+        ],
+      ],
+      body: analisisEstabilidad
+        .slice(0, 30)
+        .map((p, i) => [
+          i + 1,
+          p.producto,
+          p.totalInstancias,
+          `${Math.round(p.porcentajeFueraMargen)}%`,
+          `${Math.round(p.confiabilidad)}%`,
+          formatCurrency(p.impactoTotal),
+          p.estado,
+        ]),
       theme: 'striped',
       headStyles: { fillColor: [31, 58, 95] },
       styles: { fontSize: 8 },
@@ -969,9 +1077,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         0: { halign: 'center' },
         2: { halign: 'center' },
         3: { halign: 'center' },
-                4: { halign: 'center', fontStyle: 'bold' },
+        4: { halign: 'center', fontStyle: 'bold' },
         5: { halign: 'right' },
-        6: { halign: 'center' }
+        6: { halign: 'center' },
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 6) {
@@ -980,7 +1088,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           else if (val === 'Inestable') data.cell.styles.textColor = [242, 201, 76];
           else if (val === 'Crítico') data.cell.styles.textColor = [235, 87, 87];
         }
-      }
+      },
     });
 
     // --- PÁGINA 5: INFORME: AJUSTES POR MARGEN DE ERROR ---
@@ -993,13 +1101,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     currentY += 10;
 
     const allArticles = data.slice(0, 50);
-    const adjustmentBody = allArticles.slice(0, 50).map(a => [
-      a.articulo,
-      a.subarticulo,
-      a.totalDiferencia,
-      formatCurrency(a.totalCobro),
-      a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'
-    ]);
+    const adjustmentBody = allArticles
+      .slice(0, 50)
+      .map((a) => [
+        a.articulo,
+        a.subarticulo,
+        a.totalDiferencia,
+        formatCurrency(a.totalCobro),
+        a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN',
+      ]);
 
     autoTable(doc, {
       startY: currentY,
@@ -1023,11 +1133,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'normal');
 
-    const interpretation = conf >= 85 
-      ? "El sistema presenta un nivel alto de control de inventarios, con una confiabilidad general favorable."
-      : conf >= 70 
-      ? "El sistema presenta un nivel aceptable de control, aunque existen alertas que requieren seguimiento."
-      : "El sistema presenta un nivel crítico de control de inventarios, con un alto volumen de diferencias que requieren intervención.";
+    const interpretation =
+      conf >= 85
+        ? 'El sistema presenta un nivel alto de control de inventarios, con una confiabilidad general favorable.'
+        : conf >= 70
+          ? 'El sistema presenta un nivel aceptable de control, aunque existen alertas que requieren seguimiento.'
+          : 'El sistema presenta un nivel crítico de control de inventarios, con un alto volumen de diferencias que requieren intervención.';
 
     doc.setFont('helvetica', 'bold');
     doc.text(interpretation, 14, currentY);
@@ -1039,20 +1150,23 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       `La sede con mejor desempeño fue ${summary.sedeMasConfiable.toUpperCase()}.`,
       `La sede con menor confiabilidad fue ${summary.sedeMenosConfiable.toUpperCase()}.`,
       `Se detectaron ${summary.totalDiferencias} artículos con diferencias en inventario.`,
-      `El impacto económico total asociado a estas diferencias fue de ${formatCurrency(summary.impactoEconomicoTotal)}.`
+      `El impacto económico total asociado a estas diferencias fue de ${formatCurrency(summary.impactoEconomicoTotal)}.`,
     ];
 
     doc.setFont('helvetica', 'normal');
-    phrases.forEach(phrase => {
+    phrases.forEach((phrase) => {
       const lines = doc.splitTextToSize(phrase, pageWidth - 28);
       doc.text(lines, 14, currentY);
-      currentY += (lines.length * 7);
+      currentY += lines.length * 7;
     });
 
     // --- PÁGINA 5: RECOMENDACIONES ---
     currentY += 15;
-    if (currentY > 200) { doc.addPage(); currentY = 20; }
-    
+    if (currentY > 200) {
+      doc.addPage();
+      currentY = 20;
+    }
+
     doc.setFontSize(14);
     doc.setTextColor(31, 58, 95);
     doc.setFont('helvetica', 'bold');
@@ -1060,19 +1174,19 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
     currentY += 10;
 
     const recommendations = [
-      "Realizar auditorías inmediatas en las sedes con menor confiabilidad.",
-      "Priorizar la revisión de los centros de costos con mayor impacto económico.",
-      "Analizar las referencias con mayor frecuencia de diferencias para identificar patrones.",
-      "Implementar un seguimiento periódico (semanal/quincenal) del indicador de confiabilidad.",
-      "Reforzar la capacitación del personal en los procesos de registro y conteo."
+      'Realizar auditorías inmediatas en las sedes con menor confiabilidad.',
+      'Priorizar la revisión de los centros de costos con mayor impacto económico.',
+      'Analizar las referencias con mayor frecuencia de diferencias para identificar patrones.',
+      'Implementar un seguimiento periódico (semanal/quincenal) del indicador de confiabilidad.',
+      'Reforzar la capacitación del personal en los procesos de registro y conteo.',
     ];
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    recommendations.forEach(rec => {
+    recommendations.forEach((rec) => {
       const lines = doc.splitTextToSize(`• ${rec}`, pageWidth - 35);
       doc.text(lines, 18, currentY);
-      currentY += (lines.length * 7);
+      currentY += lines.length * 7;
     });
 
     addFooter(doc, pageWidth);
@@ -1082,33 +1196,36 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   const exportToExcel = () => {
     // Basic implementation for Reliability Excel
     const workbook = XLSX.utils.book_new();
-    
-    const dataRows = summary.sedesStats.map(s => ({
+
+    const dataRows = summary.sedesStats.map((s) => ({
       Sede: s.sede,
       Evaluados: s.articulosEvaluados,
       'Sin Diferencia': s.articulosSinDiferencia,
       'Con Diferencia': s.articulosConDiferencia,
       'Confiabilidad %': Math.round(s.confiabilidad),
       'Impacto Económico': s.impactoEconomico,
-      Nivel: s.nivel
+      Nivel: s.nivel,
     }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(dataRows);
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Confiabilidad");
 
-    const stabilityRows = analisisEstabilidad.map(p => ({
+    const worksheet = XLSX.utils.json_to_sheet(dataRows);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Confiabilidad');
+
+    const stabilityRows = analisisEstabilidad.map((p) => ({
       Producto: p.producto,
-      'Evaluaciones': p.totalInstancias,
+      Evaluaciones: p.totalInstancias,
       '% Fuera de Margen': Math.round(p.porcentajeFueraMargen),
       'Confiabilidad %': Math.round(p.confiabilidad),
       'Impacto Total $': p.impactoTotal,
-      Estado: p.estado
+      Estado: p.estado,
     }));
 
     const stabilitySheet = XLSX.utils.json_to_sheet(stabilityRows);
-    XLSX.utils.book_append_sheet(workbook, stabilitySheet, "Estabilidad");
+    XLSX.utils.book_append_sheet(workbook, stabilitySheet, 'Estabilidad');
 
-    XLSX.writeFile(workbook, `Reporte_Confiabilidad_y_Estabilidad_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `Reporte_Confiabilidad_y_Estabilidad_${new Date().toISOString().split('T')[0]}.xlsx`
+    );
   };
 
   return (
@@ -1148,10 +1265,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
           <div>
             <h2 className="text-2xl font-bold text-brand-text">
-              {mainTab === 'operativo' ? reportTitle : mainTab === 'tecnico' ? 'Informe Técnico de Control de Inventarios' : mainTab === 'estabilidad' ? 'Panel de Estabilidad de Productos' : 'Resumen Gerencial y Predicciones'}
+              {mainTab === 'operativo'
+                ? reportTitle
+                : mainTab === 'tecnico'
+                  ? 'Informe Técnico de Control de Inventarios'
+                  : mainTab === 'estabilidad'
+                    ? 'Panel de Estabilidad de Productos'
+                    : 'Resumen Gerencial y Predicciones'}
             </h2>
             <p className="text-brand-text-secondary">
-              {mainTab === 'operativo' 
+              {mainTab === 'operativo'
                 ? `Indicador de precisión y consistencia del inventario por ${entityLabel.toLowerCase()}`
                 : mainTab === 'tecnico'
                   ? 'Análisis detallado de variaciones, inventarios iniciales/finales y tolerancias por referencia'
@@ -1178,21 +1301,21 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </button>
             </div>
           )}
-          <button 
+          <button
             onClick={exportToExcel}
             className="flex items-center space-x-2 bg-white border border-brand-border text-text-main px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#132238] transition-all"
           >
             <FileDown className="w-4 h-4" />
             <span>Exportar Excel</span>
           </button>
-          <button 
+          <button
             onClick={exportarPDF}
             className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm"
           >
             <FileText className="w-4 h-4" />
             <span>Reporte Ejecutivo (PDF)</span>
           </button>
-          <button 
+          <button
             onClick={exportDashboardToPDF}
             className="flex items-center space-x-2 bg-[#38BDF8] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#0ea5e9] transition-all shadow-sm"
           >
@@ -1206,374 +1329,514 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         <div id="reporte-confiabilidad" className="space-y-6">
           {/* Main Findings Block */}
           <div className="bg-[#0a1a2d]/50 border border-blue-100 rounded-2xl p-6">
-        <div className="flex items-center space-x-2 mb-4 text-brand-secondary">
-          <Target className="w-5 h-5" />
-          <h3 className="font-bold uppercase tracking-wider text-sm">Hallazgos Principales</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="flex items-start space-x-3">
-            <div className="bg-[#0a2d1a] p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
-              <TrendingUp className="w-4 h-4" />
+            <div className="flex items-center space-x-2 mb-4 text-brand-secondary">
+              <Target className="w-5 h-5" />
+              <h3 className="font-bold uppercase tracking-wider text-sm">Hallazgos Principales</h3>
             </div>
-            <div>
-              <p className="text-xs text-text-secondary font-semibold uppercase">{entityLabel} más confiable</p>
-              <p className="text-lg font-bold text-text-main">{summary.sedeMasConfiable}</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="bg-[#2d0f0f] p-2 rounded-lg text-status-faltante mt-1 border border-rose-100">
-              <TrendingDown className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs text-text-secondary font-semibold uppercase">{entityLabel} menos confiable</p>
-              <p className="text-lg font-bold text-text-main">{summary.sedeMenosConfiable}</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="bg-[#2d2000] p-2 rounded-lg text-amber-600 mt-1 border border-amber-100">
-              <DollarSign className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs text-text-secondary font-semibold uppercase">Mayor Impacto Económico</p>
-              <p className="text-lg font-bold text-text-main">{formatCurrency(summary.impactoEconomicoTotal)}</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="bg-[#0a1a2d] p-2 rounded-lg text-secondary mt-1 border border-blue-100">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs text-text-secondary font-semibold uppercase">Diferencias Detectadas</p>
-              <p className="text-lg font-bold text-text-main">{summary.totalDiferencias} artículos</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* REPORTE FINANCIERO DE PÉRDIDAS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#2d2000] border border-yellow-100 p-6 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="bg-[#2d2000] p-3 rounded-full text-yellow-600 shadow-sm">
-              <TrendingDown className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-yellow-600 uppercase tracking-widest">💸 Pérdida por margen</p>
-              <p className="text-3xl font-black text-yellow-700">{formatCurrency(resumenFinanciero.totalPerdidaMargen)}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-tighter">Dinero no cobrado por tolerancia</p>
-          </div>
-        </div>
-
-        <div className="bg-[#2d0f0f] border border-rose-100 p-6 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="bg-rose-100 p-3 rounded-full text-rose-600 shadow-sm">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-rose-600 uppercase tracking-widest">🚨 Dinero recuperable</p>
-              <p className="text-3xl font-black text-rose-400">{formatCurrency(resumenFinanciero.totalRecuperable)}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold text-rose-400 uppercase tracking-tighter">Dinero que ya debería cobrarse</p>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#27AE60] shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Confiables</span>
-          </div>
-          <p className="text-2xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 95).length}</p>
-          <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} ≥ 95%</p>
-        </div>
-        <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#F2C94C] shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="w-5 h-5 text-[#FBC519]" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Aceptables</span>
-          </div>
-          <p className="text-2xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 80 && s.confiabilidad < 95).length}</p>
-          <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} 80-94%</p>
-        </div>
-        <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#F2994A] shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Riesgo</span>
-          </div>
-          <p className="text-2xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad >= 60 && s.confiabilidad < 80).length}</p>
-          <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} 60-79%</p>
-        </div>
-        <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#EB5757] shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
-            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Críticos</span>
-          </div>
-          <p className="text-2xl font-bold text-text-main">{summary.sedesStats.filter(s => s.confiabilidad < 60).length}</p>
-          <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} {'<'} 60%</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl card">
-          <div className="flex items-center justify-between mb-2">
-            <Building2 className="w-5 h-5 text-text-secondary" />
-            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">{entitiesLabel}</span>
-          </div>
-          <p className="text-3xl font-bold text-text-main">{summary.totalSedes}</p>
-          <p className="text-sm text-text-secondary mt-1">{entitiesLabel} evaluados</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl card">
-          <div className="flex items-center justify-between mb-2">
-            <Target className="w-5 h-5 text-secondary" />
-            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Promedio</span>
-          </div>
-          <p className="text-3xl font-bold text-text-main">{Math.round(summary.promedioConfiabilidad)}%</p>
-          <p className="text-sm text-text-secondary mt-1">Confiabilidad general</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl card">
-          <div className="flex items-center justify-between mb-2">
-            <AlertTriangle className="w-5 h-5 text-warning" />
-            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Diferencias</span>
-          </div>
-          <p className="text-3xl font-bold text-text-main">{summary.totalDiferencias}</p>
-          <p className="text-sm text-text-secondary mt-1">Artículos con descuadre</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl card">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-5 h-5 text-success" />
-            <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Impacto</span>
-          </div>
-          <p className="text-3xl font-bold text-text-main">{formatCurrency(summary.impactoEconomicoTotal)}</p>
-          <p className="text-sm text-text-secondary mt-1">Valor total diferencias</p>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl card">
-          <div className="flex items-center space-x-2 mb-6 text-text-secondary">
-            <BarChart3 className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Confiabilidad por {entityLabel} (%)</span>
-          </div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 40, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                <XAxis type="number" domain={[0, 100]} hide />
-                <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} style={{ fontSize: '12px', fontWeight: 500 }} />
-                <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="confiabilidad" radius={[0, 4, 4, 0]} barSize={20}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.confiabilidad >= 85 ? '#27AE60' : entry.confiabilidad >= 70 ? '#F2C94C' : '#EB5757'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl card">
-          <div className="flex items-center space-x-2 mb-6 text-text-secondary">
-            <PieChart className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Distribución por Nivel de Riesgo</span>
-          </div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RePieChart>
-                <Pie
-                  data={distributionData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {distributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36} />
-              </RePieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Section */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-brand-border">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-2 text-brand-text-secondary">
-            <Filter className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Filtros de {entitiesLabel}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-text-secondary" />
-              <input 
-                type="text"
-                placeholder={`Buscar ${entityLabel.toLowerCase()}...`}
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
-              />
-            </div>
-            <select 
-              value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
-              className="bg-[#132238] border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
-            >
-              <option value="all">Todos los niveles</option>
-              <option value="Confiable">Confiable</option>
-              <option value="Aceptable">Aceptable</option>
-              <option value="Riesgo">Riesgo</option>
-              <option value="Crítico">Crítico</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Sede Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSedes.map((sede) => (
-          <motion.div 
-            key={sede.sede}
-            layoutId={sede.sede}
-            onClick={() => setSelectedSede(sede)}
-            className="bg-white rounded-[12px] p-6 shadow-sm border border-brand-border hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
-          >
-            {/* FILA SUPERIOR: Nombre (izq) */}
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1 min-w-0 pr-4">
-                <h4 className="font-bold text-text-main group-hover:text-[#38BDF8] transition-colors text-lg line-clamp-2 leading-tight">
-                  {sede.sede}
-                </h4>
-                {/* DEBAJO DEL NOMBRE: Etiqueta de estado */}
-                <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(sede.nivel)}`}>
-                  <span className="mr-1">{getSemaphoreEmoji(sede.confiabilidad)}</span>
-                  {sede.nivel}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="flex items-start space-x-3">
+                <div className="bg-[#0a2d1a] p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary font-semibold uppercase">
+                    {entityLabel} más confiable
+                  </p>
+                  <p className="text-lg font-bold text-text-main">{summary.sedeMasConfiable}</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-[#2d0f0f] p-2 rounded-lg text-status-faltante mt-1 border border-rose-100">
+                  <TrendingDown className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary font-semibold uppercase">
+                    {entityLabel} menos confiable
+                  </p>
+                  <p className="text-lg font-bold text-text-main">{summary.sedeMenosConfiable}</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-[#2d2000] p-2 rounded-lg text-amber-600 mt-1 border border-amber-100">
+                  <DollarSign className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary font-semibold uppercase">
+                    Mayor Impacto Económico
+                  </p>
+                  <p className="text-lg font-bold text-text-main">
+                    {formatCurrency(summary.impactoEconomicoTotal)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-[#0a1a2d] p-2 rounded-lg text-secondary mt-1 border border-blue-100">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary font-semibold uppercase">
+                    Diferencias Detectadas
+                  </p>
+                  <p className="text-lg font-bold text-text-main">
+                    {summary.totalDiferencias} artículos
+                  </p>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* DEBAJO DEL BLOQUE SUPERIOR: Confiabilidad y Barra */}
-            <div className="mb-6">
-              <p className="text-sm font-bold text-text-main">
-                Confiabilidad: <span className="text-indigo-600">{sede.confiabilidad.toFixed(1)}%</span>
+          {/* REPORTE FINANCIERO DE PÉRDIDAS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-[#2d2000] border border-yellow-100 p-6 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="bg-[#2d2000] p-3 rounded-full text-yellow-600 shadow-sm">
+                  <TrendingDown className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-yellow-600 uppercase tracking-widest">
+                    💸 Pérdida por margen
+                  </p>
+                  <p className="text-3xl font-black text-yellow-700">
+                    {formatCurrency(resumenFinanciero.totalPerdidaMargen)}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-tighter">
+                  Dinero no cobrado por tolerancia
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#2d0f0f] border border-rose-100 p-6 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="bg-rose-100 p-3 rounded-full text-rose-600 shadow-sm">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-rose-600 uppercase tracking-widest">
+                    🚨 Dinero recuperable
+                  </p>
+                  <p className="text-3xl font-black text-rose-400">
+                    {formatCurrency(resumenFinanciero.totalRecuperable)}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-rose-400 uppercase tracking-tighter">
+                  Dinero que ya debería cobrarse
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#27AE60] shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                  Confiables
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-text-main">
+                {summary.sedesStats.filter((s) => s.confiabilidad >= 95).length}
               </p>
-              <ReliabilityBar percentage={sede.confiabilidad} />
+              <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} ≥ 95%</p>
             </div>
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#F2C94C] shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-5 h-5 text-[#FBC519]" />
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                  Aceptables
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-text-main">
+                {
+                  summary.sedesStats.filter((s) => s.confiabilidad >= 80 && s.confiabilidad < 95)
+                    .length
+                }
+              </p>
+              <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} 80-94%</p>
+            </div>
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#F2994A] shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                  Riesgo
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-text-main">
+                {
+                  summary.sedesStats.filter((s) => s.confiabilidad >= 60 && s.confiabilidad < 80)
+                    .length
+                }
+              </p>
+              <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} 60-79%</p>
+            </div>
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#EB5757] shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                  Críticos
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-text-main">
+                {summary.sedesStats.filter((s) => s.confiabilidad < 60).length}
+              </p>
+              <p className="text-[10px] text-text-secondary mt-1">
+                {entitiesLabel} {'<'} 60%
+              </p>
+            </div>
+          </div>
 
-            {/* Bloques de Artículos, Diferencias, Impacto */}
-            <div className="space-y-4 flex-1">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#132238] p-3 rounded-[6px] border border-brand-border">
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Artículos</p>
-                  <p className="text-sm font-bold text-text-main">{sede.articulosEvaluados}</p>
-                </div>
-                <div className="bg-[#132238] p-3 rounded-[6px] border border-brand-border">
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Diferencias</p>
-                  <p className="text-sm font-bold text-text-main">{sede.articulosConDiferencia}</p>
-                </div>
-                <div className="col-span-2 bg-[#2d0f0f]/50 p-3 rounded-[6px] border border-rose-100/50">
-                  <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Impacto Económico</p>
-                  <p className="text-lg font-bold text-rose-600 leading-none mt-1">{formatCurrency(sede.impactoEconomico)}</p>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-2xl card">
+              <div className="flex items-center justify-between mb-2">
+                <Building2 className="w-5 h-5 text-text-secondary" />
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  {entitiesLabel}
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-text-main">{summary.totalSedes}</p>
+              <p className="text-sm text-text-secondary mt-1">{entitiesLabel} evaluados</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl card">
+              <div className="flex items-center justify-between mb-2">
+                <Target className="w-5 h-5 text-secondary" />
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  Promedio
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-text-main">
+                {Math.round(summary.promedioConfiabilidad)}%
+              </p>
+              <p className="text-sm text-text-secondary mt-1">Confiabilidad general</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl card">
+              <div className="flex items-center justify-between mb-2">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  Diferencias
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-text-main">{summary.totalDiferencias}</p>
+              <p className="text-sm text-text-secondary mt-1">Artículos con descuadre</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl card">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="w-5 h-5 text-success" />
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  Impacto
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-text-main">
+                {formatCurrency(summary.impactoEconomicoTotal)}
+              </p>
+              <p className="text-sm text-text-secondary mt-1">Valor total diferencias</p>
+            </div>
+          </div>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white p-6 rounded-2xl card">
+              <div className="flex items-center space-x-2 mb-6 text-text-secondary">
+                <BarChart3 className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Confiabilidad por {entityLabel} (%)
+                </span>
+              </div>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="vertical" margin={{ left: 40, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      width={100}
+                      axisLine={false}
+                      tickLine={false}
+                      style={{ fontSize: '12px', fontWeight: 500 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{
+                        borderRadius: '12px',
+                        border: 'none',
+                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                      }}
+                    />
+                    <Bar dataKey="confiabilidad" radius={[0, 4, 4, 0]} barSize={20}>
+                      {chartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.confiabilidad >= 85
+                              ? '#27AE60'
+                              : entry.confiabilidad >= 70
+                                ? '#F2C94C'
+                                : '#EB5757'
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Link: Ver detalle completo */}
-            <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[#38BDF8] font-bold text-xs group-hover:translate-x-1 transition-transform">
-              <span>Ver detalle completo</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-
-      {/* Ranking Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-brand-border overflow-hidden">
-        <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-text-secondary">
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Ranking de Confiabilidad por {entityLabel}</span>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-[#0F1C2E]">
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">Pos</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">{entityLabel}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Confiabilidad %</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Evaluados</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Sin Dif.</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">Con Dif.</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Variación</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">Impacto $</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">Nivel</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {summary.sedesStats.map((s, idx) => (
-                <tr key={s.sede} className="hover:bg-[#132238]/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#0a2d1a] text-emerald-400' : idx === summary.sedesStats.length - 1 ? 'bg-rose-100 text-rose-400' : 'bg-[#0F1C2E] text-text-secondary'}`}>
-                      {idx + 1}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 font-bold text-text-main">{s.sede}</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="font-black text-slate-900">{Math.round(s.confiabilidad)}%</span>
-                      <span className="text-[10px] font-bold flex items-center gap-1">
-                        <span>{getSemaphoreEmoji(s.confiabilidad)}</span>
-                        <span className={
-                          s.confiabilidad >= 85 ? 'text-[#22C55E]' : 
-                          s.confiabilidad >= 70 ? 'text-[#FBC519]' : 
-                          'text-[#EF4444]'
-                        }>{getStatusLabel(s.confiabilidad)}</span>
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-text-secondary">{s.articulosEvaluados}</td>
-                  <td className="px-6 py-4 text-center text-emerald-600 font-medium">{s.articulosSinDiferencia}</td>
-                  <td className="px-6 py-4 text-center text-rose-600 font-medium">{s.articulosConDiferencia}</td>
-                  <td className={`px-6 py-4 text-right font-medium ${getVariationColor(s.variacionTotal)}`}>
-                    {formatVariation(s.variacionTotal, 'GRAMOS')}
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-rose-600">{formatCurrency(s.impactoEconomico)}</td>
-                  <td className="px-6 py-4">
-                    <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(s.nivel)}`}>
-                      {s.nivel}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => setSelectedSede(s)}
-                      className="p-2 hover:bg-white rounded-lg text-text-secondary hover:text-indigo-600 transition-all border border-transparent hover:border-brand-border shadow-sm"
+            <div className="bg-white p-6 rounded-2xl card">
+              <div className="flex items-center space-x-2 mb-6 text-text-secondary">
+                <PieChart className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Distribución por Nivel de Riesgo
+                </span>
+              </div>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={distributionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
                     >
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                      {distributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend verticalAlign="bottom" height={36} />
+                  </RePieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters Section */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-brand-border">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center space-x-2 text-brand-text-secondary">
+                <Filter className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Filtros de {entitiesLabel}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="relative min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-text-secondary" />
+                  <input
+                    type="text"
+                    placeholder={`Buscar ${entityLabel.toLowerCase()}...`}
+                    value={filters.search}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                    className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
+                  />
+                </div>
+                <select
+                  value={levelFilter}
+                  onChange={(e) => setLevelFilter(e.target.value)}
+                  className="bg-[#132238] border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
+                >
+                  <option value="all">Todos los niveles</option>
+                  <option value="Confiable">Confiable</option>
+                  <option value="Aceptable">Aceptable</option>
+                  <option value="Riesgo">Riesgo</option>
+                  <option value="Crítico">Crítico</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Sede Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSedes.map((sede) => (
+              <motion.div
+                key={sede.sede}
+                layoutId={sede.sede}
+                onClick={() => setSelectedSede(sede)}
+                className="bg-white rounded-[12px] p-6 shadow-sm border border-brand-border hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
+              >
+                {/* FILA SUPERIOR: Nombre (izq) */}
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0 pr-4">
+                    <h4 className="font-bold text-text-main group-hover:text-[#38BDF8] transition-colors text-lg line-clamp-2 leading-tight">
+                      {sede.sede}
+                    </h4>
+                    {/* DEBAJO DEL NOMBRE: Etiqueta de estado */}
+                    <div
+                      className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(sede.nivel)}`}
+                    >
+                      <span className="mr-1">{getSemaphoreEmoji(sede.confiabilidad)}</span>
+                      {sede.nivel}
+                    </div>
+                  </div>
+                </div>
+
+                {/* DEBAJO DEL BLOQUE SUPERIOR: Confiabilidad y Barra */}
+                <div className="mb-6">
+                  <p className="text-sm font-bold text-text-main">
+                    Confiabilidad:{' '}
+                    <span className="text-indigo-600">{sede.confiabilidad.toFixed(1)}%</span>
+                  </p>
+                  <ReliabilityBar percentage={sede.confiabilidad} />
+                </div>
+
+                {/* Bloques de Artículos, Diferencias, Impacto */}
+                <div className="space-y-4 flex-1">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-[#132238] p-3 rounded-[6px] border border-brand-border">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
+                        Artículos
+                      </p>
+                      <p className="text-sm font-bold text-text-main">{sede.articulosEvaluados}</p>
+                    </div>
+                    <div className="bg-[#132238] p-3 rounded-[6px] border border-brand-border">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
+                        Diferencias
+                      </p>
+                      <p className="text-sm font-bold text-text-main">
+                        {sede.articulosConDiferencia}
+                      </p>
+                    </div>
+                    <div className="col-span-2 bg-[#2d0f0f]/50 p-3 rounded-[6px] border border-rose-100/50">
+                      <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">
+                        Impacto Económico
+                      </p>
+                      <p className="text-lg font-bold text-rose-600 leading-none mt-1">
+                        {formatCurrency(sede.impactoEconomico)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Link: Ver detalle completo */}
+                <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[#38BDF8] font-bold text-xs group-hover:translate-x-1 transition-transform">
+                  <span>Ver detalle completo</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Ranking Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-brand-border overflow-hidden">
+            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-text-secondary">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Ranking de Confiabilidad por {entityLabel}
+                </span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[#0F1C2E]">
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">
+                      Pos
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">
+                      {entityLabel}
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">
+                      Confiabilidad %
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">
+                      Evaluados
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">
+                      Sin Dif.
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-center">
+                      Con Dif.
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">
+                      Variación
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest text-right">
+                      Impacto $
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">
+                      Nivel
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {summary.sedesStats.map((s, idx) => (
+                    <tr key={s.sede} className="hover:bg-[#132238]/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <span
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#0a2d1a] text-emerald-400' : idx === summary.sedesStats.length - 1 ? 'bg-rose-100 text-rose-400' : 'bg-[#0F1C2E] text-text-secondary'}`}
+                        >
+                          {idx + 1}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-text-main">{s.sede}</td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="font-black text-slate-900">
+                            {Math.round(s.confiabilidad)}%
+                          </span>
+                          <span className="text-[10px] font-bold flex items-center gap-1">
+                            <span>{getSemaphoreEmoji(s.confiabilidad)}</span>
+                            <span
+                              className={
+                                s.confiabilidad >= 85
+                                  ? 'text-[#22C55E]'
+                                  : s.confiabilidad >= 70
+                                    ? 'text-[#FBC519]'
+                                    : 'text-[#EF4444]'
+                              }
+                            >
+                              {getStatusLabel(s.confiabilidad)}
+                            </span>
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center text-text-secondary">
+                        {s.articulosEvaluados}
+                      </td>
+                      <td className="px-6 py-4 text-center text-emerald-600 font-medium">
+                        {s.articulosSinDiferencia}
+                      </td>
+                      <td className="px-6 py-4 text-center text-rose-600 font-medium">
+                        {s.articulosConDiferencia}
+                      </td>
+                      <td
+                        className={`px-6 py-4 text-right font-medium ${getVariationColor(s.variacionTotal)}`}
+                      >
+                        {formatVariation(s.variacionTotal, 'GRAMOS')}
+                      </td>
+                      <td className="px-6 py-4 text-right font-bold text-rose-600">
+                        {formatCurrency(s.impactoEconomico)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(s.nivel)}`}
+                        >
+                          {s.nivel}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => setSelectedSede(s)}
+                          className="p-2 hover:bg-white rounded-lg text-text-secondary hover:text-indigo-600 transition-all border border-transparent hover:border-brand-border shadow-sm"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1584,7 +1847,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-[#0F1C2E] p-6 rounded-2xl text-white shadow-xl overflow-hidden relative group">
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-60">Referencias Evaluadas</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-60">
+                Referencias Evaluadas
+              </p>
               <p className="text-4xl font-black">{data.length}</p>
               <div className="mt-4 flex items-center gap-2">
                 <div className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
@@ -1593,18 +1858,30 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">Confiabilidad Técnica Alta</p>
-              <p className="text-4xl font-black text-[#22C55E]">{data.filter(a => a.confiabilidadTecnica === 'ALTA').length}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">
+                Confiabilidad Técnica Alta
+              </p>
+              <p className="text-4xl font-black text-[#22C55E]">
+                {data.filter((a) => a.confiabilidadTecnica === 'ALTA').length}
+              </p>
               <p className="text-xs text-text-secondary mt-2">Referencias con ajuste &lt; 2%</p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">Confiabilidad Técnica Media</p>
-              <p className="text-4xl font-black text-[#FBC519]">{data.filter(a => a.confiabilidadTecnica === 'MEDIA').length}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">
+                Confiabilidad Técnica Media
+              </p>
+              <p className="text-4xl font-black text-[#FBC519]">
+                {data.filter((a) => a.confiabilidadTecnica === 'MEDIA').length}
+              </p>
               <p className="text-xs text-text-secondary mt-2">Referencias con ajuste 2% - 10%</p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">Referencias Críticas (Baja)</p>
-              <p className="text-4xl font-black text-[#EF4444]">{data.filter(a => a.confiabilidadTecnica === 'BAJA').length}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">
+                Referencias Críticas (Baja)
+              </p>
+              <p className="text-4xl font-black text-[#EF4444]">
+                {data.filter((a) => a.confiabilidadTecnica === 'BAJA').length}
+              </p>
               <p className="text-xs text-text-secondary mt-2">Referencias con ajuste &gt; 10%</p>
             </div>
           </div>
@@ -1617,8 +1894,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-text-main uppercase tracking-tight">Control de Inventario y Tolerancia</h3>
-                  <p className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Análisis detallado de variaciones técnicas y márgenes aplicados</p>
+                  <h3 className="font-bold text-text-main uppercase tracking-tight">
+                    Control de Inventario y Tolerancia
+                  </h3>
+                  <p className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">
+                    Análisis detallado de variaciones técnicas y márgenes aplicados
+                  </p>
                 </div>
               </div>
             </div>
@@ -1639,18 +1920,29 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   {data.slice(0, 100).map((a, i) => (
                     <tr key={i} className="hover:bg-[#132238] transition-colors group">
                       <td className="px-6 py-4">
-                        <div className="font-bold text-text-main group-hover:text-blue-600 transition-colors uppercase tracking-tight">{a.articulo}</div>
+                        <div className="font-bold text-text-main group-hover:text-blue-600 transition-colors uppercase tracking-tight">
+                          {a.articulo}
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] font-black bg-[#0F1C2E] text-text-secondary px-1.5 py-0.5 rounded uppercase">{a.sede}</span>
-                          <span className="text-[9px] font-black bg-[#0a1a2d] text-[#38BDF8] px-1.5 py-0.5 rounded uppercase">{a.cc}</span>
-                          <span className="text-[9px] font-medium text-text-secondary uppercase italic leading-none">{a.subarticulo}</span>
+                          <span className="text-[9px] font-black bg-[#0F1C2E] text-text-secondary px-1.5 py-0.5 rounded uppercase">
+                            {a.sede}
+                          </span>
+                          <span className="text-[9px] font-black bg-[#0a1a2d] text-[#38BDF8] px-1.5 py-0.5 rounded uppercase">
+                            {a.cc}
+                          </span>
+                          <span className="text-[9px] font-medium text-text-secondary uppercase italic leading-none">
+                            {a.subarticulo}
+                          </span>
                         </div>
                       </td>
                       <td className="px-4 py-4 text-right font-mono text-xs text-text-secondary">
                         {formatVariation(a.stockEsperado, a.subarticulo)}
                       </td>
-                      <td className={`px-4 py-4 text-right font-mono text-xs font-bold ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                        {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                      <td
+                        className={`px-4 py-4 text-right font-mono text-xs font-bold ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-emerald-600'}`}
+                      >
+                        {a.totalDiferencia > 0 ? '+' : ''}
+                        {formatVariation(a.totalDiferencia, a.subarticulo)}
                       </td>
                       <td className="px-4 py-4 text-right font-mono text-xs text-text-main font-bold underline decoration-slate-200 underline-offset-4">
                         {formatVariation(a.stockFisico, a.subarticulo)}
@@ -1661,19 +1953,27 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         ) : (
                           formatVariation(a.margenError, a.subarticulo)
                         )}
-                        <p className="text-[8px] font-bold text-text-secondary uppercase leading-none mt-1">{a.reglaAplicada}</p>
+                        <p className="text-[8px] font-bold text-text-secondary uppercase leading-none mt-1">
+                          {a.reglaAplicada}
+                        </p>
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                        >
                           {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
                         </span>
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <span className={`px-2 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-tighter shadow-sm ${
-                          a.confiabilidadTecnica === 'ALTA' ? 'bg-[#22C55E] text-white' : 
-                          a.confiabilidadTecnica === 'MEDIA' ? 'bg-[#FBC519] text-text-main' : 
-                          'bg-[#EF4444] text-white'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-tighter shadow-sm ${
+                            a.confiabilidadTecnica === 'ALTA'
+                              ? 'bg-[#22C55E] text-white'
+                              : a.confiabilidadTecnica === 'MEDIA'
+                                ? 'bg-[#FBC519] text-text-main'
+                                : 'bg-[#EF4444] text-white'
+                          }`}
+                        >
                           {a.confiabilidadTecnica}
                         </span>
                       </td>
@@ -1700,8 +2000,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Productos Estables</p>
-                <p className="text-2xl font-black text-text-main">{analisisEstabilidad.filter(p => p.estado === 'Estable').length}</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
+                  Productos Estables
+                </p>
+                <p className="text-2xl font-black text-text-main">
+                  {analisisEstabilidad.filter((p) => p.estado === 'Estable').length}
+                </p>
               </div>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
@@ -1709,8 +2013,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Productos Inestables</p>
-                <p className="text-2xl font-black text-text-main">{analisisEstabilidad.filter(p => p.estado === 'Inestable').length}</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
+                  Productos Inestables
+                </p>
+                <p className="text-2xl font-black text-text-main">
+                  {analisisEstabilidad.filter((p) => p.estado === 'Inestable').length}
+                </p>
               </div>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
@@ -1718,8 +2026,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Productos Críticos</p>
-                <p className="text-2xl font-black text-text-main">{analisisEstabilidad.filter(p => p.estado === 'Crítico').length}</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
+                  Productos Críticos
+                </p>
+                <p className="text-2xl font-black text-text-main">
+                  {analisisEstabilidad.filter((p) => p.estado === 'Crítico').length}
+                </p>
               </div>
             </div>
             <div className="bg-[#0F1C2E] p-6 rounded-2xl text-white shadow-xl flex items-center gap-4 overflow-hidden relative group">
@@ -1728,8 +2040,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <TrendingDown className="w-6 h-6" />
               </div>
               <div className="z-10">
-                <p className="text-[10px] font-black uppercase tracking-wider opacity-60">Impacto Total Riesgo</p>
-                <p className="text-xl font-black">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(analisisEstabilidad.reduce((acc, p) => acc + p.impactoTotal, 0))}</p>
+                <p className="text-[10px] font-black uppercase tracking-wider opacity-60">
+                  Impacto Total Riesgo
+                </p>
+                <p className="text-xl font-black">
+                  {new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    maximumFractionDigits: 0,
+                  }).format(analisisEstabilidad.reduce((acc, p) => acc + p.impactoTotal, 0))}
+                </p>
               </div>
             </div>
           </div>
@@ -1742,23 +2062,34 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   <div className="hidden">
                     <BarChart3 className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-text-main uppercase tracking-tight">Estabilidad por Producto</h3>
+                  <h3 className="font-bold text-text-main uppercase tracking-tight">
+                    Estabilidad por Producto
+                  </h3>
                 </div>
               </div>
               <div className="h-96 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analisisEstabilidad.slice(0, 15)} layout="vertical" margin={{ left: 20, right: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#243A57" />
-                    <XAxis type="number" domain={[0, 100]} hide />
-                    <YAxis 
-                      dataKey="producto" 
-                      type="category" 
-                      width={120} 
-                      axisLine={false} 
-                      tickLine={false} 
-                      style={{ fontSize: '10px', fontWeight: 700, fill: '#64748b' }} 
+                  <BarChart
+                    data={analisisEstabilidad.slice(0, 15)}
+                    layout="vertical"
+                    margin={{ left: 20, right: 30 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={true}
+                      vertical={false}
+                      stroke="#243A57"
                     />
-                    <Tooltip 
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis
+                      dataKey="producto"
+                      type="category"
+                      width={120}
+                      axisLine={false}
+                      tickLine={false}
+                      style={{ fontSize: '10px', fontWeight: 700, fill: '#64748b' }}
+                    />
+                    <Tooltip
                       cursor={{ fill: '#f8fafc' }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
@@ -1766,8 +2097,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           return (
                             <div className="bg-[#0F1C2E] p-4 rounded-xl shadow-2xl text-white border border-white/10">
                               <p className="text-xs font-black uppercase mb-1">{item.producto}</p>
-                              <p className="text-2xl font-black">{Math.round(item.porcentajeFueraMargen)}% <span className="text-[10px] font-bold opacity-60">Fuera de Margen</span></p>
-                              <p className="text-sm font-bold mt-2 text-emerald-400">{Math.round(item.confiabilidad)}% Confiabilidad</p>
+                              <p className="text-2xl font-black">
+                                {Math.round(item.porcentajeFueraMargen)}%{' '}
+                                <span className="text-[10px] font-bold opacity-60">
+                                  Fuera de Margen
+                                </span>
+                              </p>
+                              <p className="text-sm font-bold mt-2 text-emerald-400">
+                                {Math.round(item.confiabilidad)}% Confiabilidad
+                              </p>
                             </div>
                           );
                         }
@@ -1776,7 +2114,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     />
                     <Bar dataKey="porcentajeFueraMargen" radius={[0, 4, 4, 0]} barSize={20}>
                       {analisisEstabilidad.slice(0, 15).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.porcentajeFueraMargen > 60 ? '#EB5757' : entry.porcentajeFueraMargen > 30 ? '#F2C94C' : '#27AE60'} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.porcentajeFueraMargen > 60
+                              ? '#EB5757'
+                              : entry.porcentajeFueraMargen > 30
+                                ? '#F2C94C'
+                                : '#27AE60'
+                          }
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1791,37 +2138,55 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   <div className="bg-[#2d2000] p-2 rounded-lg text-amber-600">
                     <Activity className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-text-main uppercase tracking-tight">Ranking de Estabilidad</h3>
+                  <h3 className="font-bold text-text-main uppercase tracking-tight">
+                    Ranking de Estabilidad
+                  </h3>
                 </div>
-                <span className="text-[10px] font-black bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">Top Críticos</span>
+                <span className="text-[10px] font-black bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">
+                  Top Críticos
+                </span>
               </div>
               <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                 {analisisEstabilidad.slice(0, 20).map((item, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     onClick={() => setSelectedProduct(item)}
                     className="flex items-center justify-between p-4 rounded-xl border border-slate-50 hover:border-brand-border hover:bg-[#132238]/50 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${
-                        item.estado === 'Crítico' ? 'bg-rose-100 text-rose-600' : 
-                        item.estado === 'Inestable' ? 'bg-amber-100 text-amber-600' : 
-                        'bg-[#0a2d1a] text-emerald-600'
-                      }`}>
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${
+                          item.estado === 'Crítico'
+                            ? 'bg-rose-100 text-rose-600'
+                            : item.estado === 'Inestable'
+                              ? 'bg-amber-100 text-amber-600'
+                              : 'bg-[#0a2d1a] text-emerald-600'
+                        }`}
+                      >
                         {Math.round(item.confiabilidad)}%
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-text-main uppercase leading-none">{item.producto}</p>
-                        <p className={`text-[10px] font-black mt-1 uppercase tracking-tight ${
-                          item.confiabilidad >= 95 ? 'text-emerald-500' : 
-                          item.confiabilidad >= 80 ? 'text-amber-500' : 
-                          item.confiabilidad >= 60 ? 'text-orange-500' : 
-                          'text-rose-500'
-                        }`}>
-                          {item.confiabilidad >= 95 ? '🟢 CONFIABLE' : 
-                           item.confiabilidad >= 80 ? '🟡 ACEPTABLE' : 
-                           item.confiabilidad >= 60 ? '🟠 RIESGO' : 
-                           '🔴 CRÍTICO'}
+                        <p className="text-sm font-bold text-text-main uppercase leading-none">
+                          {item.producto}
+                        </p>
+                        <p
+                          className={`text-[10px] font-black mt-1 uppercase tracking-tight ${
+                            item.confiabilidad >= 95
+                              ? 'text-emerald-500'
+                              : item.confiabilidad >= 80
+                                ? 'text-amber-500'
+                                : item.confiabilidad >= 60
+                                  ? 'text-orange-500'
+                                  : 'text-rose-500'
+                          }`}
+                        >
+                          {item.confiabilidad >= 95
+                            ? '🟢 CONFIABLE'
+                            : item.confiabilidad >= 80
+                              ? '🟡 ACEPTABLE'
+                              : item.confiabilidad >= 60
+                                ? '🟠 RIESGO'
+                                : '🔴 CRÍTICO'}
                         </p>
                       </div>
                     </div>
@@ -1829,7 +2194,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <p className="text-lg font-black text-text-main">
                         {Math.round(item.porcentajeFueraMargen)}%
                       </p>
-                      <p className="text-[9px] font-black text-slate-300 uppercase leading-none">Fuera Margen</p>
+                      <p className="text-[9px] font-black text-slate-300 uppercase leading-none">
+                        Fuera Margen
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -1844,37 +2211,51 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
                   <Users className="w-5 h-5" />
                 </div>
-                <h3 className="font-bold text-text-main uppercase tracking-tight">Ranking por Responsables</h3>
+                <h3 className="font-bold text-text-main uppercase tracking-tight">
+                  Ranking por Responsables
+                </h3>
               </div>
-              <span className="text-[10px] font-black bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">Desempeño Operativo</span>
+              <span className="text-[10px] font-black bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">
+                Desempeño Operativo
+              </span>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analisisResponsables} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <BarChart
+                    data={analisisResponsables}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#243A57" />
-                    <XAxis 
-                      dataKey="responsable" 
-                      axisLine={false} 
+                    <XAxis
+                      dataKey="responsable"
+                      axisLine={false}
                       tickLine={false}
                       style={{ fontSize: '10px', fontWeight: 700, fill: '#64748b' }}
                     />
-                    <YAxis 
-                      axisLine={false} 
+                    <YAxis
+                      axisLine={false}
                       tickLine={false}
                       style={{ fontSize: '10px', fontWeight: 700, fill: '#64748b' }}
                     />
-                    <Tooltip 
+                    <Tooltip
                       cursor={{ fill: '#f8fafc' }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const item = payload[0].payload;
                           return (
                             <div className="bg-[#0F1C2E] p-4 rounded-xl shadow-2xl text-white border border-white/10">
-                              <p className="text-xs font-black uppercase mb-1">{item.responsable}</p>
-                              <p className="text-2xl font-black">{Math.round(item.porcentajeFallo)}% <span className="text-[10px] font-bold opacity-60">Fallo</span></p>
-                              <p className="text-sm font-bold mt-2 text-emerald-400">{Math.round(item.confiabilidad)}% Confiabilidad</p>
+                              <p className="text-xs font-black uppercase mb-1">
+                                {item.responsable}
+                              </p>
+                              <p className="text-2xl font-black">
+                                {Math.round(item.porcentajeFallo)}%{' '}
+                                <span className="text-[10px] font-bold opacity-60">Fallo</span>
+                              </p>
+                              <p className="text-sm font-bold mt-2 text-emerald-400">
+                                {Math.round(item.confiabilidad)}% Confiabilidad
+                              </p>
                             </div>
                           );
                         }
@@ -1883,7 +2264,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     />
                     <Bar dataKey="porcentajeFallo" radius={[4, 4, 0, 0]} barSize={40}>
                       {analisisResponsables.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.porcentajeFallo > 60 ? '#EB5757' : entry.porcentajeFallo > 30 ? '#F2C94C' : '#27AE60'} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.porcentajeFallo > 60
+                              ? '#EB5757'
+                              : entry.porcentajeFallo > 30
+                                ? '#F2C94C'
+                                : '#27AE60'
+                          }
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1892,19 +2282,28 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
               <div className="space-y-3">
                 {analisisResponsables.slice(0, 10).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-[#132238]/30">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-[#132238]/30"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black border border-brand-border shadow-sm text-text-secondary">
                         {i + 1}
                       </div>
-                      <span className="text-sm font-bold text-text-main uppercase">{item.responsable}</span>
+                      <span className="text-sm font-bold text-text-main uppercase">
+                        {item.responsable}
+                      </span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className={`text-sm font-black ${item.porcentajeFallo > 60 ? 'text-rose-600' : item.porcentajeFallo > 30 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                        <p
+                          className={`text-sm font-black ${item.porcentajeFallo > 60 ? 'text-rose-600' : item.porcentajeFallo > 30 ? 'text-amber-500' : 'text-emerald-600'}`}
+                        >
                           {Math.round(item.porcentajeFallo)}% fallo
                         </p>
-                        <p className={`text-[9px] font-black uppercase mt-0.5 ${item.confiabilidad < 70 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                        <p
+                          className={`text-[9px] font-black uppercase mt-0.5 ${item.confiabilidad < 70 ? 'text-rose-400' : 'text-emerald-400'}`}
+                        >
                           {Math.round(item.confiabilidad)}% confiabilidad
                         </p>
                       </div>
@@ -1922,50 +2321,72 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
-                <h3 className="font-bold text-text-main uppercase tracking-tight">Detalle de Confiabilidad (Reporte Ejecutivo)</h3>
+                <h3 className="font-bold text-text-main uppercase tracking-tight">
+                  Detalle de Confiabilidad (Reporte Ejecutivo)
+                </h3>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-[#0F1C2E] text-white">
                   <tr>
-                    <th className="px-8 py-4 font-bold uppercase tracking-wider text-[10px]">Producto</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-right">% Fuera Margen</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-right">Confiabilidad</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-center">Estado</th>
+                    <th className="px-8 py-4 font-bold uppercase tracking-wider text-[10px]">
+                      Producto
+                    </th>
+                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-right">
+                      % Fuera Margen
+                    </th>
+                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-right">
+                      Confiabilidad
+                    </th>
+                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-center">
+                      Estado
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {analisisEstabilidad.map((item, i) => (
-                    <tr 
-                      key={i} 
+                    <tr
+                      key={i}
                       onClick={() => setSelectedProduct(item)}
                       className="hover:bg-[#132238] transition-colors cursor-pointer group"
                     >
                       <td className="px-8 py-4 font-bold text-text-main group-hover:text-blue-600 transition-colors uppercase">
                         {item.producto}
                       </td>
-                      <td className={`px-6 py-4 text-right font-black ${
-                        item.porcentajeFueraMargen > 60 ? 'text-rose-600' :
-                        item.porcentajeFueraMargen > 30 ? 'text-amber-500' :
-                        'text-emerald-600'
-                      }`}>
+                      <td
+                        className={`px-6 py-4 text-right font-black ${
+                          item.porcentajeFueraMargen > 60
+                            ? 'text-rose-600'
+                            : item.porcentajeFueraMargen > 30
+                              ? 'text-amber-500'
+                              : 'text-emerald-600'
+                        }`}
+                      >
                         {Math.round(item.porcentajeFueraMargen)}%
                       </td>
                       <td className="px-6 py-4 text-right font-black text-text-main">
                         {Math.round(item.confiabilidad)}%
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                          item.confiabilidad >= 95 ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 
-                          item.confiabilidad >= 80 ? 'bg-[#2d2000] text-amber-600 border-amber-100' : 
-                          item.confiabilidad >= 60 ? 'bg-[#1a0f00] text-orange-600 border-orange-100' : 
-                          'bg-[#2d0f0f] text-rose-600 border-rose-100'
-                        }`}>
-                          {item.confiabilidad >= 95 ? '🟢 CONFIABLE' : 
-                           item.confiabilidad >= 80 ? '🟡 ACEPTABLE' : 
-                           item.confiabilidad >= 60 ? '🟠 RIESGO' : 
-                           '🔴 CRÍTICO'}
+                        <span
+                          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                            item.confiabilidad >= 95
+                              ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100'
+                              : item.confiabilidad >= 80
+                                ? 'bg-[#2d2000] text-amber-600 border-amber-100'
+                                : item.confiabilidad >= 60
+                                  ? 'bg-[#1a0f00] text-orange-600 border-orange-100'
+                                  : 'bg-[#2d0f0f] text-rose-600 border-rose-100'
+                          }`}
+                        >
+                          {item.confiabilidad >= 95
+                            ? '🟢 CONFIABLE'
+                            : item.confiabilidad >= 80
+                              ? '🟡 ACEPTABLE'
+                              : item.confiabilidad >= 60
+                                ? '🟠 RIESGO'
+                                : '🔴 CRÍTICO'}
                         </span>
                       </td>
                     </tr>
@@ -1983,15 +2404,19 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           {/* Executive KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-[#0F1C2E] p-6 rounded-2xl text-white shadow-xl relative overflow-hidden group">
-               <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl transition-all" />
-               <div className="relative z-10">
-                 <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Riesgo Mensual Proyectado</p>
-                 <p className="text-3xl font-black mt-1 text-rose-400">{formatCurrency(resumenFinanciero.perdidaMensualProyectada)}</p>
-                 <div className="flex items-center gap-1 mt-2 text-[9px] font-bold opacity-80 uppercase tracking-tighter">
-                   <TrendingDown className="w-3 h-3" />
-                   Basado en comportamiento actual (30 días)
-                 </div>
-               </div>
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl transition-all" />
+              <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                  Riesgo Mensual Proyectado
+                </p>
+                <p className="text-3xl font-black mt-1 text-rose-400">
+                  {formatCurrency(resumenFinanciero.perdidaMensualProyectada)}
+                </p>
+                <div className="flex items-center gap-1 mt-2 text-[9px] font-bold opacity-80 uppercase tracking-tighter">
+                  <TrendingDown className="w-3 h-3" />
+                  Basado en comportamiento actual (30 días)
+                </div>
+              </div>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
@@ -1999,8 +2424,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Total Alertas Críticas</p>
-                <p className="text-2xl font-black text-text-main">{resumenFinanciero.todasAlertas.filter(a => a.tipo === 'CRÍTICA').length}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                  Total Alertas Críticas
+                </p>
+                <p className="text-2xl font-black text-text-main">
+                  {resumenFinanciero.todasAlertas.filter((a) => a.tipo === 'CRÍTICA').length}
+                </p>
               </div>
             </div>
 
@@ -2009,8 +2438,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <DollarSign className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Pérdida por Tolerancia</p>
-                <p className="text-2xl font-black text-text-main">{formatCurrency(resumenFinanciero.totalPerdidaMargen)}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                  Pérdida por Tolerancia
+                </p>
+                <p className="text-2xl font-black text-text-main">
+                  {formatCurrency(resumenFinanciero.totalPerdidaMargen)}
+                </p>
               </div>
             </div>
 
@@ -2019,60 +2452,77 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 <Target className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Índice Confiabilidad</p>
-                <p className="text-2xl font-black text-text-main">{Math.round(summary.promedioConfiabilidad)}%</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                  Índice Confiabilidad
+                </p>
+                <p className="text-2xl font-black text-text-main">
+                  {Math.round(summary.promedioConfiabilidad)}%
+                </p>
               </div>
             </div>
           </div>
 
-
-             <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex flex-col h-[700px]">
-                <div className="flex items-center justify-between mb-6">
-                   <div className="flex items-center gap-3">
-                      <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
-                        <TrendingDown className="w-5 h-5" />
-                      </div>
-                      <h3 className="font-bold text-text-main uppercase tracking-tight">Top Riesgo Financiero (Proyección 30d)</h3>
-                   </div>
+          <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex flex-col h-[700px]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
+                  <TrendingDown className="w-5 h-5" />
                 </div>
-                <div className="overflow-x-auto flex-1">
-                   <table className="w-full text-left">
-                      <thead className="sticky top-0 bg-white z-10">
-                        <tr className="bg-[#132238]/50">
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary">Insumo / Sede</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary text-right">Impacto Hoy</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary text-right">Riesgo Mensual</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {resumenFinanciero.rankingRiesgo.map((item, i) => (
-                           <tr key={i} className="hover:bg-[#132238]/80 transition-colors group">
-                             <td className="px-6 py-4">
-                               <p className="text-sm font-bold text-text-main uppercase group-hover:text-indigo-600 transition-colors">{item.articulo}</p>
-                               <div className="flex items-center gap-2 mt-1">
-                                 <Building2 className="w-3 h-3 text-slate-300" />
-                                 <p className="text-[10px] font-bold text-text-secondary uppercase leading-none">{item.sede}</p>
-                               </div>
-                             </td>
-                             <td className="px-6 py-4 text-right">
-                               <span className="text-sm font-bold text-rose-500">{formatCurrency(item.perdidaHoy)}</span>
-                             </td>
-                             <td className="px-6 py-4 text-right">
-                               <div className="bg-rose-600 text-white px-3 py-1.5 rounded-lg inline-block font-black text-sm shadow-sm">
-                                 {formatCurrency(item.perdidaProyectada)}
-                               </div>
-                             </td>
-                           </tr>
-                        ))}
-                      </tbody>
-                   </table>
-                   {resumenFinanciero.rankingRiesgo.length === 0 && (
-                     <div className="flex flex-col items-center justify-center h-full opacity-30 italic py-20 text-sm">
-                       Sin riesgos proyectados significativos
-                     </div>
-                   )}
+                <h3 className="font-bold text-text-main uppercase tracking-tight">
+                  Top Riesgo Financiero (Proyección 30d)
+                </h3>
+              </div>
+            </div>
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-left">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="bg-[#132238]/50">
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                      Insumo / Sede
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary text-right">
+                      Impacto Hoy
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary text-right">
+                      Riesgo Mensual
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {resumenFinanciero.rankingRiesgo.map((item, i) => (
+                    <tr key={i} className="hover:bg-[#132238]/80 transition-colors group">
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-bold text-text-main uppercase group-hover:text-indigo-600 transition-colors">
+                          {item.articulo}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Building2 className="w-3 h-3 text-slate-300" />
+                          <p className="text-[10px] font-bold text-text-secondary uppercase leading-none">
+                            {item.sede}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-sm font-bold text-rose-500">
+                          {formatCurrency(item.perdidaHoy)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="bg-rose-600 text-white px-3 py-1.5 rounded-lg inline-block font-black text-sm shadow-sm">
+                          {formatCurrency(item.perdidaProyectada)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {resumenFinanciero.rankingRiesgo.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full opacity-30 italic py-20 text-sm">
+                  Sin riesgos proyectados significativos
                 </div>
-             </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -2080,28 +2530,32 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       <AnimatePresence>
         {selectedSede && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedSede(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               layoutId={selectedSede.sede}
               className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[12px] shadow-2xl overflow-hidden flex flex-col border border-brand-border"
             >
               {/* Modal Header */}
               <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#132238]">
                 <div>
-                  <h3 className="text-xl font-bold text-text-main">Detalle de Confiabilidad - {selectedSede.sede}</h3>
+                  <h3 className="text-xl font-bold text-text-main">
+                    Detalle de Confiabilidad - {selectedSede.sede}
+                  </h3>
                   {selectedCCFilter && (
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">Filtrado por:</span>
+                      <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                        Filtrado por:
+                      </span>
                       <span className="bg-[#0a1a2d] text-[#38BDF8] px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase border border-blue-100">
                         {selectedCCFilter}
                       </span>
-                      <button 
+                      <button
                         onClick={() => setSelectedCCFilter(null)}
                         className="text-text-secondary hover:text-rose-500 transition-colors"
                       >
@@ -2109,14 +2563,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       </button>
                     </div>
                   )}
-                  <div className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(selectedSede.nivel)}`}>
+                  <div
+                    className={`mt-2 inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider border ${getLevelColor(selectedSede.nivel)}`}
+                  >
                     <span className="mr-1">{getSemaphoreEmoji(selectedSede.confiabilidad)}</span>
                     Estado {selectedSede.nivel}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex bg-white p-1 rounded-[6px] border border-brand-border">
-                    <button 
+                    <button
                       onClick={() => downloadGeneralPDF(selectedSede)}
                       className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-text-main hover:bg-[#132238] transition-all border-r border-brand-border"
                       title="Reporte General"
@@ -2124,7 +2580,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <FileText className="w-3 h-3" />
                       <span>General</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => downloadLossesPDF(selectedSede)}
                       className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#EF4444] hover:bg-[#2d0f0f] transition-all border-r border-brand-border"
                       title="Top Pérdidas"
@@ -2132,7 +2588,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <TrendingDown className="w-3 h-3" />
                       <span>Pérdidas</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => downloadGainsPDF(selectedSede)}
                       className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#22C55E] hover:bg-[#0a2d1a] transition-all border-r border-brand-border"
                       title="Top Ganancias"
@@ -2140,7 +2596,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <TrendingUp className="w-3 h-3" />
                       <span>Ganancias</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => downloadProblematicPDF(selectedSede)}
                       className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#38BDF8] hover:bg-[#0a1a2d] transition-all"
                       title="Riesgo Operativo"
@@ -2149,7 +2605,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <span>Riesgo</span>
                     </button>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       setSelectedSede(null);
                       setSelectedCCFilter(null);
@@ -2168,20 +2624,36 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Confiabilidad</p>
-                    <p className="text-2xl font-bold text-text-main">{Math.round(selectedSede.confiabilidad)}%</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
+                      Confiabilidad
+                    </p>
+                    <p className="text-2xl font-bold text-text-main">
+                      {Math.round(selectedSede.confiabilidad)}%
+                    </p>
                   </div>
                   <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Evaluados</p>
-                    <p className="text-2xl font-bold text-text-main">{selectedSede.articulosEvaluados}</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
+                      Evaluados
+                    </p>
+                    <p className="text-2xl font-bold text-text-main">
+                      {selectedSede.articulosEvaluados}
+                    </p>
                   </div>
                   <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Sin Diferencia</p>
-                    <p className="text-2xl font-bold text-[#22C55E]">{selectedSede.articulosSinDiferencia}</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
+                      Sin Diferencia
+                    </p>
+                    <p className="text-2xl font-bold text-[#22C55E]">
+                      {selectedSede.articulosSinDiferencia}
+                    </p>
                   </div>
                   <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Con Diferencia</p>
-                    <p className="text-2xl font-bold text-[#EF4444]">{selectedSede.articulosConDiferencia}</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
+                      Con Diferencia
+                    </p>
+                    <p className="text-2xl font-bold text-[#EF4444]">
+                      {selectedSede.articulosConDiferencia}
+                    </p>
                   </div>
                 </div>
 
@@ -2233,31 +2705,53 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           Referencias: {filteredItems.length}
                         </span>
                       </div>
-                      
+
                       <div className="overflow-hidden rounded-[8px] border border-brand-border shadow-sm">
                         <table className="w-full text-left text-sm">
                           <thead className="bg-[#0F1C2E] text-text-main">
                             <tr>
-                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
-                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">UNIDAD</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">DIFERENCIA</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">COBRO RECUPERABLE $</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">ESTADO</th>
+                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
+                                ARTÍCULO
+                              </th>
+                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
+                                UNIDAD
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                                DIFERENCIA
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                                COBRO RECUPERABLE $
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">
+                                ESTADO
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-brand-border">
                             {filteredItems.map((a, i) => (
-                              <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-[#0F1C2E] transition-colors`}>
+                              <tr
+                                key={i}
+                                className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-[#0F1C2E] transition-colors`}
+                              >
                                 <td className="px-6 py-3 font-bold text-text-main">{a.articulo}</td>
-                                <td className="px-6 py-3 text-text-secondary text-[10px] font-bold">{a.subarticulo}</td>
-                                <td className={`px-4 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-text-secondary'}`}>
-                                  {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                                <td className="px-6 py-3 text-text-secondary text-[10px] font-bold">
+                                  {a.subarticulo}
+                                </td>
+                                <td
+                                  className={`px-4 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-text-secondary'}`}
+                                >
+                                  {a.totalDiferencia > 0 ? '+' : ''}
+                                  {formatVariation(a.totalDiferencia, a.subarticulo)}
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-rose-600">
-                                  {a.dineroRecuperable > 0 ? formatCurrency(a.dineroRecuperable) : '-'}
+                                  {a.dineroRecuperable > 0
+                                    ? formatCurrency(a.dineroRecuperable)
+                                    : '-'}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                                  >
                                     {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
                                   </span>
                                 </td>
@@ -2278,45 +2772,71 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           Referencias: {filteredItems.length}
                         </span>
                       </div>
-                      
+
                       <div className="overflow-hidden rounded-[8px] border border-brand-border shadow-sm">
                         <table className="w-full text-left text-sm">
                           <thead className="bg-[#0F1C2E] text-white">
                             <tr>
-                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">ARTÍCULO</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">INV. INICIAL</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">VARIACIÓN</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">INV. FINAL</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">MARGEN</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">ESTADO</th>
+                              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
+                                ARTÍCULO
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                                INV. INICIAL
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                                VARIACIÓN
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                                INV. FINAL
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                                MARGEN
+                              </th>
+                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">
+                                ESTADO
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-brand-border">
                             {filteredItems.map((a, i) => (
-                              <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-indigo-50 transition-colors`}>
+                              <tr
+                                key={i}
+                                className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-indigo-50 transition-colors`}
+                              >
                                 <td className="px-6 py-3 font-bold text-text-main">
                                   {a.articulo}
-                                  <div className="text-[9px] text-text-secondary uppercase leading-none mt-0.5">{a.subarticulo}</div>
+                                  <div className="text-[9px] text-text-secondary uppercase leading-none mt-0.5">
+                                    {a.subarticulo}
+                                  </div>
                                 </td>
                                 <td className="px-4 py-3 text-right font-medium text-text-secondary">
                                   {formatVariation(a.stockEsperado, a.subarticulo)}
                                 </td>
-                                <td className={`px-4 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-text-secondary'}`}>
-                                  {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
+                                <td
+                                  className={`px-4 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-text-secondary'}`}
+                                >
+                                  {a.totalDiferencia > 0 ? '+' : ''}
+                                  {formatVariation(a.totalDiferencia, a.subarticulo)}
                                 </td>
                                 <td className="px-4 py-3 text-right font-medium text-text-main">
                                   {formatVariation(a.stockFisico, a.subarticulo)}
                                 </td>
                                 <td className="px-4 py-3 text-right text-indigo-600 font-bold">
                                   {a.margenError === 0 ? (
-                                    <span className="text-text-secondary/50 italic font-normal">No aplica</span>
+                                    <span className="text-text-secondary/50 italic font-normal">
+                                      No aplica
+                                    </span>
                                   ) : (
                                     formatVariation(a.margenError, a.subarticulo)
                                   )}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
-                                    {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
+                                  <div
+                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                                  >
+                                    {a.dentroDeTolerancia
+                                      ? 'DENTRO DE MARGEN'
+                                      : 'EXCEDE TOLERANCIA'}
                                   </div>
                                 </td>
                               </tr>
@@ -2333,11 +2853,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               <div className="p-6 bg-[#132238] border-t border-brand-border flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div>
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Impacto Total {entityLabel}</p>
-                    <p className="text-2xl font-bold text-[#EF4444]">{formatCurrency(selectedSede.impactoEconomico)}</p>
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
+                      Impacto Total {entityLabel}
+                    </p>
+                    <p className="text-2xl font-bold text-[#EF4444]">
+                      {formatCurrency(selectedSede.impactoEconomico)}
+                    </p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setSelectedSede(null);
                     setModalFilter('Todos');
@@ -2357,28 +2881,34 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       <AnimatePresence>
         {selectedProduct && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedProduct(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               layoutId={selectedProduct.producto}
               className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[12px] shadow-2xl overflow-hidden flex flex-col border border-brand-border"
             >
               <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#132238]">
                 <div>
-                  <h3 className="text-xl font-bold text-text-main">Trazabilidad de Producto: {selectedProduct.producto}</h3>
+                  <h3 className="text-xl font-bold text-text-main">
+                    Trazabilidad de Producto: {selectedProduct.producto}
+                  </h3>
                   <div className="flex items-center gap-4 mt-1">
                     <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
-                      Nivel de Estabilidad: 
-                      <span className={`ml-2 px-2 py-0.5 rounded-[4px] text-white ${
-                        selectedProduct.estado === 'Crítico' ? 'bg-[#2d0f0f]0' : 
-                        selectedProduct.estado === 'Inestable' ? 'bg-[#2d2000]0' : 
-                        'bg-[#0a2d1a]0'
-                      }`}>
+                      Nivel de Estabilidad:
+                      <span
+                        className={`ml-2 px-2 py-0.5 rounded-[4px] text-white ${
+                          selectedProduct.estado === 'Crítico'
+                            ? 'bg-[#2d0f0f]0'
+                            : selectedProduct.estado === 'Inestable'
+                              ? 'bg-[#2d2000]0'
+                              : 'bg-[#0a2d1a]0'
+                        }`}
+                      >
                         {selectedProduct.estado}
                       </span>
                     </span>
@@ -2387,7 +2917,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     </span>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedProduct(null)}
                   className="p-2 hover:bg-white rounded-full text-text-secondary hover:text-text-secondary transition-colors"
                 >
@@ -2400,39 +2930,61 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   <table className="w-full text-left text-sm">
                     <thead className="bg-[#0F1C2E] text-white">
                       <tr>
-                        <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">Sede / Centro de Costo</th>
-                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">Variación</th>
-                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">Impacto $</th>
-                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">Estado</th>
+                        <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
+                          Sede / Centro de Costo
+                        </th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                          Variación
+                        </th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-right">
+                          Impacto $
+                        </th>
+                        <th className="px-4 py-3 font-bold uppercase tracking-wider text-[10px] text-center">
+                          Estado
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-brand-border">
-                      {data.filter(a => a.articulo === selectedProduct.producto).map((a, i) => (
-                        <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-[#0F1C2E] transition-colors`}>
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-text-main">{a.sede}</div>
-                            <div className="text-[10px] font-bold text-text-secondary uppercase">{a.cc || 'SIN CC'}</div>
-                          </td>
-                          <td className={`px-4 py-4 text-right font-mono text-xs ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                            {a.totalDiferencia > 0 ? '+' : ''}{formatVariation(a.totalDiferencia, a.subarticulo)}
-                          </td>
-                          <td className="px-4 py-4 text-right font-bold text-text-main">
-                            {formatCurrency(Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio))}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}>
-                              {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {data
+                        .filter((a) => a.articulo === selectedProduct.producto)
+                        .map((a, i) => (
+                          <tr
+                            key={i}
+                            className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-[#0F1C2E] transition-colors`}
+                          >
+                            <td className="px-6 py-4">
+                              <div className="font-bold text-text-main">{a.sede}</div>
+                              <div className="text-[10px] font-bold text-text-secondary uppercase">
+                                {a.cc || 'SIN CC'}
+                              </div>
+                            </td>
+                            <td
+                              className={`px-4 py-4 text-right font-mono text-xs ${a.totalDiferencia < 0 ? 'text-rose-600' : 'text-emerald-600'}`}
+                            >
+                              {a.totalDiferencia > 0 ? '+' : ''}
+                              {formatVariation(a.totalDiferencia, a.subarticulo)}
+                            </td>
+                            <td className="px-4 py-4 text-right font-bold text-text-main">
+                              {formatCurrency(
+                                Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)
+                              )}
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                              >
+                                {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
               </div>
 
               <div className="p-6 bg-[#132238] border-t border-brand-border flex justify-end">
-                <button 
+                <button
                   onClick={() => setSelectedProduct(null)}
                   className="bg-[#0F1C2E] text-white px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#38BDF8] transition-all"
                 >

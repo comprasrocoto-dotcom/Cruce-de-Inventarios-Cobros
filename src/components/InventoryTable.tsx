@@ -1,3 +1,8 @@
+/**
+ * Tabla detallada de inventario. Lista de forma jerárquica los artículos y sus
+ * variaciones (faltantes/sobrantes), resaltando los que deben cobrarse. Es la
+ * vista principal de las pestañas Cobros y Análisis.
+ */
 import React, { useState } from 'react';
 import { ArticleSummary } from '../types';
 import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info } from 'lucide-react';
@@ -15,22 +20,29 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
   const [expandedArticles, setExpandedArticles] = useState<Record<string, boolean>>({});
 
   const toggleSede = (sede: string) => {
-    setExpandedSedes(prev => ({ ...prev, [sede]: !prev[sede] }));
+    setExpandedSedes((prev) => ({ ...prev, [sede]: !prev[sede] }));
   };
 
   const toggleArticle = (key: string) => {
-    setExpandedArticles(prev => ({ ...prev, [key]: !prev[key] }));
+    setExpandedArticles((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Group by Sede
-  const groupedBySede = data.reduce((acc, art) => {
-    if (!acc[art.sede]) acc[art.sede] = [];
-    acc[art.sede].push(art);
-    return acc;
-  }, {} as Record<string, ArticleSummary[]>);
+  const groupedBySede = data.reduce(
+    (acc, art) => {
+      if (!acc[art.sede]) acc[art.sede] = [];
+      acc[art.sede].push(art);
+      return acc;
+    },
+    {} as Record<string, ArticleSummary[]>
+  );
 
-  const formatCurrency = (val: number) => 
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(val);
 
   if (data.length === 0) {
     return (
@@ -64,123 +76,148 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
             </tr>
           </thead>
           <tbody className="text-sm">
-            {(Object.entries(groupedBySede) as [string, ArticleSummary[]][]).map(([sede, articles]) => (
-              <React.Fragment key={sede}>
-                {/* Sede Header Row */}
-                <tr 
-                  className="bg-[#0d1b2a] cursor-pointer hover:bg-[#1a2d45] transition-colors border-b border-brand-border"
-                  onClick={() => toggleSede(sede)}
-                >
-                  <td colSpan={6} className="px-6 py-3">
-                    <div className="flex items-center font-bold text-text-main uppercase tracking-tight">
-                      {expandedSedes[sede] ? (
-                        <ChevronDown className="w-5 h-5 mr-2 text-secondary" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 mr-2 text-text-secondary" />
-                      )}
-                      <span>SEDE: {sede}</span>
-                      <span className="ml-3 px-2 py-0.5 bg-[#0d1b2a] text-secondary rounded text-[10px] font-bold border border-brand-border">
-                        {articles.length} ARTÍCULOS
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-
-                {/* Articles within Sede */}
-                {expandedSedes[sede] && articles.map((art, artIdx) => {
-                  const artKey = `${sede}-${art.articulo}`;
-                  const isExpanded = expandedArticles[artKey];
-                  
-                  return (
-                    <React.Fragment key={artKey}>
-                      <tr 
-                        className={clsx(
-                          "border-b border-brand-border transition-colors cursor-pointer",
-                          artIdx % 2 === 0 ? "bg-[#0d1b2a]" : "bg-[#0d1b2a]",
-                          "hover:bg-[#1a2d45]",
-                          isExpanded && "bg-[#152338]"
+            {(Object.entries(groupedBySede) as [string, ArticleSummary[]][]).map(
+              ([sede, articles]) => (
+                <React.Fragment key={sede}>
+                  {/* Sede Header Row */}
+                  <tr
+                    className="bg-[#0d1b2a] cursor-pointer hover:bg-[#1a2d45] transition-colors border-b border-brand-border"
+                    onClick={() => toggleSede(sede)}
+                  >
+                    <td colSpan={6} className="px-6 py-3">
+                      <div className="flex items-center font-bold text-text-main uppercase tracking-tight">
+                        {expandedSedes[sede] ? (
+                          <ChevronDown className="w-5 h-5 mr-2 text-secondary" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 mr-2 text-text-secondary" />
                         )}
-                        onClick={() => toggleArticle(artKey)}
-                      >
-                        <td className="px-6 py-4 pl-12">
-                          <div className="flex items-center">
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 mr-2 text-secondary" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 mr-2 text-text-secondary" />
-                            )}
-                            <span className="font-bold text-text-main">{art.articulo}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-text-secondary font-medium">{art.subarticulo}</td>
-                        <td className={clsx(
-                          "px-6 py-4 text-right font-black",
-                          art.totalDiferencia < 0 ? "text-status-faltante" : "text-status-sobrante"
-                        )}>
-                          {art.totalDiferencia.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {art.debeCobrar ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d0f0f] text-status-cobra border border-rose-900">
-                              <AlertCircle className="w-3 h-3 mr-1" /> Cobra
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0d1b2a] text-status-sin-cobra border border-brand-border">
-                              <CheckCircle2 className="w-3 h-3 mr-1" /> No cobra
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right text-text-secondary font-medium">
-                          {formatCurrency(art.ultimoCoste || art.costePromedio)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-black text-text-main">
-                          {art.totalCobro > 0 ? formatCurrency(art.totalCobro) : '-'}
-                        </td>
-                      </tr>
+                        <span>SEDE: {sede}</span>
+                        <span className="ml-3 px-2 py-0.5 bg-[#0d1b2a] text-secondary rounded text-[10px] font-bold border border-brand-border">
+                          {articles.length} ARTÍCULOS
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
 
-                      {/* Movement Details (Level 3) */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <tr className="bg-[#0d1b2a]/80">
-                            <td colSpan={6} className="px-12 py-4">
-                              <motion.div 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="overflow-hidden"
-                              >
-                                 <div className="ml-8 border-l-4 border-secondary/30 pl-6 py-2">
-                                  <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Detalle de movimientos por fecha</h4>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {art.movements.map((m, idx) => (
-                                      <div key={idx} className="bg-[#0d1b2a] p-3 rounded-xl border border-border shadow-sm flex justify-between items-center">
-                                        <div>
-                                          <p className="text-[10px] font-bold text-text-secondary uppercase">{format(m.fecha, 'MMMM yyyy', { locale: es })}</p>
-                                          <p className="text-xs font-bold text-text-main">{format(m.fecha, 'dd MMM yyyy', { locale: es })}</p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className={clsx(
-                                            "text-sm font-black",
-                                            m.variacion < 0 ? "text-status-faltante" : "text-status-sobrante"
-                                          )}>
-                                            {m.variacion > 0 ? '+' : ''}{m.variacion.toLocaleString()}
-                                          </p>
-                                          <p className="text-[10px] font-medium text-text-secondary">{formatCurrency(m.costeLinea)}</p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </motion.div>
+                  {/* Articles within Sede */}
+                  {expandedSedes[sede] &&
+                    articles.map((art, artIdx) => {
+                      const artKey = `${sede}-${art.articulo}`;
+                      const isExpanded = expandedArticles[artKey];
+
+                      return (
+                        <React.Fragment key={artKey}>
+                          <tr
+                            className={clsx(
+                              'border-b border-brand-border transition-colors cursor-pointer',
+                              artIdx % 2 === 0 ? 'bg-[#0d1b2a]' : 'bg-[#0d1b2a]',
+                              'hover:bg-[#1a2d45]',
+                              isExpanded && 'bg-[#152338]'
+                            )}
+                            onClick={() => toggleArticle(artKey)}
+                          >
+                            <td className="px-6 py-4 pl-12">
+                              <div className="flex items-center">
+                                {isExpanded ? (
+                                  <ChevronDown className="w-4 h-4 mr-2 text-secondary" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 mr-2 text-text-secondary" />
+                                )}
+                                <span className="font-bold text-text-main">{art.articulo}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-text-secondary font-medium">
+                              {art.subarticulo}
+                            </td>
+                            <td
+                              className={clsx(
+                                'px-6 py-4 text-right font-black',
+                                art.totalDiferencia < 0
+                                  ? 'text-status-faltante'
+                                  : 'text-status-sobrante'
+                              )}
+                            >
+                              {art.totalDiferencia.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              {art.debeCobrar ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d0f0f] text-status-cobra border border-rose-900">
+                                  <AlertCircle className="w-3 h-3 mr-1" /> Cobra
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0d1b2a] text-status-sin-cobra border border-brand-border">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" /> No cobra
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right text-text-secondary font-medium">
+                              {formatCurrency(art.ultimoCoste || art.costePromedio)}
+                            </td>
+                            <td className="px-6 py-4 text-right font-black text-text-main">
+                              {art.totalCobro > 0 ? formatCurrency(art.totalCobro) : '-'}
                             </td>
                           </tr>
-                        )}
-                      </AnimatePresence>
-                    </React.Fragment>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+
+                          {/* Movement Details (Level 3) */}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <tr className="bg-[#0d1b2a]/80">
+                                <td colSpan={6} className="px-12 py-4">
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="ml-8 border-l-4 border-secondary/30 pl-6 py-2">
+                                      <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3">
+                                        Detalle de movimientos por fecha
+                                      </h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {art.movements.map((m, idx) => (
+                                          <div
+                                            key={idx}
+                                            className="bg-[#0d1b2a] p-3 rounded-xl border border-border shadow-sm flex justify-between items-center"
+                                          >
+                                            <div>
+                                              <p className="text-[10px] font-bold text-text-secondary uppercase">
+                                                {format(m.fecha, 'MMMM yyyy', { locale: es })}
+                                              </p>
+                                              <p className="text-xs font-bold text-text-main">
+                                                {format(m.fecha, 'dd MMM yyyy', { locale: es })}
+                                              </p>
+                                            </div>
+                                            <div className="text-right">
+                                              <p
+                                                className={clsx(
+                                                  'text-sm font-black',
+                                                  m.variacion < 0
+                                                    ? 'text-status-faltante'
+                                                    : 'text-status-sobrante'
+                                                )}
+                                              >
+                                                {m.variacion > 0 ? '+' : ''}
+                                                {m.variacion.toLocaleString()}
+                                              </p>
+                                              <p className="text-[10px] font-medium text-text-secondary">
+                                                {formatCurrency(m.costeLinea)}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                </td>
+                              </tr>
+                            )}
+                          </AnimatePresence>
+                        </React.Fragment>
+                      );
+                    })}
+                </React.Fragment>
+              )
+            )}
           </tbody>
         </table>
       </div>

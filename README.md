@@ -1,20 +1,54 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Cruces de Inventario — Auditoría y Cobros por Sede
 
-# Run and deploy your AI Studio app
+Aplicación web para auditar cruces de inventario y calcular cobros por sede,
+a partir de los datos de una hoja de Google Sheets ("BASE DE DATOS").
 
-This contains everything you need to run your app locally.
+Construida con **React + TypeScript + Vite**, estilada con **Tailwind CSS v4**
+y desplegada en **Vercel**.
 
-View your app in AI Studio: https://ai.studio/apps/d8a4ceaa-d934-41bd-8e4a-f418906a4ac7
+## Origen de datos
 
-## Run Locally
+La app consume un **Web App de Google Apps Script** que sirve la hoja como JSON.
+La URL está centralizada en [`src/config.ts`](src/config.ts) (`SHEET_API_URL`).
+También permite cargar un archivo **Excel local** (.xlsx/.xls) como alternativa.
 
-**Prerequisites:**  Node.js
+El código del backend (Apps Script) se incluye como referencia en
+[`apps-script/Codigo.gs`](apps-script/Codigo.gs).
 
+## Funcionalidades
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **Resumen**: KPIs globales y distribución por sede.
+- **Análisis**: tabla detallada y análisis avanzado de variaciones.
+- **Cobros**: detalle jerárquico de faltantes/sobrantes y montos a cobrar.
+- **Confiabilidad**: indicadores por sede y centro de costo.
+- **Gerencial**: lectura ejecutiva por sede.
+- **Trazabilidad**: evolución histórica entre periodos.
+- **Ejecutivo**: KPIs, tendencias, top de productos y reporte PDF.
+
+## Requisitos
+
+- Node.js 18+ (recomendado 20+)
+
+## Ejecutar en local
+
+```bash
+npm install
+npm run dev
+```
+
+La app queda disponible en http://localhost:3000
+
+## Scripts
+
+| Script           | Descripción                                   |
+| ---------------- | --------------------------------------------- |
+| `npm run dev`    | Servidor de desarrollo (Vite)                 |
+| `npm run build`  | Build de producción (genera `dist/`)          |
+| `npm run preview`| Sirve el build de producción localmente       |
+| `npm run lint`   | Chequeo de tipos (`tsc --noEmit`)             |
+| `npm run format` | Formatea el código con Prettier               |
+
+## Despliegue (Vercel)
+
+El proyecto se construye con `npm run build` y se publica el directorio `dist/`.
+No requiere variables de entorno.

@@ -61,7 +61,6 @@ export interface DashboardStats {
   sedes: SedeSummary[];
 }
 
-
 export interface ReliabilityStats {
   sede: string;
   confiabilidad: number;
@@ -73,7 +72,12 @@ export interface ReliabilityStats {
   variacionTotal: number;
   impactoEconomico: number;
   topArticulosCriticos: { articulo: string; variacion: number; impacto: number; unidad: string }[];
-  topArticulosConfiables: { articulo: string; variacion: number; impacto: number; unidad: string }[];
+  topArticulosConfiables: {
+    articulo: string;
+    variacion: number;
+    impacto: number;
+    unidad: string;
+  }[];
 }
 
 export interface ReliabilitySummary {

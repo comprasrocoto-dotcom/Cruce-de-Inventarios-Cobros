@@ -1,259 +1,259 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-      /* ===== NUEVA PALETA PREMIUM DARK - SaaS ENTERPRISE ===== */
+  /* ===== NUEVA PALETA PREMIUM DARK - SaaS ENTERPRISE ===== */
 
   /* Colores principales - Nueva identidad visual */
-  --color-primary: #FBC519;
-      --color-primary-hover: #e6b010;
-      --color-secondary: #38BDF8;
-      --color-secondary-hover: #0ea5e9;
+  --color-primary: #fbc519;
+  --color-primary-hover: #e6b010;
+  --color-secondary: #38bdf8;
+  --color-secondary-hover: #0ea5e9;
 
   /* Estados funcionales */
-  --color-success: #22C55E;
-      --color-warning: #FBC519;
-      --color-danger: #EF4444;
-      --color-risk: #F59E0B;
-      --color-info: #38BDF8;
+  --color-success: #22c55e;
+  --color-warning: #fbc519;
+  --color-danger: #ef4444;
+  --color-risk: #f59e0b;
+  --color-info: #38bdf8;
 
   /* Fondos - Jerarquía oscura premium */
   --color-background: #081423;
-      --color-surface: #0F1C2E;
-      --color-card: #132238;
-      --color-card-hover: #1A2E4A;
-      --color-border: #243A57;
+  --color-surface: #0f1c2e;
+  --color-card: #132238;
+  --color-card-hover: #1a2e4a;
+  --color-border: #243a57;
 
   /* Texto - Alta legibilidad */
-  --color-text-main: #FFFFFF;
-      --color-text-secondary: #C9D4E3;
-      --color-text-muted: #8EA3BF;
+  --color-text-main: #ffffff;
+  --color-text-secondary: #c9d4e3;
+  --color-text-muted: #8ea3bf;
 
   /* ERP Specific Colors */
-  --color-table-header: #0F1C2E;
-      --color-table-header-text: #FFFFFF;
-      --color-row-alt: #0d1929;
-      --color-row-hover: #1A2E4A;
+  --color-table-header: #0f1c2e;
+  --color-table-header-text: #ffffff;
+  --color-row-alt: #0d1929;
+  --color-row-hover: #1a2e4a;
 
   /* Compatibilidad con clases de marca existentes */
   --color-brand-primary: var(--color-primary);
-      --color-brand-secondary: var(--color-secondary);
-      --color-brand-bg: var(--color-background);
-      --color-brand-border: var(--color-border);
-      --color-brand-text: var(--color-text-main);
-      --color-brand-text-secondary: var(--color-text-secondary);
+  --color-brand-secondary: var(--color-secondary);
+  --color-brand-bg: var(--color-background);
+  --color-brand-border: var(--color-border);
+  --color-brand-text: var(--color-text-main);
+  --color-brand-text-secondary: var(--color-text-secondary);
 
   /* Colores de estado */
   --color-status-sobrante: var(--color-success);
-      --color-status-faltante: var(--color-danger);
-      --color-status-sin-diferencia: #8EA3BF;
-      --color-status-cobra: #EF4444;
-      --color-status-sin-cobra: var(--color-text-muted);
+  --color-status-faltante: var(--color-danger);
+  --color-status-sin-diferencia: #8ea3bf;
+  --color-status-cobra: #ef4444;
+  --color-status-sin-cobra: var(--color-text-muted);
 
   /* Colores de KPI */
-  --color-kpi-revisados: #38BDF8;
-      --color-kpi-faltantes: #F59E0B;
-      --color-kpi-cobrables: #EF4444;
-      --color-kpi-valor: #22C55E;
+  --color-kpi-revisados: #38bdf8;
+  --color-kpi-faltantes: #f59e0b;
+  --color-kpi-cobrables: #ef4444;
+  --color-kpi-valor: #22c55e;
 
   /* Colores de filas de tabla */
   --color-brand-table-hover: var(--color-row-hover);
-      --color-brand-table-selected: #1A2E4A;
+  --color-brand-table-selected: #1a2e4a;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
-      body {
-              @apply bg-background text-text-main font-sans;
-              background-color: #081423 !important;
-              color: #FFFFFF !important;
-      }
+  body {
+    @apply bg-background text-text-main font-sans;
+    background-color: #081423 !important;
+    color: #ffffff !important;
+  }
 
   * {
-          box-sizing: border-box;
+    box-sizing: border-box;
   }
 }
 
 @layer components {
-      .table-header {
-              @apply bg-table-header text-table-header-text font-bold;
-      }
+  .table-header {
+    @apply bg-table-header text-table-header-text font-bold;
+  }
 
   .btn-primary {
-          background-color: #FBC519 !important;
-          color: #081423 !important;
-          font-weight: 700;
-          transition: background-color 0.2s;
-          border-radius: 8px;
+    background-color: #fbc519 !important;
+    color: #081423 !important;
+    font-weight: 700;
+    transition: background-color 0.2s;
+    border-radius: 8px;
   }
 
   .btn-primary:hover {
-          background-color: #e6b010 !important;
+    background-color: #e6b010 !important;
   }
 
   .btn-secondary {
-          background-color: #1A2E4A !important;
-          color: #FFFFFF !important;
-          font-weight: 600;
-          border-radius: 8px;
+    background-color: #1a2e4a !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    border-radius: 8px;
   }
 
   .btn-secondary:hover {
-          background-color: #243A57 !important;
+    background-color: #243a57 !important;
   }
 
   .btn-danger {
-          background-color: #EF4444 !important;
-          color: #FFFFFF !important;
-          font-weight: 700;
-          border-radius: 8px;
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    border-radius: 8px;
   }
 
   .card {
-          background-color: #132238 !important;
-          border-color: #243A57 !important;
-          border-radius: 16px;
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    background-color: #132238 !important;
+    border-color: #243a57 !important;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   }
 
   .status-success {
-          @apply text-success;
+    @apply text-success;
   }
 
   .status-warning {
-          @apply text-warning;
+    @apply text-warning;
   }
 
   .status-danger {
-          @apply text-danger;
+    @apply text-danger;
   }
 
   .sidebar {
-          background-color: #081423 !important;
+    background-color: #081423 !important;
   }
 
   .sidebar-icon-active {
-          color: #FBC519 !important;
+    color: #fbc519 !important;
   }
 
   /* ===== DARK THEME FORM ELEMENTS ===== */
   select {
-          background-color: #132238 !important;
-          color: #FFFFFF !important;
-          border-color: #243A57 !important;
-          border-radius: 8px !important;
+    background-color: #132238 !important;
+    color: #ffffff !important;
+    border-color: #243a57 !important;
+    border-radius: 8px !important;
   }
 
   select:focus {
-          border-color: #FBC519 !important;
-          outline: none !important;
-          box-shadow: 0 0 0 2px rgba(251, 197, 25, 0.25) !important;
+    border-color: #fbc519 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(251, 197, 25, 0.25) !important;
   }
 
   select option {
-          background-color: #0F1C2E;
-          color: #FFFFFF;
+    background-color: #0f1c2e;
+    color: #ffffff;
   }
 
-  input[type="text"],
-      input[type="date"],
-      input[type="search"],
-      input[type="email"],
-      input[type="number"],
-      input[type="password"],
-      textarea {
-              background-color: #132238 !important;
-              color: #FFFFFF !important;
-              border-color: #243A57 !important;
-              color-scheme: dark;
-              border-radius: 8px !important;
-      }
+  input[type='text'],
+  input[type='date'],
+  input[type='search'],
+  input[type='email'],
+  input[type='number'],
+  input[type='password'],
+  textarea {
+    background-color: #132238 !important;
+    color: #ffffff !important;
+    border-color: #243a57 !important;
+    color-scheme: dark;
+    border-radius: 8px !important;
+  }
 
   input:focus,
-        textarea:focus {
-                border-color: #FBC519 !important;
-                outline: none !important;
-                box-shadow: 0 0 0 2px rgba(251, 197, 25, 0.25) !important;
-        }
+  textarea:focus {
+    border-color: #fbc519 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(251, 197, 25, 0.25) !important;
+  }
 
   input::placeholder,
-      textarea::placeholder {
-              color: #8EA3BF !important;
-      }
+  textarea::placeholder {
+    color: #8ea3bf !important;
+  }
 
   .tab-active {
-          background-color: #FBC519 !important;
-          color: #081423 !important;
-          border-radius: 8px;
-          font-weight: 700;
+    background-color: #fbc519 !important;
+    color: #081423 !important;
+    border-radius: 8px;
+    font-weight: 700;
   }
 
   /* ===== OVERRIDE RESIDUAL LIGHT COLORS ===== */
   .bg-white,
-      .bg-gray-50,
-      .bg-slate-50,
-      .bg-gray-100,
-      .bg-slate-100,
-      [class*="bg-white"],
-      [class*="bg-gray-50"],
-      [class*="bg-slate-50"] {
-              background-color: #132238 !important;
-              color: #FFFFFF !important;
-      }
+  .bg-gray-50,
+  .bg-slate-50,
+  .bg-gray-100,
+  .bg-slate-100,
+  [class*='bg-white'],
+  [class*='bg-gray-50'],
+  [class*='bg-slate-50'] {
+    background-color: #132238 !important;
+    color: #ffffff !important;
+  }
 
   /* Recharts chart backgrounds */
   .recharts-wrapper,
-      .recharts-surface {
-              background: transparent !important;
-      }
+  .recharts-surface {
+    background: transparent !important;
+  }
 
   .recharts-cartesian-axis-tick text,
-      .recharts-legend-item-text {
-              fill: #C9D4E3 !important;
-              color: #C9D4E3 !important;
-      }
+  .recharts-legend-item-text {
+    fill: #c9d4e3 !important;
+    color: #c9d4e3 !important;
+  }
 
   .recharts-tooltip-wrapper .recharts-default-tooltip {
-          background-color: #0F1C2E !important;
-          border-color: #243A57 !important;
-          color: #FFFFFF !important;
+    background-color: #0f1c2e !important;
+    border-color: #243a57 !important;
+    color: #ffffff !important;
   }
 
   .recharts-cartesian-grid line {
-          stroke: #243A57 !important;
+    stroke: #243a57 !important;
   }
 
   /* Table overrides */
   table {
-          border-collapse: collapse;
+    border-collapse: collapse;
   }
 
   thead th {
-          background-color: #0F1C2E !important;
-          color: #FFFFFF !important;
-          font-weight: 700;
+    background-color: #0f1c2e !important;
+    color: #ffffff !important;
+    font-weight: 700;
   }
 
   tbody tr:hover {
-          background-color: #1A2E4A !important;
+    background-color: #1a2e4a !important;
   }
 
   /* Scrollbar premium dark */
   ::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-          background: #081423;
+    background: #081423;
   }
 
   ::-webkit-scrollbar-thumb {
-          background: #243A57;
-          border-radius: 3px;
+    background: #243a57;
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-          background: #FBC519;
+    background: #fbc519;
   }
 }
