@@ -7,33 +7,42 @@
  * alertas y proyecciones de pérdida. Es la fuente de verdad económica usada
  * por inventory.ts.
  */
-import { ArticleSummary } from '../types';
+import { ArticleSummary } from "../types";
 
 /**
  * Calcula el margen de error permitido según la unidad de medida y el contexto.
  */
+/**
+ * Base mínima (en gramos) para calcular el margen del 2.5%.
+ * Evita que teóricos en cero o negativos (herencia de ajustes del ERP)
+ * colapsen el margen a ~0 y disparen falsos "fuera de tolerancia".
+ */
+export const BASE_MINIMA_GRAMOS = 100;
+
 export const calcularMargenError = (item: Partial<ArticleSummary>) => {
-  const unidad = item.subarticulo?.toUpperCase() || '';
+  const unidad = item.subarticulo?.toUpperCase() || "";
   const diferencia = item.totalDiferencia || 0;
-  // Usamos stockEsperado como base de consumo teórico si no existe consumo explícito
+  // Usamos stockEsperado como base de consumo teórico si no existe consumo explícito.
+  // Se toma |valor| con un piso mínimo: los teóricos ≤ 0 no anulan el margen.
   const baseConsumo = Math.abs(item.stockEsperado || 0);
 
   // ❌ SIN margen para unidades exactas o copas
-  if (unidad.includes('UNIDAD') || unidad.includes('COPA')) return 0;
+  if (unidad.includes("UNIDAD") || unidad.includes("COPA")) return 0;
 
   // ✅ ONZAS → ±1 permitido
-  if (unidad.includes('ONZA')) return 1;
+  if (unidad.includes("ONZA")) return 1;
 
-  // ✅ GRAMOS → 2.5% de margen sobre el consumo teórico (stock esperado)
-  if (unidad.includes('GRAMO')) {
-    return baseConsumo * 0.025;
+  // ✅ GRAMOS → 2.5% de margen sobre el consumo teórico (stock esperado),
+  // con piso de BASE_MINIMA_GRAMOS para bases nulas/negativas del ERP.
+  if (unidad.includes("GRAMO")) {
+    return Math.max(baseConsumo, BASE_MINIMA_GRAMOS) * 0.025;
   }
 
   return 0;
 };
 
 export interface AlertaInsumo {
-  tipo: 'CRÍTICA' | 'ALERTA' | 'SOBRESTOCK' | 'QUIEBRE';
+  tipo: "CRÍTICA" | "ALERTA" | "SOBRESTOCK" | "QUIEBRE";
   mensaje: string;
 }
 
@@ -48,7 +57,7 @@ export const generarAlertasInsumo = (item: ArticleSummary): AlertaInsumo[] => {
   // 🔴 PÉRDIDA CRÍTICA
   if (fueraMargen && diferencia < 0) {
     alertas.push({
-      tipo: 'CRÍTICA',
+      tipo: "CRÍTICA",
       mensaje: `${item.articulo} – pérdida crítica en la evaluación actual`,
     });
   }
@@ -56,7 +65,7 @@ export const generarAlertasInsumo = (item: ArticleSummary): AlertaInsumo[] => {
   // 🟡 SOBRECONSUMO (Muy fuera de margen)
   if (diferencia < 0 && Math.abs(diferencia) > item.margenError * 3) {
     alertas.push({
-      tipo: 'ALERTA',
+      tipo: "ALERTA",
       mensaje: `${item.articulo} – consumo fuera de control histórico`,
     });
   }
@@ -64,7 +73,7 @@ export const generarAlertasInsumo = (item: ArticleSummary): AlertaInsumo[] => {
   // ⚫ QUIEBRE
   if (item.stockFisico <= 0) {
     alertas.push({
-      tipo: 'QUIEBRE',
+      tipo: "QUIEBRE",
       mensaje: `${item.articulo} – sin inventario físico registrado`,
     });
   }
@@ -81,9 +90,9 @@ export const analizarEstabilidadProducto = (item: ArticleSummary) => {
 
   const ratio = variacion / stockBase;
 
-  let estado: 'ESTABLE' | 'INESTABLE' | 'CRÍTICO' = 'ESTABLE';
-  if (ratio > 0.3) estado = 'CRÍTICO';
-  else if (ratio > 0.15) estado = 'INESTABLE';
+  let estado: "ESTABLE" | "INESTABLE" | "CRÍTICO" = "ESTABLE";
+  if (ratio > 0.3) estado = "CRÍTICO";
+  else if (ratio > 0.15) estado = "INESTABLE";
 
   return {
     ratioVariacion: ratio,
@@ -138,8 +147,9 @@ export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
   // Diferencia que excede el margen permitido
   const diferenciaAjustada = Math.max(0, Math.abs(diferencia) - margenError);
 
-  // Cálculo de variación porcentual sobre el esperado
-  const variacion = esperado > 0 ? diferenciaAjustada / esperado : 0;
+  // Cálculo de variación porcentual sobre el esperado (piso 1 para evitar
+  // divisiones por bases nulas que producían confiabilidades sin sentido)
+  const variacion = diferenciaAjustada / Math.max(esperado, 1);
 
   // Confiabilidad gradual (100% - variación)
   let confiabilidad = (1 - variacion) * 100;
@@ -163,10 +173,18 @@ export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
  * Realiza el cálculo global de indicadores de confiabilidad para un conjunto de datos.
  * Ahora calcula el promedio ponderado de confiabilidad de los items.
  */
-export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) => {
+export const calcularEstadisticasConfiabilidad = (
+  data: ArticleSummary[] = [],
+) => {
   const total = data.length;
   if (total === 0) {
-    return { total: 0, dentro: 0, fuera: 0, confiabilidad: 0, porcentajeFuera: 0 };
+    return {
+      total: 0,
+      dentro: 0,
+      fuera: 0,
+      confiabilidad: 0,
+      porcentajeFuera: 0,
+    };
   }
 
   const evaluados = data.map(evaluarItem);
@@ -174,7 +192,10 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
   const fuera = total - dentro;
 
   // La confiabilidad global ahora es el promedio de las confiabilidades individuales
-  const sumaConfiabilidad = evaluados.reduce((acc, i) => acc + (i.confiabilidad || 0), 0);
+  const sumaConfiabilidad = evaluados.reduce(
+    (acc, i) => acc + (i.confiabilidad || 0),
+    0,
+  );
   const confiabilidadPromedio = sumaConfiabilidad / total;
 
   const porcentajeFuera = (fuera / total) * 100;
@@ -192,12 +213,12 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
  * Determina el estado categórico basado en el porcentaje de confiabilidad (Gradual).
  */
 export const obtenerEstado = (
-  confiabilidad: number
-): 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico' => {
-  if (confiabilidad >= 95) return 'Confiable';
-  if (confiabilidad >= 80) return 'Aceptable';
-  if (confiabilidad >= 60) return 'Riesgo';
-  return 'Crítico';
+  confiabilidad: number,
+): "Confiable" | "Aceptable" | "Riesgo" | "Crítico" => {
+  if (confiabilidad >= 95) return "Confiable";
+  if (confiabilidad >= 80) return "Aceptable";
+  if (confiabilidad >= 60) return "Riesgo";
+  return "Crítico";
 };
 
 /**
