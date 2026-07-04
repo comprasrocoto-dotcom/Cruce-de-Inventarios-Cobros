@@ -916,6 +916,13 @@ export function getReliabilitySummary(
 
       const nivel = obtenerEstado(confiabilidad);
 
+      // Dimensiones estándar de exactitud (se propagan a las vistas).
+      const exactitudArticulos = stats.exactitudArticulos;
+
+      const exactitudValor = stats.exactitudValor;
+
+      const valorInventarioTeorico = stats.valorTeorico;
+
       // Variación e impacto medidos sobre el ÚLTIMO CICLO presente (coherente
       // con filtros de fecha) y sin sub-recetas; valorados con costo robusto.
       const evaluables = arts.filter((a) => !a.esSubReceta);
@@ -970,6 +977,12 @@ export function getReliabilitySummary(
         confiabilidad,
 
         nivel,
+
+        exactitudArticulos,
+
+        exactitudValor,
+
+        valorInventarioTeorico,
 
         articulosEvaluados,
 
