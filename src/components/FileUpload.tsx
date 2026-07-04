@@ -21,6 +21,13 @@ interface FileUploadProps {
   onReset: () => void;
   onFileNameChange?: (name: string) => void;
   hasData: boolean;
+  /**
+   * Si es true, muestra el panel de carga aunque ya haya datos (se renderiza
+   * como dropdown bajo la barra superior). Lo controla el botón "Cargar Excel"
+   * del header en App. Al entrar a la app la carga automática sigue siendo
+   * SIEMPRE desde Google Sheets.
+   */
+  forzarVisible?: boolean;
 }
 
 /**
@@ -41,6 +48,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onReset,
   onFileNameChange,
   hasData,
+  forzarVisible = false,
 }) => {
   // Estado de carga (muestra spinner mientras se obtienen / procesan datos).
   const [loading, setLoading] = useState(false);
@@ -178,13 +186,28 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   }
 
   // Si ya hay datos cargados y metadatos disponibles, el panel se oculta.
-  if (hasData && fileInfo) {
+  if (hasData && fileInfo && !forzarVisible) {
     return null;
   }
 
+  // Con datos ya cargados, el panel se muestra como dropdown anclado al header
+  // (no desplaza el layout); sin datos, se muestra inline como siempre.
+  const comoDropdown = hasData && forzarVisible;
+
   // --- Render: panel de carga (Google Sheets + Excel local) --------------------
   return (
-    <div className="flex flex-col gap-3">
+    <div
+      className={
+        comoDropdown
+          ? 'absolute right-6 top-full mt-2 z-50 w-96 max-w-[90vw] bg-[#081423] border border-[#1A3A5A] rounded-xl p-4 shadow-2xl flex flex-col gap-3'
+          : 'flex flex-col gap-3'
+      }
+    >
+      {comoDropdown && (
+        <p className="text-[10px] uppercase tracking-widest text-[#8EA3BF] font-bold">
+          Cargar otra fuente de datos
+        </p>
+      )}
       {/* Banner de error con acción de reintento sobre Google Sheets. */}
       {error && (
         <div className="flex items-center gap-2 px-4 py-2 bg-[#2A1010] border border-[#5A2020] rounded-xl text-[#EF4444] text-sm">
