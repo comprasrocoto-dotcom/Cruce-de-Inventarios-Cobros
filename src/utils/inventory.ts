@@ -894,6 +894,96 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
     return summary;
   });
 
+  // Cobro + pases de auditoría bajo la política por defecto (COMPLETO).
+  // La app puede re-aplicar otra política en caliente con aplicarPoliticaCobro.
+  const conPolitica = aplicarPoliticaCobro(articles, 'COMPLETO', debugInfo);
+  articles.length = 0;
+  articles.push(...conPolitica);
+
+  return { articles, errors, debug: debugInfo };
+}
+
+/** Política de cobro aplicable al corte (seleccionable en Configuración). */
+export type PoliticaCobro = 'COMPLETO' | 'EXCEDENTE' | 'SIN_MARGEN';
+
+export const POLITICAS_COBRO: Record<PoliticaCobro, { etiqueta: string; descripcion: string }> = {
+  COMPLETO: {
+    etiqueta: 'Con margen · cobro completo',
+    descripcion:
+      'El margen es el umbral del perdón: si el faltante lo supera, se cobra COMPLETO. Evita que el margen se vuelva una "mesada" de pérdida gratis.',
+  },
+  EXCEDENTE: {
+    etiqueta: 'Con margen · solo excedente',
+    descripcion:
+      'Los primeros gramos/onzas del margen siempre son merma del negocio: se cobra solo lo que SOBREPASA el margen.',
+  },
+  SIN_MARGEN: {
+    etiqueta: 'Sin margen · tolerancia cero',
+    descripcion: 'Todo faltante neto se cobra desde la primera unidad, sin perdón.',
+  },
+};
+
+/**
+ * Recalcula el COBRO de cada artículo bajo la política elegida y vuelve a
+ * correr los pases de auditoría que dependen del cobro (⚠ Revisar y
+ * ¿Confusión de códigos?).
+ *
+ * Qué cambia y qué NO cambia con la política:
+ *   - CAMBIA: debeCobrar, totalCobro, perdidaPorMargen, banderas y pistas.
+ *   - NO cambia: dentroDeTolerancia, margenError ni la confiabilidad — la
+ *     tolerancia técnica es un estándar de exactitud de inventario (IRA),
+ *     independiente de cuánta plata se decida descontar.
+ *
+ * Devuelve COPIAS de los artículos (nuevas referencias) para que React
+ * recalcule las vistas derivadas al cambiar la política en caliente.
+ */
+export function aplicarPoliticaCobro(
+  entrada: ArticleSummary[],
+  politica: PoliticaCobro = 'COMPLETO',
+  debugInfo?: { articulosEnRevision?: number }
+): ArticleSummary[] {
+  const articles = entrada.map((a) => ({ ...a }));
+  if (debugInfo) debugInfo.articulosEnRevision = 0;
+
+  const EPS = 0.0001;
+  articles.forEach((a) => {
+    // limpiar resultados de una política anterior
+    a.requiereRevision = false;
+    a.motivoRevision = undefined;
+    a.posibleConfusion = undefined;
+
+    const v = a.variacionUltimoCiclo ?? a.totalDiferencia;
+    const vu = a.costeMediano || a.ultimoCoste || a.costePromedio || 0;
+    const esFaltante = v < -EPS;
+    const magnitud = Math.abs(v);
+    const margen = a.margenError || 0;
+
+    if (a.esSubReceta || !esFaltante) {
+      a.debeCobrar = false;
+      a.totalCobro = 0;
+      a.perdidaPorMargen = 0;
+      return;
+    }
+
+    switch (politica) {
+      case 'SIN_MARGEN':
+        a.debeCobrar = magnitud > EPS;
+        a.totalCobro = magnitud * vu;
+        break;
+      case 'EXCEDENTE':
+        a.debeCobrar = magnitud > margen;
+        a.totalCobro = a.debeCobrar ? (magnitud - margen) * vu : 0;
+        break;
+      case 'COMPLETO':
+      default:
+        a.debeCobrar = magnitud > margen;
+        a.totalCobro = a.debeCobrar ? magnitud * vu : 0;
+    }
+
+    // La parte del faltante que la política NO cobra (perdón del margen).
+    a.perdidaPorMargen = Math.max(0, magnitud * vu - a.totalCobro);
+  });
+
   // 🚩 BANDERAS DE REVISIÓN — hallazgos de calidad del ERP que la app debe
   // exponer, no cobrar a ciegas ni ocultar:
   //  a) Coste unitario atípico: el mismo artículo con costo >5× la mediana
@@ -934,7 +1024,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
     if (motivos.length > 0) {
       a.requiereRevision = true;
       a.motivoRevision = motivos.join(' · ');
-      debugInfo.articulosEnRevision = (debugInfo.articulosEnRevision || 0) + 1;
+      if (debugInfo) debugInfo.articulosEnRevision = (debugInfo.articulosEnRevision || 0) + 1;
     }
   });
 
@@ -1021,7 +1111,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
       ' — posible confusión de códigos al contar; validar contra el ERP antes de descontar.';
   });
 
-  return { articles, errors, debug: debugInfo };
+  return articles;
 }
 
 export function getDashboardStats(articles: ArticleSummary[]): DashboardStats {
