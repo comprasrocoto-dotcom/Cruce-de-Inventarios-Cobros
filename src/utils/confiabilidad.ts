@@ -215,31 +215,73 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
       confiabilidad: 0,
       porcentajeFuera: 0,
       excluidosSubReceta: data.length,
+      exactitudArticulos: 0,
+      exactitudValor: 0,
+      valorTeorico: 0,
+      valorDesviado: 0,
     };
   }
 
   // La tolerancia se evalúa sobre el ÚLTIMO CICLO presente en los movimientos
   // (no sobre la suma histórica): coherente con el modelo y con los filtros.
-  const evaluados = evaluables.map((i) => {
+  const conCiclo = evaluables.map((i) => {
     const ciclo = cicloDesdeMovimientos(i.movements);
-    return evaluarItem(
-      ciclo ? { ...i, totalDiferencia: ciclo.variacion, stockEsperado: ciclo.base } : i
-    );
+    const variacionCiclo = ciclo?.variacion ?? i.totalDiferencia ?? 0;
+    const baseCiclo = ciclo?.base ?? i.stockEsperado ?? 0;
+    return {
+      item: i,
+      variacionCiclo,
+      baseCiclo,
+      valorUnitario: i.costeMediano || i.ultimoCoste || i.costePromedio || 0,
+      evaluado: evaluarItem({ ...i, totalDiferencia: variacionCiclo, stockEsperado: baseCiclo }),
+    };
   });
+  const evaluados = conCiclo.map((c) => c.evaluado);
   const dentro = evaluados.filter((i) => i.dentroDeTolerancia).length;
   const fuera = total - dentro;
-
-  // La confiabilidad global ahora es el promedio de las confiabilidades individuales
-  const sumaConfiabilidad = evaluados.reduce((acc, i) => acc + (i.confiabilidad || 0), 0);
-  const confiabilidadPromedio = sumaConfiabilidad / total;
-
   const porcentajeFuera = (fuera / total) * 100;
+
+  // ── DOS DIMENSIONES ESTÁNDAR DE EXACTITUD (IRA) ──────────────────────────
+  // La práctica experta (APICS/Strategos, NetSuite) mide la exactitud de
+  // inventario en dos bases distintas que "pueden dar resultados muy
+  // diferentes" y deben reportarse ambas:
+  //
+  //  1) EXACTITUD POR ARTÍCULOS (base conteo): % de artículos cuyo último
+  //     conteo quedó dentro de tolerancia.
+  //        exactitudArticulos = dentro / total × 100
+  //
+  //  2) EXACTITUD POR VALOR (base dinero): cuánto del valor del inventario
+  //     teórico quedó desviado en el conteo, con VARIACIÓN ABSOLUTA (los
+  //     faltantes no se netean con sobrantes — netear oculta pérdidas).
+  //        exactitudValor = (1 − Σ|variación|×costo ÷ Σ teórico×costo) × 100
+  //
+  // Una sede puede tener 98% de artículos exactos y aún así fugar millones
+  // en pocos ítems de alto valor: por eso la CALIFICACIÓN final usa la
+  // dimensión MÁS DÉBIL (criterio conservador de auditoría).
+  const exactitudArticulos = (dentro / total) * 100;
+
+  const valorTeorico = conCiclo.reduce(
+    (acc, c) => acc + Math.abs(c.baseCiclo) * c.valorUnitario,
+    0
+  );
+  const valorDesviado = conCiclo.reduce(
+    (acc, c) => acc + Math.abs(c.variacionCiclo) * c.valorUnitario,
+    0
+  );
+  const exactitudValor =
+    valorTeorico > 0 ? Math.max(0, (1 - valorDesviado / valorTeorico) * 100) : exactitudArticulos;
+
+  const confiabilidadPromedio = Math.min(exactitudArticulos, exactitudValor);
 
   return {
     total,
     dentro,
     fuera,
     excluidosSubReceta: data.length - total,
+    exactitudArticulos: Number(exactitudArticulos.toFixed(2)),
+    exactitudValor: Number(exactitudValor.toFixed(2)),
+    valorTeorico,
+    valorDesviado,
     confiabilidad: Number(confiabilidadPromedio.toFixed(2)),
     porcentajeFuera,
   };
@@ -248,12 +290,20 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
 /**
  * Determina el estado categórico basado en el porcentaje de confiabilidad (Gradual).
  */
+/**
+ * Clasificación calibrada con los benchmarks de la industria de restaurantes
+ * para la varianza real-vs-teórico (Restaurant365, Supy, meez):
+ *   varianza <2%  = bien gestionado      → exactitud ≥98  → Confiable
+ *   varianza 2–5% = requiere atención    → exactitud ≥95  → Aceptable
+ *   varianza 5–10%= investigar ya        → exactitud ≥90  → Riesgo
+ *   varianza >10% = problema sistémico   → exactitud <90  → Crítico
+ */
 export const obtenerEstado = (
   confiabilidad: number
 ): 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico' => {
-  if (confiabilidad >= 95) return 'Confiable';
-  if (confiabilidad >= 80) return 'Aceptable';
-  if (confiabilidad >= 60) return 'Riesgo';
+  if (confiabilidad >= 98) return 'Confiable';
+  if (confiabilidad >= 95) return 'Aceptable';
+  if (confiabilidad >= 90) return 'Riesgo';
   return 'Crítico';
 };
 
