@@ -140,15 +140,27 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                               {art.totalDiferencia.toLocaleString()}
                             </td>
                             <td className="px-6 py-4 text-center">
-                              {art.debeCobrar ? (
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d0f0f] text-status-cobra border border-rose-900">
-                                  <AlertCircle className="w-3 h-3 mr-1" /> Cobra
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0d1b2a] text-status-sin-cobra border border-brand-border">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" /> No cobra
-                                </span>
-                              )}
+                              <div className="inline-flex flex-col items-center gap-1">
+                                {art.debeCobrar ? (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d0f0f] text-status-cobra border border-rose-900">
+                                    <AlertCircle className="w-3 h-3 mr-1" /> Cobra
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0d1b2a] text-status-sin-cobra border border-brand-border">
+                                    <CheckCircle2 className="w-3 h-3 mr-1" /> No cobra
+                                  </span>
+                                )}
+                                {/* Bandera de calidad: cobro que debe validarse contra el ERP
+                                    antes de descontar (coste atípico, monto implausible). */}
+                                {art.requiereRevision && (
+                                  <span
+                                    title={art.motivoRevision}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d230f] text-amber-400 border border-amber-700 cursor-help"
+                                  >
+                                    ⚠ Revisar
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-right text-text-secondary font-medium">
                               {formatCurrency(art.ultimoCoste || art.costePromedio)}
