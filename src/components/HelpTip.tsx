@@ -36,20 +36,23 @@ export const HelpProvider: React.FC<{
 
   return (
     <HelpContext.Provider value={{ abrir: setClave }}>
-      {children}
+      {/* Cuando el panel está abierto, el contenido se DESPLAZA (no se tapa):
+          en pantallas grandes se abre espacio a la derecha; en móvil el panel
+          flota encima (no hay ancho para ambos). */}
+      <div
+        className={
+          entrada
+            ? 'lg:pr-[430px] transition-[padding] duration-300'
+            : 'transition-[padding] duration-300'
+        }
+      >
+        {children}
+      </div>
 
       {/* Panel lateral (banda a un costado, como el dashboard de cocina) */}
       <AnimatePresence>
         {entrada && (
           <>
-            {/* Fondo suave: cierra al tocar, pero deja ver la pantalla detrás */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setClave(null)}
-              className="fixed inset-0 bg-slate-950/40 z-[70]"
-            />
             <motion.aside
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
