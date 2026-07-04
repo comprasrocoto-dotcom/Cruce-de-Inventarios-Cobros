@@ -96,6 +96,9 @@ export const Filters: React.FC<FiltersProps> = ({
     filters.sedes.length > 0 ||
     filters.ccs.length > 0 ||
     filters.subfamilias.length > 0 ||
+    (filters.familias?.length ?? 0) > 0 ||
+    (filters.subArticulos?.length ?? 0) > 0 ||
+    (filters.proveedores?.length ?? 0) > 0 ||
     filters.responsables.length > 0 ||
     filters.search !== '' ||
     filters.status !== 'all' ||
@@ -319,6 +322,77 @@ export const Filters: React.FC<FiltersProps> = ({
               </button>
             </div>
           ))}
+
+          {filters.subfamilias.map((sf) => (
+            <div
+              key={sf}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-emerald-400 rounded-full text-xs font-bold border border-brand-border"
+            >
+              <span className="opacity-60 uppercase text-[9px]">Subfam:</span> {sf}
+              <button onClick={() => removeChip('subfamilias', sf)}>
+                <X className="w-3 h-3 hover:text-white" />
+              </button>
+            </div>
+          ))}
+
+          {(filters.familias || []).map((f) => (
+            <div
+              key={f}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-sky-300 rounded-full text-xs font-bold border border-brand-border"
+            >
+              <span className="opacity-60 uppercase text-[9px]">Familia:</span> {f}
+              <button onClick={() => removeChip('familias', f)}>
+                <X className="w-3 h-3 hover:text-white" />
+              </button>
+            </div>
+          ))}
+
+          {(filters.subArticulos || []).map((u) => (
+            <div
+              key={u}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-indigo-300 rounded-full text-xs font-bold border border-brand-border"
+            >
+              <span className="opacity-60 uppercase text-[9px]">Unidad:</span> {u}
+              <button onClick={() => removeChip('subArticulos', u)}>
+                <X className="w-3 h-3 hover:text-white" />
+              </button>
+            </div>
+          ))}
+
+          {(filters.proveedores || []).map((pv) => (
+            <div
+              key={pv}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-fuchsia-300 rounded-full text-xs font-bold border border-brand-border"
+            >
+              <span className="opacity-60 uppercase text-[9px]">Proveedor:</span> {pv}
+              <button onClick={() => removeChip('proveedores', pv)}>
+                <X className="w-3 h-3 hover:text-white" />
+              </button>
+            </div>
+          ))}
+
+          {filters.status !== 'all' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-amber-400 rounded-full text-xs font-bold border border-brand-border">
+              <span className="opacity-60 uppercase text-[9px]">Estado:</span>{' '}
+              {filters.status === 'cobrables'
+                ? 'Solo cobrables'
+                : filters.status === 'faltantes'
+                  ? 'Solo faltantes'
+                  : 'Solo sobrantes'}
+              <button onClick={() => setFilters({ ...filters, status: 'all' })}>
+                <X className="w-3 h-3 hover:text-white" />
+              </button>
+            </div>
+          )}
+
+          {filters.search && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-rose-300 rounded-full text-xs font-bold border border-brand-border">
+              <span className="opacity-60 uppercase text-[9px]">Busca:</span> "{filters.search}"
+              <button onClick={() => setFilters({ ...filters, search: '' })}>
+                <X className="w-3 h-3 hover:text-white" />
+              </button>
+            </div>
+          )}
 
           {filters.fechaInicio && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-warning rounded-full text-xs font-bold border border-brand-border">
