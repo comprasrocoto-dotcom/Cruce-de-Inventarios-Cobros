@@ -938,6 +938,89 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
     }
   });
 
+  // ── Pase de EVIDENCIA: posible confusión de códigos al contar ──
+  // Patrón clásico de restaurante (frecuente en abarrotes): el mismo producto
+  // existe bajo dos referencias (ej. "QUESO X KILO" y "QUESO BLOQUE 2.5KG") y
+  // el conteo se anota en la equivocada -> un faltante cobrable en una y un
+  // sobrante fuerte en la otra, misma sede y misma subfamilia. El cobro puede
+  // ser injusto: la pista pide validar contra el ERP antes de descontar.
+  // Regla: faltante cobrable + sobrante FUERA de tolerancia en la misma
+  // sede+subfamilia cuyo valor a costo sea al menos el 25% del cobro.
+  const sobrantesPorGrupo = new Map<string, ArticleSummary[]>();
+  articles.forEach((a) => {
+    if (a.tipo !== 'SOBRANTE' || a.dentroDeTolerancia || a.esSubReceta) return;
+    const key = `${a.sede}|${a.subfamilia}`;
+    if (!sobrantesPorGrupo.has(key)) sobrantesPorGrupo.set(key, []);
+    sobrantesPorGrupo.get(key)!.push(a);
+  });
+
+  const valorDe = (a: ArticleSummary) =>
+    Math.abs(a.variacionUltimoCiclo ?? a.totalDiferencia) *
+    (a.costeMediano || a.ultimoCoste || a.costePromedio || 0);
+
+  // Palabras de empaque/medida que no cuentan como parentesco de producto.
+  const PALABRAS_GENERICAS = new Set([
+    'KILO',
+    'KILOS',
+    'GRAMOS',
+    'GRAMO',
+    'LITRO',
+    'LITROS',
+    'BOTELLA',
+    'BOTELLAS',
+    'UNIDAD',
+    'UNIDADES',
+    'CAJA',
+    'BOLSA',
+    'PACK',
+    'GALON',
+    'GRANEL',
+    'PAQUETE',
+    'FRASCO',
+    'LATA',
+    'SOBRE',
+    'BIDON',
+    'CUÑETE',
+    'DOCENA',
+  ]);
+  const tokensDe = (nombre: string) =>
+    new Set(
+      nombre
+        .toUpperCase()
+        .split(/[^A-ZÁÉÍÓÚÑ]+/)
+        .filter((t) => t.length >= 4 && !PALABRAS_GENERICAS.has(t))
+    );
+
+  articles.forEach((a) => {
+    if (!a.debeCobrar || a.esSubReceta) return;
+    const misTokens = tokensDe(a.articulo);
+    const candidatos = (sobrantesPorGrupo.get(`${a.sede}|${a.subfamilia}`) || [])
+      .filter((c) => {
+        if (c.articulo === a.articulo) return false;
+        // Mismo tipo de conteo: confundir códigos exige contar en la misma unidad.
+        if (c.subarticulo !== a.subarticulo) return false;
+        // Parentesco de producto: comparten al menos una palabra significativa
+        // (QUESO con QUESO, ACEITE con ACEITE) — no margarina con queso.
+        const suyos = tokensDe(c.articulo);
+        let comparten = false;
+        misTokens.forEach((t) => {
+          if (suyos.has(t)) comparten = true;
+        });
+        if (!comparten) return false;
+        return valorDe(c) >= a.totalCobro * 0.25;
+      })
+      .sort((x, y) => valorDe(y) - valorDe(x));
+    if (candidatos.length === 0) return;
+    const top = candidatos[0];
+    const extras = candidatos.length - 1;
+    a.posibleConfusion =
+      `Sobrante fuerte en la misma subfamilia: "${top.articulo}" ` +
+      `(+${Math.round(Math.abs(top.variacionUltimoCiclo ?? top.totalDiferencia)).toLocaleString('es-CO')} ${top.subarticulo}, ` +
+      `≈$${Math.round(valorDe(top)).toLocaleString('es-CO')})` +
+      (extras > 0 ? ` y ${extras} más` : '') +
+      ' — posible confusión de códigos al contar; validar contra el ERP antes de descontar.';
+  });
+
   return { articles, errors, debug: debugInfo };
 }
 
@@ -965,6 +1048,18 @@ export function getDashboardStats(articles: ArticleSummary[]): DashboardStats {
       totalFaltantes: arts.filter((a) => a.tipo === 'FALTANTE').length,
 
       totalCobrables: arts.filter((a) => a.debeCobrar).length,
+
+      totalSobrantes: arts.filter((a) => a.tipo === 'SOBRANTE').length,
+
+      valorSobranteSede: arts
+        .filter((a) => a.tipo === 'SOBRANTE')
+        .reduce(
+          (acc, a) =>
+            acc +
+            Math.abs(a.variacionUltimoCiclo ?? a.totalDiferencia) *
+              (a.costeMediano || a.ultimoCoste || a.costePromedio || 0),
+          0
+        ),
     };
   });
 
@@ -976,6 +1071,18 @@ export function getDashboardStats(articles: ArticleSummary[]): DashboardStats {
     totalCobrables: articles.filter((a) => a.debeCobrar).length,
 
     valorTotalCobro: articles.reduce((acc, a) => acc + a.totalCobro, 0),
+
+    totalSobrantes: articles.filter((a) => a.tipo === 'SOBRANTE').length,
+
+    valorSobrante: articles
+      .filter((a) => a.tipo === 'SOBRANTE')
+      .reduce(
+        (acc, a) =>
+          acc +
+          Math.abs(a.variacionUltimoCiclo ?? a.totalDiferencia) *
+            (a.costeMediano || a.ultimoCoste || a.costePromedio || 0),
+        0
+      ),
 
     sedes,
   };
