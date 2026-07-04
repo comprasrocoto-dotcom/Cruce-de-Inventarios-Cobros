@@ -133,6 +133,23 @@ export async function fetchRecetas(): Promise<RecetasPayload> {
 
 // ─────────────────────────── Cruce ───────────────────────────
 
+/**
+ * Normaliza una fecha de fabricación a yyyy-MM-dd. El RecetasAPI puede enviar
+ * 'yyyy-MM-dd' o el formato largo de JavaScript ('Mon May 25 2026 11:37:04
+ * GMT-0500 ...') según cómo esté la celda en la hoja; ambos se aceptan. Se
+ * usan los componentes LOCALES del Date (los usuarios operan en Colombia,
+ * misma zona en que se registran las fabricaciones).
+ */
+const normFechaFab = (v: unknown): string => {
+  const s = String(v ?? '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s.slice(0, 10);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+};
+
 const norm = (v: unknown) =>
   String(v ?? '')
     .trim()
@@ -204,12 +221,13 @@ export function cruzarRecetasConInventario(
   // Fabricaciones dentro del rango, indexadas por sede|receta.
   const fabPorSedeReceta = new Map<string, { n: number; ultima: string; fechas: string[] }>();
   for (const f of payload.fabricaciones) {
-    if (rango && (f.fecha < rango.desde || f.fecha > rango.hasta)) continue;
+    const fecha = normFechaFab(f.fecha);
+    if (rango && (fecha < rango.desde || fecha > rango.hasta)) continue;
     const key = `${norm(f.sede)}|${norm(f.receta)}`;
     const prev = fabPorSedeReceta.get(key) || { n: 0, ultima: '', fechas: [] };
     prev.n += 1;
-    prev.fechas.push(f.fecha);
-    if (f.fecha > prev.ultima) prev.ultima = f.fecha;
+    prev.fechas.push(fecha);
+    if (fecha > prev.ultima) prev.ultima = fecha;
     fabPorSedeReceta.set(key, prev);
   }
 
