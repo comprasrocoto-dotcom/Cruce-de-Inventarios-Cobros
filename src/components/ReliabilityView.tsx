@@ -1684,6 +1684,28 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     <span className="text-indigo-600">{sede.confiabilidad.toFixed(1)}%</span>
                   </p>
                   <ReliabilityBar percentage={sede.confiabilidad} />
+                  {/* Dimensiones estándar (IRA): la nota final es la MENOR de las dos.
+                      Permite ver si el problema de la sede es de CONTEO o de PLATA. */}
+                  {sede.exactitudArticulos !== undefined && (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="bg-[#0F1C2E] px-3 py-2 rounded-[6px] border border-brand-border">
+                        <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">
+                          Exact. Artículos
+                        </p>
+                        <p className="text-sm font-black text-text-main mt-1">
+                          {sede.exactitudArticulos?.toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="bg-[#0F1C2E] px-3 py-2 rounded-[6px] border border-brand-border">
+                        <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">
+                          Exact. Valor
+                        </p>
+                        <p className="text-sm font-black text-text-main mt-1">
+                          {sede.exactitudValor?.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Bloques de Artículos, Diferencias, Impacto */}
@@ -2630,6 +2652,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     <p className="text-2xl font-bold text-text-main">
                       {Math.round(selectedSede.confiabilidad)}%
                     </p>
+                    {selectedSede.exactitudArticulos !== undefined && (
+                      <p className="text-[9px] font-bold text-text-secondary mt-1 leading-tight">
+                        Artículos {selectedSede.exactitudArticulos?.toFixed(1)}% · Valor{' '}
+                        {selectedSede.exactitudValor?.toFixed(1)}%
+                      </p>
+                    )}
                   </div>
                   <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
                     <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
