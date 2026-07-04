@@ -216,7 +216,17 @@ export const AYUDAS: Record<
             <b>Artículos faltantes:</b> cuántos quedaron con diferencia negativa (contaron menos de
             lo que debía haber). · <b>Artículos cobrables:</b> de esos faltantes, cuántos superaron
             el margen de tolerancia y por eso generan cobro. · <b>Valor total a cobrar:</b> la plata
-            que suman todos esos cobros.
+            que suman todos esos cobros. · <b>Artículos sobrantes:</b> los que contaron MÁS de lo
+            que debía haber.
+          </P>
+          <P>
+            <b>¿Y por qué vigilar los sobrantes si no se cobran?</b> Porque sobrar no es buena
+            noticia: es el mismo síntoma de proceso roto que faltar. Las causas típicas (sobre todo
+            en abarrotes): recetas preparadas sin registrar, compras recibidas sin cargar, errores
+            de unidad al contar (la bolsa de 500 g anotada como kilo) o el mismo producto contado
+            bajo otro código. El sobrante de hoy es el faltante de mañana — y además no se cobra el
+            sobrante para evitar que alguien "fabrique" sobrantes de lo barato para tapar faltantes
+            de lo caro.
           </P>
           <P>
             Fíjate que <b>faltante no es lo mismo que cobrable</b>: un faltante pequeño (dentro del
@@ -261,9 +271,11 @@ export const AYUDAS: Record<
           </P>
           <P>
             Sirve para responder rápido "<b>¿dónde está el problema?</b>" antes de entrar al
-            detalle. Una sede con muchos faltantes pero poco cobro tiene descuadres pequeños y
-            repartidos; una con pocos faltantes pero cobro alto tiene el problema concentrado en
-            productos caros.
+            detalle. La fila de <b>Sobrantes</b> (con su valor a costo) también cuenta: una sede con
+            sobrantes altos casi siempre tiene recetas sin registrar o errores de unidad — no se
+            cobra, pero es tarea de proceso. Una sede con muchos faltantes pero poco cobro tiene
+            descuadres pequeños y repartidos; una con pocos faltantes pero cobro alto tiene el
+            problema concentrado en productos caros.
           </P>
           <P>
             Los botones <b>Excel Jerárquico</b> y <b>PDF Cobros</b> exportan exactamente lo que está
@@ -345,9 +357,16 @@ export const AYUDAS: Record<
           ) : (
             <SinDatos />
           )}
+          <P>
+            <b>La pista "¿Confusión de códigos?"</b> (azul) aparece cuando un faltante cobrable
+            tiene, en la misma sede y subfamilia, un sobrante fuerte en otro artículo. Es el patrón
+            típico del mismo producto bajo dos referencias (ej. "QUESO X KILO" vs "QUESO BLOQUE"):
+            se contó todo, pero en el código equivocado. El cobro podría ser injusto — pasa el mouse
+            por la pista para ver el candidato y valida contra el ERP antes de descontar.
+          </P>
           <Tip>
-            El orden sano de la auditoría: primero resolver los ⚠ Revisar contra HioPOS (suelen ser
-            datos, no pérdidas) y después descontar el resto.
+            El orden sano de la auditoría: primero resolver los ⚠ Revisar y las pistas de confusión
+            contra HioPOS (suelen ser datos, no pérdidas) y después descontar el resto.
           </Tip>
         </>
       );
