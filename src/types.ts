@@ -54,7 +54,7 @@ export interface ArticleSummary {
   esSubReceta?: boolean;
   /** Motivo por el que no se genera cobro (ej. sub-receta, solo ajustes). */
   motivoNoCobro?: string;
-  /** Variación del último ciclo de conteo (base del cobro). */
+  /** Variación NETA del horizonte auditado (base del cobro): suma de las variaciones de los conteos, que son pérdidas por periodo no superpuestas. */
   variacionUltimoCiclo?: number;
   /** Fecha del último ciclo evaluado. */
   fechaUltimoCiclo?: Date;
