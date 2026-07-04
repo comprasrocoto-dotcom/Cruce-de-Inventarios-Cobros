@@ -27,6 +27,7 @@ import {
 } from '../types';
 
 import {
+  resumenHorizonte,
   cicloDesdeMovimientos,
   evaluarItem,
   calcularPerdidaEconomica,
@@ -674,7 +675,15 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
         ? conteosFisicos[conteosFisicos.length - 1]
         : ciclos[ciclos.length - 1];
 
-    const variacionCiclo = cicloCobro?.variacion ?? 0;
+    // 💡 COBRO = NETO DEL HORIZONTE. El ERP ajusta el stock al cargar cada
+    // inventario (el teórico de un conteo es el físico del anterior), así que
+    // cada variación es la pérdida de SU periodo y las de conteos sucesivos
+    // SE SUMAN. La base de tolerancia es el volumen teórico auditado.
+    const horizonte = resumenHorizonte(summary.movements);
+
+    const variacionCiclo = horizonte.variacion;
+
+    const baseHorizonte = horizonte.base;
 
     summary.variacionUltimoCiclo = variacionCiclo;
     summary.fechaUltimoCiclo = cicloCobro?.fecha;
@@ -693,7 +702,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
     const evaluado = evaluarItem({
       ...summary,
       totalDiferencia: variacionCiclo,
-      stockEsperado: cicloCobro?.stockFecha ?? summary.stockEsperado,
+      stockEsperado: baseHorizonte,
     });
 
     summary.margenError = evaluado.margenError;
@@ -702,10 +711,12 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
 
     summary.confiabilidad = evaluado.confiabilidad;
 
-    // Se cobra si: el último CONTEO FÍSICO tiene faltante fuera de margen.
-    // Los ajustes de sistema (serie "a /") explican, no imputan: sin conteo
-    // físico no se genera cobro automático. Las sub-recetas / producto en
-    // proceso se analizan pero no se cobran (su variación es operativa).
+    // Se cobra si: el NETO del horizonte auditado es faltante fuera de margen
+    // (documentos de inventario: serie CONTEO** o la histórica "a /"). Los
+    // sobrantes de un periodo compensan faltantes de otro (mismo responsable).
+    // Series no reconocidas (OTRO) no generan cobro automático, por prudencia.
+    // Las sub-recetas / producto en proceso se analizan pero no se cobran
+    // (su variación es operativa, no una merma atribuible).
     const hayConteoFisico = conteosFisicos.length > 0;
 
     if (summary.esSubReceta) {
@@ -751,7 +762,7 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
 
     // 🔥 CONFIABILIDAD TÉCNICA (3 niveles) basada en el ratio de error
 
-    const baseBench = Math.max(Math.abs(cicloCobro?.stockFecha ?? summary.stockEsperado), 1);
+    const baseBench = Math.max(baseHorizonte, 1);
 
     const ratioError = Math.abs(variacionCiclo) / baseBench;
 
@@ -928,7 +939,7 @@ export function getReliabilitySummary(
       const evaluables = arts.filter((a) => !a.esSubReceta);
 
       const varCiclo = (a: ArticleSummary) =>
-        cicloDesdeMovimientos(a.movements)?.variacion ?? a.totalDiferencia;
+        a.movements.length ? resumenHorizonte(a.movements).variacion : a.totalDiferencia;
 
       const vu = (a: ArticleSummary) => a.costeMediano || a.ultimoCoste || a.costePromedio;
 
