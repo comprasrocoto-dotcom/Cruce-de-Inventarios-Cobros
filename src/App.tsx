@@ -19,7 +19,7 @@ import { ExportButtons } from './components/ExportButtons';
 import { StatsCard } from './components/StatsCard';
 import { ArticleSummary, GlobalFilters } from './types';
 import { getDashboardStats } from './utils/inventory';
-import { evaluarItem } from './utils/confiabilidad';
+import { evaluarItem, cicloDesdeMovimientos } from './utils/confiabilidad';
 import { useEffect } from 'react';
 import {
   Upload,
@@ -143,16 +143,21 @@ export default function App() {
         if (totalDiferencia < -0.0001) tipo = 'FALTANTE';
         else if (totalDiferencia > 0.0001) tipo = 'SOBRANTE';
 
-        // La tolerancia se re-evalúa PARA EL PERIODO filtrado (variación y base
-        // teórica del rango), en lugar de heredar la evaluación del acumulado.
+        // El COBRO del periodo se basa en el ÚLTIMO CICLO (documento) dentro del
+        // rango filtrado — nunca en la suma del rango, que mezclaría inventarios.
+        // totalDiferencia (suma del rango) se conserva solo como vista analítica.
+        const ciclo = cicloDesdeMovimientos(movements);
+        const variacionCiclo = ciclo?.variacion ?? totalDiferencia;
+
+        // La tolerancia se re-evalúa PARA EL CICLO del periodo filtrado.
         const evaluadoPeriodo = evaluarItem({
           ...art,
-          totalDiferencia,
-          stockEsperado: lastMov.stockFecha,
+          totalDiferencia: variacionCiclo,
+          stockEsperado: ciclo?.base ?? lastMov.stockFecha,
         });
 
         const debeCobrar =
-          totalDiferencia < -0.0001 && !evaluadoPeriodo.dentroDeTolerancia && !art.esSubReceta;
+          variacionCiclo < -0.0001 && !evaluadoPeriodo.dentroDeTolerancia && !art.esSubReceta;
 
         return {
           ...art,
@@ -161,13 +166,17 @@ export default function App() {
           totalDiferencia,
           totalFaltantes,
           totalSobrantes,
-          cantidadACobrar: Math.max(0, totalFaltantes - totalSobrantes),
+          cantidadACobrar: debeCobrar ? Math.abs(variacionCiclo) : 0,
           ultimoCoste,
           tipo,
           margenError: evaluadoPeriodo.margenError,
           dentroDeTolerancia: evaluadoPeriodo.dentroDeTolerancia,
+          confiabilidad: evaluadoPeriodo.confiabilidad,
+          variacionUltimoCiclo: variacionCiclo,
+          fechaUltimoCiclo: ciclo?.fecha ?? lastMov.fecha,
+          serieUltimoCiclo: ciclo?.serie ?? lastMov.serie,
           debeCobrar,
-          totalCobro: debeCobrar ? Math.abs(totalDiferencia) * valorUnitario : 0,
+          totalCobro: debeCobrar ? Math.abs(variacionCiclo) * valorUnitario : 0,
           valorPerdida: totalFaltantes * valorUnitario,
           valorSobrante: totalSobrantes * valorUnitario,
         } as ArticleSummary;
