@@ -14,9 +14,15 @@ import { es } from 'date-fns/locale';
 interface ExportButtonsProps {
   data: ArticleSummary[];
   onlyCobrables?: boolean;
+  /** Etiqueta de la política de cobro activa (queda en el encabezado del Excel). */
+  politicaLabel?: string;
 }
 
-export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrables = false }) => {
+export const ExportButtons: React.FC<ExportButtonsProps> = ({
+  data,
+  onlyCobrables = false,
+  politicaLabel,
+}) => {
   const exportToExcel = () => {
     const workbook = XLSX.utils.book_new();
 
@@ -52,6 +58,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data, onlyCobrable
       rows.push(['REPORTE DE COBROS POR AJUSTES DE INVENTARIO']);
       rows.push([`Sede / Almacén: ${sedeName}`]);
       rows.push([`Fecha de generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`]);
+      if (politicaLabel) rows.push([`Política de cobro: ${politicaLabel}`]);
       rows.push([]); // Spacer
 
       // --- DYNAMIC TABLE HEADERS (Rows 4-5) ---
