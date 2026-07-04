@@ -114,7 +114,7 @@ const ALIASES: Record<string, string[]> = {
 
   subarticulo: ['subarticulo', 'unidad', 'unidad de medida', 'medida', 'u m', 'um'],
 
-  costeLinea: ['coste linea', 'costo linea', 'coste', 'costo', 'valor costo'],
+  costeLinea: ['coste linea', 'costo linea', 'valor costo', 'coste unitario'],
 
   variacion: [
     'variacion stock',
@@ -138,7 +138,14 @@ const ALIASES: Record<string, string[]> = {
   codBarras: ['cod barras', 'codigo barras', 'cod.', 'barras'],
 
   responsable: ['responsable', 'usuario', 'vendedor', 'creado por', 'persona', 'empleado'],
-  cc: ['centro de costos', 'centro costos', 'cc', 'centro de costo'],
+  cc: [
+    'centro de costos',
+    'centro costos',
+    'cc',
+    'centro de costo',
+    'centros de costos',
+    'c costos',
+  ],
 };
 
 function normalizeHeader(header: string): string {
@@ -177,6 +184,81 @@ function normalizeHeader(header: string): string {
   str = str.replace(/[^a-z0-9\s/]/g, '');
 
   return str.trim();
+}
+
+/**
+ * Construye el mapa encabezado→campo en TRES FASES con ASIGNACIÓN ÚNICA:
+ *
+ *   Fase 1 — Coincidencia EXACTA (mojibake + alias normalizados).
+ *   Fase 2 — Coincidencia PARCIAL, solo entre campos y columnas aún libres.
+ *   Fase 3 — Posición: los campos que sigan libres toman su columna estándar
+ *            del layout HioPOS (A..M) si esa columna sigue libre.
+ *
+ * Por qué en fases: el esquema anterior resolvía cada encabezado por separado,
+ * así que dos columnas podían reclamar el MISMO campo y pisarse en silencio
+ * (caso real: el alias parcial "costo" capturaba "Centro de Costos", dejando
+ * el filtro de CC apuntando a la columna equivocada). Con asignación única,
+ * cada campo tiene a lo sumo una columna y cada columna a lo sumo un campo;
+ * y si un encabezado no se reconoce, su campo cae a la POSICIÓN del layout
+ * (p. ej. Centro de Costos = columna F), que es el contrato con el ERP.
+ */
+function construirHeaderMap(keys: string[]): Record<string, string> {
+  const headerMap: Record<string, string> = {};
+  const campoUsado = new Set<string>();
+  const columnaUsada = new Set<string>();
+
+  const exacto = (key: string): string | null => {
+    if (EXACT_MOJIBAKE_MAP[key]) return EXACT_MOJIBAKE_MAP[key];
+    const n = normalizeHeader(key);
+    for (const [campo, sinonimos] of Object.entries(ALIASES)) {
+      for (const sin of sinonimos) {
+        if (n === normalizeHeader(sin)) return campo;
+      }
+    }
+    return null;
+  };
+
+  // Fase 1: exactos
+  keys.forEach((key) => {
+    const campo = exacto(key);
+    if (campo && !campoUsado.has(campo)) {
+      headerMap[key] = campo;
+      campoUsado.add(campo);
+      columnaUsada.add(key);
+    }
+  });
+
+  // Fase 2: parciales, campo-por-campo (en el orden de ALIASES) sobre lo libre
+  for (const [campo, sinonimos] of Object.entries(ALIASES)) {
+    if (campoUsado.has(campo)) continue;
+    for (const key of keys) {
+      if (columnaUsada.has(key)) continue;
+      const n = normalizeHeader(key);
+      const hay = sinonimos.some((sin) => {
+        const ns = normalizeHeader(sin);
+        if (ns.length < 4) return false;
+        return n.includes(ns) || ns.includes(n);
+      });
+      if (hay) {
+        headerMap[key] = campo;
+        campoUsado.add(campo);
+        columnaUsada.add(key);
+        break;
+      }
+    }
+  }
+
+  // Fase 3: posición del layout HioPOS para lo que siga libre
+  Object.entries(INDEX_FALLBACK).forEach(([idxStr, campo]) => {
+    if (campoUsado.has(campo)) return;
+    const key = keys[Number(idxStr)];
+    if (key === undefined || columnaUsada.has(key)) return;
+    headerMap[key] = campo;
+    campoUsado.add(campo);
+    columnaUsada.add(key);
+  });
+
+  return headerMap;
 }
 
 function findInternalName(header: string, index: number): string | null {
@@ -341,18 +423,14 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
     mappedColumns: {},
   };
 
-  Object.keys(firstRow).forEach((key, index) => {
-    const normalized = normalizeHeader(key);
+  const claves = Object.keys(firstRow);
+  claves.forEach((key) => debugInfo.normalizedHeaders.push(normalizeHeader(key)));
 
-    debugInfo.normalizedHeaders.push(normalized);
-
-    const internalName = findInternalName(key, index);
-
-    if (internalName) {
-      headerMap[key] = internalName;
-
-      debugInfo.mappedColumns[internalName] = key;
-    }
+  // Mapeo en fases con asignación única (ver construirHeaderMap).
+  const mapa = construirHeaderMap(claves);
+  Object.entries(mapa).forEach(([key, internalName]) => {
+    headerMap[key] = internalName;
+    debugInfo.mappedColumns[internalName] = key;
   });
 
   const requiredColumns = ['fecha', 'sede', 'articulo', 'subarticulo', 'costeLinea', 'variacion'];
