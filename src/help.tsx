@@ -9,7 +9,11 @@
  */
 import React from 'react';
 import { ArticleSummary } from './types';
-import { getReliabilitySummary, UMBRAL_COBRO_REVISION } from './utils/inventory';
+import {
+  getReliabilitySummary,
+  UMBRAL_COBRO_REVISION,
+  aplicarPoliticaCobro,
+} from './utils/inventory';
 
 export interface HelpCtx {
   articles: ArticleSummary[];
@@ -433,14 +437,14 @@ export const AYUDAS: Record<
     contenido: () => (
       <>
         <P>
-          Es la misma información de Cobros pero con <b>lupa de exploración</b>: la tabla completa
-          para navegar movimientos, más los bloques de análisis avanzado de abajo (rankings,
-          comparativos y resúmenes por sede).
+          Es la misma información de Cobros pero con <b>lupa de exploración</b>: arriba la tabla
+          completa para navegar movimientos, y abajo el bloque de análisis con <b>tres secciones</b>{' '}
+          — cada una responde una pregunta distinta:
         </P>
         <P>
-          Úsala cuando la pregunta no es "¿cuánto cobro?" sino "<b>¿qué está pasando?</b>": qué
-          productos se repiten con descuadre, cómo se comparan las sedes entre sí, dónde se
-          concentra la plata perdida.
+          <b>Variaciones:</b> ¿qué pasó, artículo por artículo? · <b>Consolidado:</b> ¿qué productos
+          fallan sin importar la sede? · <b>Cobros:</b> ¿en qué se traduce en plata? Toca el{' '}
+          <b>?</b> junto a esas pestañas para la explicación de cada una con tus datos.
         </P>
         <Tip>
           Combínala con el buscador: escribe un producto (ej. "salmón") y mira su comportamiento en
@@ -676,5 +680,162 @@ export const AYUDAS: Record<
         </P>
       </>
     ),
+  },
+  // ══════════════ CONFIGURACIÓN DE COBRO ══════════════
+  configuracion: {
+    titulo: 'Configuración de Cobro: reglas y política',
+    contenido: ({ articles }) => {
+      let vivo: React.ReactNode = <SinDatos />;
+      try {
+        if (articles.length > 0) {
+          const tot = (pol: 'COMPLETO' | 'EXCEDENTE' | 'SIN_MARGEN') =>
+            aplicarPoliticaCobro(articles, pol).reduce((s2, a) => s2 + a.totalCobro, 0);
+          vivo = (
+            <Ej>
+              Con el corte actual, el total a cobrar bajo cada política sería:{' '}
+              <b>cobro completo {fmt$(tot('COMPLETO'))}</b> · solo excedente{' '}
+              <b>{fmt$(tot('EXCEDENTE'))}</b> · sin margen <b>{fmt$(tot('SIN_MARGEN'))}</b>. Cambia
+              el selector y verás toda la app recalcularse con estos números.
+            </Ej>
+          );
+        }
+      } catch {
+        /* sin datos */
+      }
+      return (
+        <>
+          <P>
+            Esta tarjeta es <b>el contrato de la auditoría</b>: las reglas con las que se decide qué
+            se cobra, visibles para que cualquier cobro sea defendible. Tiene dos partes:
+          </P>
+          <P>
+            <b>1. Los márgenes de tolerancia</b> (solo lectura — no se editan desde la app para
+            proteger la trazabilidad de cobros ya liquidados): <b>UNIDADES y COPAS</b> sin margen,
+            porque lo contable se cuenta con los dedos: si falta una botella, falta. · <b>ONZAS</b>{' '}
+            con ±1 de perdón: es el error normal del jigger al servir un trago. · <b>GRAMOS</b> con
+            2.5% del inventario teórico del horizonte (piso de 100 g): las mermas normales de
+            pesaje, goteo y porcionado.
+          </P>
+          <P>
+            <b>2. La política de cobro</b> — qué hacer cuando el faltante supera el margen. Un
+            ejemplo con números para ver la diferencia: teórico de <b>10.000 g</b> → margen ={' '}
+            <b>250 g</b> → faltan <b>400 g</b> a $100 el gramo:
+          </P>
+          <P>
+            · <b>Cobro completo:</b> superaste el margen, respondes por TODO → se cobran 400 g =
+            $40.000. El margen es umbral del perdón, no mesada. · <b>Solo excedente:</b> los
+            primeros 250 g siempre son merma del negocio → se cobran 150 g = $15.000. ·{' '}
+            <b>Sin margen:</b> tolerancia cero → 400 g = $40.000, y además otro artículo con
+            faltante de apenas 200 g (que antes se perdonaba) también entraría a cobrar.
+          </P>
+          {vivo}
+          <Tip>
+            La confiabilidad NO cambia con la política: mide qué tan bien se cuenta, no cuánto se
+            descuenta. Y el PDF y el Excel imprimen la política activa — un reporte de descuentos
+            sin su regla es indefendible en una discusión.
+          </Tip>
+        </>
+      );
+    },
+  },
+
+  // ══════════════ ANÁLISIS: SECCIONES INTERNAS ══════════════
+  avVariaciones: {
+    titulo: 'Sección Variaciones',
+    contenido: ({ articles }) => {
+      const top = articles
+        .filter((a) => !a.esSubReceta)
+        .sort(
+          (a, b) =>
+            Math.abs(b.variacionUltimoCiclo ?? b.totalDiferencia) *
+              (b.costeMediano || b.ultimoCoste || b.costePromedio || 0) -
+            Math.abs(a.variacionUltimoCiclo ?? a.totalDiferencia) *
+              (a.costeMediano || a.ultimoCoste || a.costePromedio || 0)
+        )[0];
+      return (
+        <>
+          <P>
+            Responde "<b>¿qué pasó, artículo por artículo?</b>": el detalle de cada producto con su
+            variación en el horizonte, para explorar con el buscador y los filtros.
+          </P>
+          <P>
+            Léela en pesos, no en porcentajes: un descuadre del 40% en un condimento vale poco; uno
+            del 4% en tu proteína estrella puede ser millones. Aquí es donde se encuentra el "hilo"
+            del que tirar antes de ir a la sección de Cobros.
+          </P>
+          {top ? (
+            <Ej>
+              El artículo con mayor desviación en plata del corte es <b>{top.articulo}</b> (
+              {top.sede}): {fmtN(top.variacionUltimoCiclo ?? top.totalDiferencia)} {top.subarticulo}
+              .
+            </Ej>
+          ) : (
+            <SinDatos />
+          )}
+        </>
+      );
+    },
+  },
+
+  avConsolidado: {
+    titulo: 'Sección Consolidado',
+    contenido: () => (
+      <>
+        <P>
+          Responde "<b>¿qué productos fallan sin importar la sede?</b>": suma el mismo producto a
+          través de todas las sedes del corte.
+        </P>
+        <P>
+          Es la vista que separa dos problemas muy distintos: si un producto descuadra{' '}
+          <b>en una sola sede</b>, el problema es de esa operación (conteo, robo, proceso local); si
+          descuadra <b>en todas</b>, el problema es del producto — receta mal parametrizada en el
+          POS, unidad de compra confusa (caja vs unidad), o porcionado sin estandarizar. La solución
+          de lo primero es gestión de sede; la de lo segundo es corregir el maestro en el ERP una
+          sola vez.
+        </P>
+        <Tip>
+          Los productos que aparecen aquí arriba son los mejores candidatos para revisar su ficha en
+          HioPOS antes de cobrarle a nadie.
+        </Tip>
+      </>
+    ),
+  },
+
+  avCobros: {
+    titulo: 'Sección Cobros (del Análisis)',
+    contenido: ({ articles }) => {
+      const t = totales(articles);
+      return (
+        <>
+          <P>
+            Responde "<b>¿en qué se traduce en plata?</b>": solo los artículos que generan cobro,
+            con su cantidad faltante, costo unitario y valor, más el <b>total por sede</b> al final
+            — la cifra que va a la liquidación.
+          </P>
+          <P>
+            Se calcula con la <b>política de cobro activa</b> (mira la insignia amarilla en la
+            pestaña Cobros o la tarjeta Configuración del Resumen): si cambias la política, estos
+            valores cambian al instante.
+          </P>
+          {articles.length > 0 ? (
+            <Ej>
+              En el corte actual: <b>{t.cobrables}</b> artículos cobrables por{' '}
+              <b>{fmt$(t.cobro)}</b>
+              {t.enRevision > 0 ? (
+                <>
+                  {' '}
+                  — de los cuales <b>{t.enRevision}</b> traen ⚠ Revisar: resuélvelos contra el ERP
+                  antes de liquidar.
+                </>
+              ) : (
+                '.'
+              )}
+            </Ej>
+          ) : (
+            <SinDatos />
+          )}
+        </>
+      );
+    },
   },
 };
