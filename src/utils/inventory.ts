@@ -573,7 +573,12 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
 
     const familiaStr = (row.familia || '').toString().trim();
 
-    const ccStr = (row.cc || familiaStr || '').toString().trim();
+    // Centro de Costos: SOLO la columna F. Sin fallback a Familia (era la
+    // causa de que el filtro de CC mostrara valores de otra columna), y el
+    // 0/'0' que exporta el ERP cuando la columna viene sin diligenciar se
+    // trata como "sin CC" para no ofrecer basura en los filtros.
+    const ccRaw = (row.cc ?? '').toString().trim();
+    const ccStr = ccRaw && ccRaw !== '0' ? ccRaw : '';
 
     const proveedorStr = (row.proveedor || '').toString().trim();
 
