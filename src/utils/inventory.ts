@@ -28,7 +28,6 @@ import {
 
 import {
   resumenHorizonte,
-  cicloDesdeMovimientos,
   evaluarItem,
   calcularPerdidaEconomica,
   calcularEstadisticasConfiabilidad,
