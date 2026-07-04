@@ -125,7 +125,7 @@ export const PDFReport: React.FC<Props> = ({ data, filters }) => {
     autoTable(doc, {
       startY: yPos,
       margin: { left: margin, right: margin },
-      head: [['Sede', 'Producto', 'Faltante', 'Sobrante', 'Neto', 'Valor P\u00e9rdida']],
+      head: [['Sede', 'Producto', 'Faltante', 'Sobrante', 'Neto', 'Valor P\u00e9rdida', 'Estado']],
       body: conNovedadesData.map(function (a) {
         return [
           a.sede,
@@ -134,18 +134,21 @@ export const PDFReport: React.FC<Props> = ({ data, filters }) => {
           fmtNumber(a.totalSobrantes ?? 0),
           (a.totalDiferencia > 0 ? '+' : '') + fmtNumber(a.totalDiferencia),
           fmtCurrency(a.valorPerdida ?? 0),
+          // Bandera de calidad: validar contra el ERP antes de descontar.
+          a.requiereRevision ? 'REVISAR' : '',
         ];
       }),
       headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       styles: { fontSize: 7 },
       columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 60 },
-        2: { cellWidth: 22 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 29 },
+        0: { cellWidth: 24 },
+        1: { cellWidth: 52 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 26 },
+        6: { cellWidth: 18 },
       },
       didParseCell: function (data: any) {
         if (data.section === 'body' && data.column.index === 4) {
@@ -153,8 +156,31 @@ export const PDFReport: React.FC<Props> = ({ data, filters }) => {
           if (val < 0) data.cell.styles.textColor = [220, 38, 38];
           else if (val > 0) data.cell.styles.textColor = [22, 163, 74];
         }
+        // Fila marcada REVISAR: texto ámbar y negrita en la columna Estado.
+        if (data.section === 'body' && data.column.index === 6 && data.cell.text[0] === 'REVISAR') {
+          data.cell.styles.textColor = [180, 120, 0];
+          data.cell.styles.fontStyle = 'bold';
+        }
       },
     });
+
+    // Nota explicativa de la marca REVISAR (solo si aplica).
+    const marcados = conNovedadesData.filter(function (a) {
+      return a.requiereRevision;
+    }).length;
+    if (marcados > 0) {
+      const finalY = (doc as any).lastAutoTable?.finalY ?? yPos;
+      doc.setFontSize(7);
+      doc.setTextColor(180, 120, 0);
+      doc.setFont('helvetica', 'italic');
+      doc.text(
+        'REVISAR (' +
+          marcados +
+          ' art.): cobros con coste unitario at\u00edpico o monto implausible. Validar contra el ERP antes de descontar.',
+        margin,
+        Math.min(finalY + 5, doc.internal.pageSize.getHeight() - 12)
+      );
+    }
 
     // Footer on each page
     const totalPages = (doc as any).internal.getNumberOfPages();
