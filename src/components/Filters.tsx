@@ -9,6 +9,7 @@ import React from 'react';
 import { Filter, Search, X, Calendar, RotateCcw, User } from 'lucide-react';
 
 import { GlobalFilters } from '../types';
+import { HelpTip } from './HelpTip';
 
 interface FiltersProps {
   sedes: string[];
@@ -107,7 +108,9 @@ export const Filters: React.FC<FiltersProps> = ({
         <div className="flex items-center space-x-2 text-text-main">
           <Filter className="w-5 h-5 text-primary" />
 
-          <h3 className="font-bold uppercase tracking-tight">Filtros Avanzados</h3>
+          <h3 className="font-bold uppercase tracking-tight">
+            Filtros Avanzados <HelpTip clave="filtros" />
+          </h3>
         </div>
 
         {hasActiveFilters && (
@@ -223,7 +226,7 @@ export const Filters: React.FC<FiltersProps> = ({
 
         <div className="space-y-4 col-span-1 md:col-span-2">
           <label className="block text-[10px] font-black text-text-secondary mb-2 uppercase tracking-widest">
-            Rango de Fechas
+            Rango de Fechas <HelpTip clave="fechas" />
           </label>
 
           <div className="grid grid-cols-2 gap-4">

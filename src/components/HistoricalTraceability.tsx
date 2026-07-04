@@ -44,6 +44,7 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { HelpTip } from './HelpTip';
 
 interface HistoricalTraceabilityProps {
   data: ArticleSummary[];
@@ -202,7 +203,9 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
       {/* Header Section */}
       <div className="bg-[#0F1C2E] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-1 uppercase tracking-tight">TRAZABILIDAD</h2>
+          <h2 className="text-2xl font-bold mb-1 uppercase tracking-tight">
+            TRAZABILIDAD <HelpTip clave="trazabilidad" />
+          </h2>
           <p className="text-[#C9D4E3] font-medium">
             Comparativo histórico de confiabilidad e impacto económico
           </p>

@@ -27,6 +27,7 @@ import {
   AlertaInsumo,
 } from '../utils/confiabilidad';
 import { motion, AnimatePresence } from 'motion/react';
+import { HelpTip } from './HelpTip';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import autoTable from 'jspdf-autotable';
@@ -1271,7 +1272,19 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   ? 'Informe Técnico de Control de Inventarios'
                   : mainTab === 'estabilidad'
                     ? 'Panel de Estabilidad de Productos'
-                    : 'Resumen Gerencial y Predicciones'}
+                    : 'Resumen Gerencial y Predicciones'}{' '}
+              <HelpTip
+                clave={
+                  mainTab === 'operativo'
+                    ? 'confiabilidad'
+                    : mainTab === 'tecnico'
+                      ? 'confTecnico'
+                      : mainTab === 'estabilidad'
+                        ? 'estabilidad'
+                        : 'confGerencial'
+                }
+              />
+              {mainTab === 'operativo' && <HelpTip clave="niveles" className="ml-1" />}
             </h2>
             <p className="text-brand-text-secondary">
               {mainTab === 'operativo'

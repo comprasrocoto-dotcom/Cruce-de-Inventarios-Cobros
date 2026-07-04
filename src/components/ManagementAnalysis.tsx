@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArticleSummary, ReliabilityStats } from '../types';
 import { getReliabilitySummary } from '../utils/inventory';
+import { HelpTip } from './HelpTip';
 import {
   BarChart,
   Bar,
@@ -294,6 +295,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
       <div className="bg-[#0F1C2E] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">
+            <HelpTip clave="gerencial" className="mr-2" />
             Análisis Gerencial de Inventarios {selectedSede ? `— ${selectedSede}` : ''}
           </h2>
           <p className="text-text-secondary font-medium">

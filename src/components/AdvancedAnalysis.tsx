@@ -23,6 +23,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { HelpTip } from './HelpTip';
 
 interface AdvancedAnalysisProps {
   data: ArticleSummary[];
@@ -488,7 +489,9 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
       {/* RESUMEN EJECUTIVO POR SEDE */}
       {activeSection === 'ejecutivo' && (
         <div className="space-y-6">
-          <h3 className="text-base font-bold text-white">Resumen Ejecutivo por Sede</h3>
+          <h3 className="text-base font-bold text-white">
+            Resumen Ejecutivo por Sede <HelpTip clave="analisisAvanzado" />
+          </h3>
 
           {/* Tarjetas agrupadas por categoria */}
           {(['Critica', 'Riesgo', 'Aceptable', 'Buena', 'Excelente'] as const).map((categoria) => {
