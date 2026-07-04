@@ -66,6 +66,10 @@ export interface ArticleSummary {
   costeMediano?: number;
   /** Nº de filas cuya variación fue reparada con la identidad Inv = Teórico + Var. */
   filasReparadas?: number;
+  /** true si el cobro debe revisarse manualmente (coste atípico, monto implausible). */
+  requiereRevision?: boolean;
+  /** Detalle del motivo por el que el artículo requiere revisión. */
+  motivoRevision?: string;
 }
 export interface SedeSummary {
   sede: string;
