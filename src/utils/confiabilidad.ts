@@ -7,7 +7,7 @@
  * alertas y proyecciones de pérdida. Es la fuente de verdad económica usada
  * por inventory.ts.
  */
-import { ArticleSummary } from '../types';
+import { ArticleSummary, InventoryMovement } from '../types';
 
 /**
  * Calcula el margen de error permitido según la unidad de medida y el contexto.
@@ -170,11 +170,43 @@ export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
 };
 
 /**
+ * Deriva el ÚLTIMO CICLO de conteo a partir de los movimientos presentes.
+ *
+ * Cada documento HioPOS (fecha + serie) es la foto de un inventario. Esta
+ * función toma el último documento del arreglo recibido, de modo que:
+ *   - sin filtros: devuelve el último inventario cargado del artículo;
+ *   - con filtro de fechas (App recorta movements): devuelve el último
+ *     inventario DENTRO del rango, manteniendo coherente toda la cadena
+ *     (tolerancia, confiabilidad, cobros) sin dobles conteos.
+ */
+export const cicloDesdeMovimientos = (
+  movements: InventoryMovement[] = []
+): { variacion: number; base: number; fecha: Date; serie: string } | null => {
+  if (!movements.length) return null;
+  const ultimo = movements[movements.length - 1];
+  const claveFecha = ultimo.fecha.getTime();
+  const claveSerie = ultimo.serie || '';
+  let variacion = 0;
+  let base = 0;
+  for (const m of movements) {
+    if (m.fecha.getTime() === claveFecha && (m.serie || '') === claveSerie) {
+      variacion += m.variacion;
+      base = m.stockFecha;
+    }
+  }
+  return { variacion, base, fecha: ultimo.fecha, serie: claveSerie };
+};
+
+/**
  * Realiza el cálculo global de indicadores de confiabilidad para un conjunto de datos.
  * Ahora calcula el promedio ponderado de confiabilidad de los items.
  */
 export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) => {
-  const total = data.length;
+  // Las sub-recetas / producto en proceso se excluyen del indicador: su
+  // variación es operativa (producción/consumo entre inventarios) y no mide
+  // la calidad del conteo de la sede.
+  const evaluables = data.filter((i) => !i.esSubReceta);
+  const total = evaluables.length;
   if (total === 0) {
     return {
       total: 0,
@@ -182,10 +214,18 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
       fuera: 0,
       confiabilidad: 0,
       porcentajeFuera: 0,
+      excluidosSubReceta: data.length,
     };
   }
 
-  const evaluados = data.map(evaluarItem);
+  // La tolerancia se evalúa sobre el ÚLTIMO CICLO presente en los movimientos
+  // (no sobre la suma histórica): coherente con el modelo y con los filtros.
+  const evaluados = evaluables.map((i) => {
+    const ciclo = cicloDesdeMovimientos(i.movements);
+    return evaluarItem(
+      ciclo ? { ...i, totalDiferencia: ciclo.variacion, stockEsperado: ciclo.base } : i
+    );
+  });
   const dentro = evaluados.filter((i) => i.dentroDeTolerancia).length;
   const fuera = total - dentro;
 
@@ -199,6 +239,7 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
     total,
     dentro,
     fuera,
+    excluidosSubReceta: data.length - total,
     confiabilidad: Number(confiabilidadPromedio.toFixed(2)),
     porcentajeFuera,
   };
