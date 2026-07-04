@@ -10,6 +10,8 @@ import { FileText } from 'lucide-react';
 interface Props {
   data: ArticleSummary[];
   filters: GlobalFilters;
+  /** Etiqueta de la política de cobro activa (queda impresa en el PDF). */
+  politicaLabel?: string;
 }
 
 const fmtCurrency = (val: number) =>
@@ -21,7 +23,7 @@ const fmtCurrency = (val: number) =>
 
 const fmtNumber = (val: number) => new Intl.NumberFormat('es-CO').format(val);
 
-export const PDFReport: React.FC<Props> = ({ data, filters }) => {
+export const PDFReport: React.FC<Props> = ({ data, filters, politicaLabel }) => {
   const generatePDF = async () => {
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;
@@ -42,6 +44,11 @@ export const PDFReport: React.FC<Props> = ({ data, filters }) => {
     doc.setFont('helvetica', 'normal');
     doc.text('Sistema de Cruce de Inventarios y Cobros', margin, 19);
     doc.text('Generado: ' + new Date().toLocaleString('es-CO'), margin, 25);
+    if (politicaLabel) {
+      // La política bajo la que se calcularon los cobros DEBE quedar impresa:
+      // un reporte de descuentos sin su regla es indefendible en una discusión.
+      doc.text('Pol\u00edtica de cobro: ' + politicaLabel, margin, 30);
+    }
     yPos = 38;
 
     // Filters section
