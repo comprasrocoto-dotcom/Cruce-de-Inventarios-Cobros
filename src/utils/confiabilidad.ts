@@ -170,6 +170,29 @@ export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
 };
 
 /**
+ * Resumen del HORIZONTE auditado a partir de los movimientos presentes.
+ *
+ * El ERP ajusta el stock al cargar cada inventario: el teórico de cada conteo
+ * parte del físico del anterior (verificado en la data: 3866→3615→0). Por eso
+ * cada variación es la pérdida/sobrante DE SU PERIODO y NO se superponen:
+ * la diferencia del horizonte es la SUMA NETA de las variaciones, y la base
+ * de tolerancia es el volumen teórico auditado (Σ|teórico de cada conteo|).
+ *
+ * Con filtro de fechas (App recorta movements) el horizonte es el rango.
+ */
+export const resumenHorizonte = (
+  movements: InventoryMovement[] = []
+): { variacion: number; base: number } => {
+  let variacion = 0;
+  let base = 0;
+  for (const m of movements) {
+    variacion += m.variacion;
+    base += Math.abs(m.stockFecha);
+  }
+  return { variacion, base };
+};
+
+/**
  * Deriva el ÚLTIMO CICLO de conteo a partir de los movimientos presentes.
  *
  * Cada documento HioPOS (fecha + serie) es la foto de un inventario. Esta
@@ -222,12 +245,13 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
     };
   }
 
-  // La tolerancia se evalúa sobre el ÚLTIMO CICLO presente en los movimientos
-  // (no sobre la suma histórica): coherente con el modelo y con los filtros.
+  // La tolerancia se evalúa sobre el NETO DEL HORIZONTE presente en los
+  // movimientos (las variaciones de conteos sucesivos son pérdidas por
+  // periodo que se suman): coherente con el negocio y con los filtros.
   const conCiclo = evaluables.map((i) => {
-    const ciclo = cicloDesdeMovimientos(i.movements);
-    const variacionCiclo = ciclo?.variacion ?? i.totalDiferencia ?? 0;
-    const baseCiclo = ciclo?.base ?? i.stockEsperado ?? 0;
+    const horizonte = resumenHorizonte(i.movements);
+    const variacionCiclo = i.movements.length ? horizonte.variacion : (i.totalDiferencia ?? 0);
+    const baseCiclo = i.movements.length ? horizonte.base : (i.stockEsperado ?? 0);
     return {
       item: i,
       variacionCiclo,
