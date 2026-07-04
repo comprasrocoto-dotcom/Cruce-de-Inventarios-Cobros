@@ -35,6 +35,7 @@ import {
   TrendingDown,
   BarChart3,
   Activity,
+  TrendingUp,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
@@ -293,7 +294,7 @@ export default function App() {
                   </span>
                   <HelpTip clave="kpis" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                   <StatsCard
                     title="Artículos Revisados"
                     value={dashboardStats.totalArticulos}
@@ -321,6 +322,13 @@ export default function App() {
                     icon={DollarSign}
                     color="bg-[#22C55E]"
                     description="Impacto económico total"
+                  />
+                  <StatsCard
+                    title="Artículos Sobrantes"
+                    value={dashboardStats.totalSobrantes}
+                    icon={TrendingUp}
+                    color="bg-emerald-600"
+                    description={`≈ $${Math.round(dashboardStats.valorSobrante).toLocaleString('es-CO')} a costo · no cobran, pero son síntoma de proceso`}
                   />
                 </div>
 
@@ -366,6 +374,23 @@ export default function App() {
                             </span>
                             <span className="font-bold text-status-cobra">
                               {sede.totalCobrables}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-brand-text-secondary font-medium">
+                              Sobrantes:
+                            </span>
+                            <span
+                              className="font-bold text-status-sobrante"
+                              title={`≈ $${Math.round(sede.valorSobranteSede).toLocaleString('es-CO')} a costo. No cobran, pero señalan proceso roto (recetas sin registrar, compras sin cargar, errores de unidad).`}
+                            >
+                              {sede.totalSobrantes}
+                              <span className="opacity-60 font-medium">
+                                {' '}
+                                (≈ $
+                                {Math.round(sede.valorSobranteSede / 1000).toLocaleString('es-CO')}
+                                k)
+                              </span>
                             </span>
                           </div>
                           <div className="pt-2 border-t border-brand-border flex justify-between items-center">
