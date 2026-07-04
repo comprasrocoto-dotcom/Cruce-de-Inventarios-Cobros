@@ -160,6 +160,17 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
                                     ⚠ Revisar
                                   </span>
                                 )}
+                                {/* Evidencia de auditoría: sobrante fuerte en la misma
+                                    sede+subfamilia -> el faltante puede ser el mismo
+                                    producto contado bajo otro código. */}
+                                {art.posibleConfusion && (
+                                  <span
+                                    title={art.posibleConfusion}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0f2233] text-sky-300 border border-sky-800 cursor-help"
+                                  >
+                                    ¿Confusión de códigos?
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="px-6 py-4 text-right text-text-secondary font-medium">
