@@ -9,19 +9,20 @@
  *  - Orquestar las 7 pestañas: Resumen, Análisis, Cobros, Confiabilidad,
  *    Gerencial, Trazabilidad y Ejecutivo.
  */
-import React, { useState, useMemo } from "react";
-import { FileUpload } from "./components/FileUpload";
-import { Filters } from "./components/Filters";
-import { InventoryTable } from "./components/InventoryTable";
-import { RecipesView } from "./components/RecipesView";
-import { ReliabilityView } from "./components/ReliabilityView";
-import { ManagementAnalysis } from "./components/ManagementAnalysis";
-import { ExportButtons } from "./components/ExportButtons";
-import { StatsCard } from "./components/StatsCard";
-import { ArticleSummary, GlobalFilters } from "./types";
-import { getDashboardStats } from "./utils/inventory";
-import { evaluarItem, resumenHorizonte } from "./utils/confiabilidad";
-import { useEffect } from "react";
+import React, { useState, useMemo } from 'react';
+import { FileUpload } from './components/FileUpload';
+import { Filters } from './components/Filters';
+import { InventoryTable } from './components/InventoryTable';
+import { RecipesView } from './components/RecipesView';
+import { HelpProvider, HelpTip } from './components/HelpTip';
+import { ReliabilityView } from './components/ReliabilityView';
+import { ManagementAnalysis } from './components/ManagementAnalysis';
+import { ExportButtons } from './components/ExportButtons';
+import { StatsCard } from './components/StatsCard';
+import { ArticleSummary, GlobalFilters } from './types';
+import { getDashboardStats } from './utils/inventory';
+import { evaluarItem, resumenHorizonte } from './utils/confiabilidad';
+import { useEffect } from 'react';
 import {
   Upload,
   LayoutDashboard,
@@ -34,26 +35,20 @@ import {
   TrendingDown,
   BarChart3,
   Activity,
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { HistoricalTraceability } from "./components/HistoricalTraceability";
-import { AdvancedAnalysis } from "./components/AdvancedAnalysis";
-import { ExecutiveDashboard } from "./components/ExecutiveDashboard";
-import { PDFReport } from "./components/PDFReport";
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { HistoricalTraceability } from './components/HistoricalTraceability';
+import { AdvancedAnalysis } from './components/AdvancedAnalysis';
+import { ExecutiveDashboard } from './components/ExecutiveDashboard';
+import { PDFReport } from './components/PDFReport';
 
 type Tab =
-  | "RESUMEN"
-  | "ANÁLISIS"
-  | "COBROS"
-  | "CONFIABILIDAD"
-  | "GERENCIAL"
-  | "TRAZABILIDAD"
-  | "EJECUTIVO";
+  'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("RESUMEN");
+  const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
-  const [fileName, setFileName] = useState<string>("");
+  const [fileName, setFileName] = useState<string>('');
   // Muestra el panel de carga (dropdown) para subir un Excel aunque ya haya datos.
   const [mostrarCargador, setMostrarCargador] = useState(false);
   const [filters, setFilters] = useState<GlobalFilters>({
@@ -64,62 +59,52 @@ export default function App() {
     familias: [],
     subArticulos: [],
     proveedores: [],
-    status: "all",
-    search: "",
-    fechaInicio: "",
-    fechaFin: "",
+    status: 'all',
+    search: '',
+    fechaInicio: '',
+    fechaFin: '',
   });
 
   // Persistencia de filtros
   useEffect(() => {
-    const saved = localStorage.getItem("inventory_filters");
+    const saved = localStorage.getItem('inventory_filters');
     if (saved) {
       try {
         setFilters(JSON.parse(saved));
       } catch (e) {
-        console.error("Error loading filters", e);
+        console.error('Error loading filters', e);
       }
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("inventory_filters", JSON.stringify(filters));
+    localStorage.setItem('inventory_filters', JSON.stringify(filters));
   }, [filters]);
 
   const filteredArticles = useMemo(() => {
-    const startDate = filters.fechaInicio
-      ? new Date(filters.fechaInicio + "T00:00:00")
-      : null;
-    const endDate = filters.fechaFin
-      ? new Date(filters.fechaFin + "T23:59:59")
-      : null;
+    const startDate = filters.fechaInicio ? new Date(filters.fechaInicio + 'T00:00:00') : null;
+    const endDate = filters.fechaFin ? new Date(filters.fechaFin + 'T23:59:59') : null;
 
     return articles
       .filter((art) => {
-        const matchesSede =
-          filters.sedes.length === 0 || filters.sedes.includes(art.sede);
-        const matchesCC =
-          filters.ccs.length === 0 || filters.ccs.includes(art.cc);
+        const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
+        const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
         const matchesSubfamilia =
-          filters.subfamilias.length === 0 ||
-          filters.subfamilias.includes(art.subfamilia);
+          filters.subfamilias.length === 0 || filters.subfamilias.includes(art.subfamilia);
         const matchesResponsable =
           filters.responsables.length === 0 ||
-          filters.responsables.includes(art.responsable || "Sin asignar");
+          filters.responsables.includes(art.responsable || 'Sin asignar');
 
         const matchesSearch =
           !filters.search ||
           art.articulo.toLowerCase().includes(filters.search.toLowerCase()) ||
           art.codBarras.toLowerCase().includes(filters.search.toLowerCase());
 
-        const matchesFamilia =
-          !filters.familias?.length || filters.familias.includes(art.familia);
+        const matchesFamilia = !filters.familias?.length || filters.familias.includes(art.familia);
         const matchesSubArticulo =
-          !filters.subArticulos?.length ||
-          filters.subArticulos.includes(art.subarticulo);
+          !filters.subArticulos?.length || filters.subArticulos.includes(art.subarticulo);
         const matchesProveedor =
-          !filters.proveedores?.length ||
-          filters.proveedores.includes(art.proveedor);
+          !filters.proveedores?.length || filters.proveedores.includes(art.proveedor);
 
         return (
           matchesSede &&
@@ -144,10 +129,7 @@ export default function App() {
 
         if (movements.length === 0) return null;
 
-        const totalDiferencia = movements.reduce(
-          (acc, m) => acc + m.variacion,
-          0,
-        );
+        const totalDiferencia = movements.reduce((acc, m) => acc + m.variacion, 0);
         const totalFaltantes = movements
           .filter((m) => m.variacion < 0)
           .reduce((acc, m) => acc + Math.abs(m.variacion), 0);
@@ -157,12 +139,11 @@ export default function App() {
         const lastMov = movements[movements.length - 1];
         const ultimoCoste = lastMov.costeLinea;
         // Costo robusto: mediana global del artículo > último coste del periodo > promedio.
-        const valorUnitario =
-          art.costeMediano || ultimoCoste || art.costePromedio;
+        const valorUnitario = art.costeMediano || ultimoCoste || art.costePromedio;
 
-        let tipo: ArticleSummary["tipo"] = "SIN_VARIACION";
-        if (totalDiferencia < -0.0001) tipo = "FALTANTE";
-        else if (totalDiferencia > 0.0001) tipo = "SOBRANTE";
+        let tipo: ArticleSummary['tipo'] = 'SIN_VARIACION';
+        if (totalDiferencia < -0.0001) tipo = 'FALTANTE';
+        else if (totalDiferencia > 0.0001) tipo = 'SOBRANTE';
 
         // El COBRO del rango filtrado es el NETO de las variaciones del rango:
         // el ERP ajusta el stock en cada carga, así que cada variación es la
@@ -178,9 +159,7 @@ export default function App() {
         });
 
         const debeCobrar =
-          variacionCiclo < -0.0001 &&
-          !evaluadoPeriodo.dentroDeTolerancia &&
-          !art.esSubReceta;
+          variacionCiclo < -0.0001 && !evaluadoPeriodo.dentroDeTolerancia && !art.esSubReceta;
 
         return {
           ...art,
@@ -206,69 +185,63 @@ export default function App() {
       })
       .filter((art): art is ArticleSummary => art !== null)
       .filter((art) => {
-        if (filters.status === "cobrables") return art.debeCobrar;
-        if (filters.status === "faltantes") return art.tipo === "FALTANTE";
-        if (filters.status === "sobrantes") return art.tipo === "SOBRANTE";
+        if (filters.status === 'cobrables') return art.debeCobrar;
+        if (filters.status === 'faltantes') return art.tipo === 'FALTANTE';
+        if (filters.status === 'sobrantes') return art.tipo === 'SOBRANTE';
         return true;
       });
   }, [articles, filters]);
 
-  const dashboardStats = useMemo(
-    () => getDashboardStats(filteredArticles),
-    [filteredArticles],
-  );
+  const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
 
   const uniqueSedes = useMemo(
     () => Array.from(new Set(articles.map((a) => a.sede))).sort(),
-    [articles],
+    [articles]
   );
   const uniqueFamilias = useMemo(
     () =>
       Array.from(new Set(articles.map((a) => a.familia)))
         .filter(Boolean)
         .sort(),
-    [articles],
+    [articles]
   );
   const uniqueProveedores = useMemo(
     () =>
       Array.from(new Set(articles.map((a) => a.proveedor)))
         .filter(Boolean)
         .sort(),
-    [articles],
+    [articles]
   );
   const uniqueSubArticulos = useMemo(
     () =>
       Array.from(new Set(articles.map((a) => a.subarticulo)))
         .filter(Boolean)
         .sort(),
-    [articles],
+    [articles]
   );
   const uniqueCCs = useMemo(
     () =>
       Array.from(new Set(articles.map((a) => a.cc)))
         .filter(Boolean)
         .sort(),
-    [articles],
+    [articles]
   );
   const uniqueSubfamilias = useMemo(
     () =>
       Array.from(new Set(articles.map((a) => a.subfamilia)))
         .filter(Boolean)
         .sort(),
-    [articles],
+    [articles]
   );
   const uniqueResponsables = useMemo(
-    () =>
-      Array.from(
-        new Set(articles.map((a) => a.responsable || "Sin asignar")),
-      ).sort(),
-    [articles],
+    () => Array.from(new Set(articles.map((a) => a.responsable || 'Sin asignar'))).sort(),
+    [articles]
   );
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
       maximumFractionDigits: 0,
     }).format(val);
 
@@ -280,14 +253,10 @@ export default function App() {
             <Package className="w-16 h-16 text-secondary opacity-30" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-text-main mb-2">
-              No hay datos cargados
-            </h2>
+            <h2 className="text-2xl font-bold text-text-main mb-2">No hay datos cargados</h2>
             <p className="text-text-secondary max-w-md mx-auto">
-              Utiliza el botón{" "}
-              <span className="font-bold text-secondary">Cargar Excel</span> en
-              la esquina superior derecha para comenzar el análisis de
-              inventarios.
+              Utiliza el botón <span className="font-bold text-secondary">Cargar Excel</span> en la
+              esquina superior derecha para comenzar el análisis de inventarios.
             </p>
           </div>
         </div>
@@ -316,8 +285,14 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {activeTab === "RESUMEN" && (
+            {activeTab === 'RESUMEN' && (
               <div className="space-y-8">
+                <div className="flex items-center gap-2 -mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                    Indicadores del corte
+                  </span>
+                  <HelpTip clave="kpis" />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <StatsCard
                     title="Artículos Revisados"
@@ -353,7 +328,7 @@ export default function App() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-brand-text">
-                        Resumen por Sede
+                        Resumen por Sede <HelpTip clave="resumenSede" />
                       </h3>
                       <p className="text-sm text-brand-text-secondary">
                         Distribución de cobros y faltantes por almacén
@@ -375,9 +350,7 @@ export default function App() {
                             <span className="text-brand-text-secondary font-medium">
                               Artículos:
                             </span>
-                            <span className="font-bold text-brand-text">
-                              {sede.totalArticulos}
-                            </span>
+                            <span className="font-bold text-brand-text">{sede.totalArticulos}</span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-brand-text-secondary font-medium">
@@ -411,12 +384,12 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === "COBROS" && (
+            {activeTab === 'COBROS' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">
-                      Detalle de Cobros
+                      Detalle de Cobros <HelpTip clave="cobros" />
                     </h3>
                     <p className="text-sm text-brand-text-secondary">
                       Listado jerárquico de artículos y variaciones
@@ -430,12 +403,12 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === "ANÁLISIS" && (
+            {activeTab === 'ANÁLISIS' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">
-                      Análisis de Variaciones
+                      Análisis de Variaciones <HelpTip clave="analisis" />
                     </h3>
                     <p className="text-sm text-brand-text-secondary">
                       Exploración detallada de movimientos
@@ -447,29 +420,23 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === "CONFIABILIDAD" && (
-              <ReliabilityView
-                data={filteredArticles}
-                filters={filters}
-                setFilters={setFilters}
-              />
+            {activeTab === 'CONFIABILIDAD' && (
+              <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
             )}
 
-            {activeTab === "GERENCIAL" && (
+            {activeTab === 'GERENCIAL' && (
               <ManagementAnalysis
                 data={filteredArticles}
-                selectedSede={
-                  filters.sedes.length === 1 ? filters.sedes[0] : undefined
-                }
+                selectedSede={filters.sedes.length === 1 ? filters.sedes[0] : undefined}
               />
             )}
 
-            {activeTab === "EJECUTIVO" && (
+            {activeTab === 'EJECUTIVO' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-bold text-brand-text">
-                      Dashboard Ejecutivo
+                      Dashboard Ejecutivo <HelpTip clave="ejecutivo" />
                     </h3>
                     <p className="text-sm text-brand-text-secondary">
                       KPIs, tendencias y top productos
@@ -482,7 +449,7 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === "TRAZABILIDAD" && (
+            {activeTab === 'TRAZABILIDAD' && (
               <HistoricalTraceability
                 data={filteredArticles}
                 sedes={uniqueSedes}
@@ -491,7 +458,7 @@ export default function App() {
                 fileName={fileName}
                 onReset={() => {
                   setArticles([]);
-                  setFileName("");
+                  setFileName('');
                 }}
               />
             )}
@@ -502,121 +469,119 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Top Bar */}
-      <header className="relative bg-[#081423] text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
-        <div className="flex items-center gap-3">
-          <div className="bg-[#FBC519] p-2 rounded-lg">
-            <ShieldCheck className="w-6 h-6 text-white" />
+    <HelpProvider articles={filteredArticles}>
+      <div className="min-h-screen flex flex-col bg-background">
+        {/* Top Bar */}
+        <header className="relative bg-[#081423] text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#FBC519] p-2 rounded-lg">
+              <ShieldCheck className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight leading-none uppercase">
+                Cruces de Inventario
+              </h1>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">
+                Auditoría y Cobros por Sede
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight leading-none uppercase">
-              Cruces de Inventario
-            </h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">
-              Auditoría y Cobros por Sede
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-6">
-          {articles.length > 0 && (
-            <button
-              onClick={() => setMostrarCargador((v) => !v)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${
-                mostrarCargador
-                  ? "bg-[#FBC519] text-[#081423]"
-                  : "bg-white/10 hover:bg-white/20 text-white"
-              }`}
-              title="Cargar datos desde un archivo Excel local"
-            >
-              <Upload className="w-4 h-4" />
-              Cargar Excel
-            </button>
-          )}
-          <FileUpload
-            onDataLoaded={(data) => {
-              setArticles(data);
-              setMostrarCargador(false);
-            }}
-            onReset={() => {
-              setArticles([]);
-              setFileName("");
-              setMostrarCargador(false);
-            }}
-            onFileNameChange={(name) => setFileName(name)}
-            hasData={articles.length > 0}
-            forzarVisible={mostrarCargador}
-          />
-          {articles.length > 0 && (
-            <>
-              <div className="h-8 w-px bg-white/10"></div>
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-[#38BDF8] uppercase">
-                  Estado
-                </p>
-                <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>{" "}
-                  Sistema Activo
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </header>
-
-      {/* Navigation Tabs */}
-      {articles.length > 0 && (
-        <nav className="bg-[#0F1C2E] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
-          {(
-            [
-              "RESUMEN",
-              "ANÁLISIS",
-              "COBROS",
-              "CONFIABILIDAD",
-              "GERENCIAL",
-              "TRAZABILIDAD",
-              "EJECUTIVO",
-            ] as Tab[]
-          ).map((tab) => {
-            const Icon = {
-              RESUMEN: LayoutDashboard,
-              ANÁLISIS: BarChart2,
-              COBROS: DollarSign,
-              CONFIABILIDAD: ShieldCheck,
-              GERENCIAL: BarChart3,
-              TRAZABILIDAD: Activity,
-              EJECUTIVO: LayoutDashboard,
-            }[tab];
-
-            return (
+          <div className="flex items-center gap-6">
+            {articles.length > 0 && (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
-                  activeTab === tab
-                    ? "border-[#FBC519] text-secondary"
-                    : "border-transparent text-text-secondary hover:text-text-main"
+                onClick={() => setMostrarCargador((v) => !v)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${
+                  mostrarCargador
+                    ? 'bg-[#FBC519] text-[#081423]'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}
+                title="Cargar datos desde un archivo Excel local"
               >
-                <Icon className="w-4 h-4" />
-                {tab}
+                <Upload className="w-4 h-4" />
+                Cargar Excel
               </button>
-            );
-          })}
-        </nav>
-      )}
+            )}
+            {articles.length > 0 && <HelpTip clave="cargar" />}
+            <FileUpload
+              onDataLoaded={(data) => {
+                setArticles(data);
+                setMostrarCargador(false);
+              }}
+              onReset={() => {
+                setArticles([]);
+                setFileName('');
+                setMostrarCargador(false);
+              }}
+              onFileNameChange={(name) => setFileName(name)}
+              hasData={articles.length > 0}
+              forzarVisible={mostrarCargador}
+            />
+            {articles.length > 0 && (
+              <>
+                <div className="h-8 w-px bg-white/10"></div>
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-[#38BDF8] uppercase">Estado</p>
+                  <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>{' '}
+                    Sistema Activo
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </header>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        {renderContent()}
-      </main>
+        {/* Navigation Tabs */}
+        {articles.length > 0 && (
+          <nav className="bg-[#0F1C2E] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
+            {(
+              [
+                'RESUMEN',
+                'ANÁLISIS',
+                'COBROS',
+                'CONFIABILIDAD',
+                'GERENCIAL',
+                'TRAZABILIDAD',
+                'EJECUTIVO',
+              ] as Tab[]
+            ).map((tab) => {
+              const Icon = {
+                RESUMEN: LayoutDashboard,
+                ANÁLISIS: BarChart2,
+                COBROS: DollarSign,
+                CONFIABILIDAD: ShieldCheck,
+                GERENCIAL: BarChart3,
+                TRAZABILIDAD: Activity,
+                EJECUTIVO: LayoutDashboard,
+              }[tab];
 
-      {/* Footer */}
-      <footer className="bg-[#0F1C2E] border-t border-brand-border p-4 text-center text-[10px] text-[#8EA3BF] font-bold uppercase tracking-widest">
-        © {new Date().getFullYear()} PROMPT MAESTRO – SISTEMA DE AUDITORÍA DE
-        INVENTARIOS
-      </footer>
-    </div>
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
+                    activeTab === tab
+                      ? 'border-[#FBC519] text-secondary'
+                      : 'border-transparent text-text-secondary hover:text-text-main'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab}
+                </button>
+              );
+            })}
+          </nav>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 max-w-7xl mx-auto w-full">{renderContent()}</main>
+
+        {/* Footer */}
+        <footer className="bg-[#0F1C2E] border-t border-brand-border p-4 text-center text-[10px] text-[#8EA3BF] font-bold uppercase tracking-widest">
+          © {new Date().getFullYear()} PROMPT MAESTRO – SISTEMA DE AUDITORÍA DE INVENTARIOS
+        </footer>
+      </div>
+    </HelpProvider>
   );
 }
