@@ -215,7 +215,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-2 border-b border-[#243A57]">
+      <div className="flex gap-2 border-b border-[#243A57] items-center">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -230,6 +230,16 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
             {label}
           </button>
         ))}
+        <HelpTip
+          clave={
+            activeSection === 'variaciones'
+              ? 'avVariaciones'
+              : activeSection === 'consolidado'
+                ? 'avConsolidado'
+                : 'avCobros'
+          }
+          className="ml-2"
+        />
       </div>
 
       {/* VARIACIONES */}
