@@ -11,9 +11,9 @@ export interface InventoryMovement {
   /** Serie / Número del documento de HioPOS (ej. "CONTEORC / 4", "a / 1287"). */
   serie?: string;
   /** Naturaleza del documento: conteo físico, ajuste de sistema u otro. */
-  tipoDocumento?: "CONTEO" | "AJUSTE" | "OTRO";
+  tipoDocumento?: 'CONTEO' | 'AJUSTE' | 'OTRO';
   /** Calidad del dato: OK, REPARADA (variación recalculada por identidad contable) o SOSPECHOSA. */
-  calidad?: "OK" | "REPARADA" | "SOSPECHOSA";
+  calidad?: 'OK' | 'REPARADA' | 'SOSPECHOSA';
 }
 
 export interface ArticleSummary {
@@ -32,7 +32,7 @@ export interface ArticleSummary {
   stockFisico: number;
   stockEsperado: number;
   ajusteCobro: number;
-  confiabilidadTecnica: "ALTA" | "MEDIA" | "BAJA";
+  confiabilidadTecnica: 'ALTA' | 'MEDIA' | 'BAJA';
   costePromedio: number;
   ultimoCoste: number;
   totalCobro: number;
@@ -42,14 +42,14 @@ export interface ArticleSummary {
   reglaAplicada: string;
   perdidaPorMargen: number;
   dineroRecuperable: number;
-  tipo: "FALTANTE" | "SOBRANTE" | "SIN_VARIACION";
+  tipo: 'FALTANTE' | 'SOBRANTE' | 'SIN_VARIACION';
   confiabilidad?: number;
   totalFaltantes: number;
   totalSobrantes: number;
   cantidadACobrar: number;
   valorPerdida: number;
   valorSobrante: number;
-  severidad: "CRITICO" | "MEDIO" | "NORMAL";
+  severidad: 'CRITICO' | 'MEDIO' | 'NORMAL';
   /** true si el artículo es sub-receta / producto en proceso (no se cobra). */
   esSubReceta?: boolean;
   /** Motivo por el que no se genera cobro (ej. sub-receta, solo ajustes). */
@@ -61,7 +61,7 @@ export interface ArticleSummary {
   /** Serie del documento del último ciclo evaluado. */
   serieUltimoCiclo?: string;
   /** Tipo de documento del último ciclo (CONTEO físico, AJUSTE de sistema u OTRO). */
-  tipoDocumentoUltimoCiclo?: "CONTEO" | "AJUSTE" | "OTRO";
+  tipoDocumentoUltimoCiclo?: 'CONTEO' | 'AJUSTE' | 'OTRO';
   /** Costo unitario mediano de los movimientos (robusto frente a outliers). */
   costeMediano?: number;
   /** Nº de filas cuya variación fue reparada con la identidad Inv = Teórico + Var. */
@@ -86,7 +86,7 @@ export interface DashboardStats {
 export interface ReliabilityStats {
   sede: string;
   confiabilidad: number;
-  nivel: "Confiable" | "Aceptable" | "Riesgo" | "Crítico";
+  nivel: 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico';
   articulosEvaluados: number;
   totalArticulos?: number;
   articulosSinDiferencia: number;
@@ -130,7 +130,7 @@ export interface HistoricalPeriodStats {
   cobrables: number;
   valorCobro: number;
   variacionVsAnterior?: number;
-  estado: "Mejoró" | "Empeoró" | "Estable";
+  estado: 'Mejoró' | 'Empeoró' | 'Estable';
 }
 
 export interface HistoricalTraceabilityData {
@@ -146,7 +146,7 @@ export interface ProductStability {
   porcentajeFueraMargen: number;
   confiabilidad: number;
   impactoTotal: number;
-  estado: "Estable" | "Inestable" | "Crítico";
+  estado: 'Estable' | 'Inestable' | 'Crítico';
 }
 
 export interface ResponsableStability {
