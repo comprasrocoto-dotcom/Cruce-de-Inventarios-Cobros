@@ -15,12 +15,13 @@ import { Filters } from './components/Filters';
 import { InventoryTable } from './components/InventoryTable';
 import { RecipesView } from './components/RecipesView';
 import { HelpProvider, HelpTip } from './components/HelpTip';
+import type { PoliticaCobro } from './utils/inventory';
 import { ReliabilityView } from './components/ReliabilityView';
 import { ManagementAnalysis } from './components/ManagementAnalysis';
 import { ExportButtons } from './components/ExportButtons';
 import { StatsCard } from './components/StatsCard';
 import { ArticleSummary, GlobalFilters } from './types';
-import { getDashboardStats } from './utils/inventory';
+import { getDashboardStats, aplicarPoliticaCobro, POLITICAS_COBRO } from './utils/inventory';
 import { evaluarItem, resumenHorizonte } from './utils/confiabilidad';
 import { useEffect } from 'react';
 import {
@@ -36,6 +37,7 @@ import {
   BarChart3,
   Activity,
   TrendingUp,
+  Settings,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
@@ -49,6 +51,31 @@ type Tab =
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
+  // Política de cobro activa (Configuración de Cobro en el RESUMEN).
+  // Se persiste en el navegador para sobrevivir recargas.
+  const [politicaCobro, setPoliticaCobro] = useState<PoliticaCobro>(() => {
+    try {
+      const v = window.localStorage.getItem('politicaCobro');
+      if (v === 'COMPLETO' || v === 'EXCEDENTE' || v === 'SIN_MARGEN') return v;
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    return 'COMPLETO';
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('politicaCobro', politicaCobro);
+    } catch {
+      /* almacenamiento no disponible */
+    }
+  }, [politicaCobro]);
+
+  // Artículos con la política aplicada: recalcula cobros, banderas y pistas
+  // en caliente al cambiar el selector (copias nuevas -> React refresca todo).
+  const articlesConPolitica = useMemo(
+    () => aplicarPoliticaCobro(articles, politicaCobro),
+    [articles, politicaCobro]
+  );
   const [fileName, setFileName] = useState<string>('');
   // Muestra el panel de carga (dropdown) para subir un Excel aunque ya haya datos.
   const [mostrarCargador, setMostrarCargador] = useState(false);
@@ -86,7 +113,7 @@ export default function App() {
     const startDate = filters.fechaInicio ? new Date(filters.fechaInicio + 'T00:00:00') : null;
     const endDate = filters.fechaFin ? new Date(filters.fechaFin + 'T23:59:59') : null;
 
-    return articles
+    return articlesConPolitica
       .filter((art) => {
         const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
         const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
@@ -191,7 +218,7 @@ export default function App() {
         if (filters.status === 'sobrantes') return art.tipo === 'SOBRANTE';
         return true;
       });
-  }, [articles, filters]);
+  }, [articlesConPolitica, filters]);
 
   const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
 
@@ -342,7 +369,10 @@ export default function App() {
                         Distribución de cobros y faltantes por almacén
                       </p>
                     </div>
-                    <ExportButtons data={filteredArticles} />
+                    <ExportButtons
+                      data={filteredArticles}
+                      politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.sedes.map((sede) => (
@@ -406,6 +436,110 @@ export default function App() {
                     ))}
                   </div>
                 </div>
+
+                {/* ── CONFIGURACIÓN DE COBRO: reglas visibles + política seleccionable ── */}
+                <div className="bg-white rounded-2xl border border-brand-border shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-brand-border flex items-center gap-3 bg-[#132238]/50">
+                    <div className="bg-[#0a1a2d] p-2 rounded-lg text-[#FBC519]">
+                      <Settings className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-text-main uppercase tracking-tight">
+                        Configuración de Cobro <HelpTip clave="configuracion" />
+                      </h3>
+                      <p className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">
+                        Reglas de tolerancia por unidad · política aplicada a toda la app y a los
+                        reportes
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Reglas de tolerancia (solo lectura: el contrato de la auditoría) */}
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-3">
+                        Margen de tolerancia por unidad de medida
+                      </p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#132238] border border-brand-border">
+                          <div>
+                            <span className="font-bold text-text-main">UNIDADES y COPAS</span>
+                            <p className="text-xs text-text-secondary">
+                              Lo contable se cuenta exacto: no hay excusa de báscula.
+                            </p>
+                          </div>
+                          <span className="font-black text-status-faltante whitespace-nowrap">
+                            Sin margen
+                          </span>
+                        </div>
+                        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#132238] border border-brand-border">
+                          <div>
+                            <span className="font-bold text-text-main">ONZAS</span>
+                            <p className="text-xs text-text-secondary">
+                              El error normal del jigger al servir.
+                            </p>
+                          </div>
+                          <span className="font-black text-amber-400 whitespace-nowrap">
+                            ±1 onza
+                          </span>
+                        </div>
+                        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#132238] border border-brand-border">
+                          <div>
+                            <span className="font-bold text-text-main">GRAMOS</span>
+                            <p className="text-xs text-text-secondary">
+                              Mermas normales de pesaje y porcionado. Piso de 100 g para teóricos
+                              muy pequeños.
+                            </p>
+                          </div>
+                          <span className="font-black text-status-sobrante whitespace-nowrap">
+                            2.5% del teórico
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Política de cobro (seleccionable, recalcula en vivo) */}
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-3">
+                        Política de cobro activa
+                      </p>
+                      <div className="space-y-2">
+                        {(Object.keys(POLITICAS_COBRO) as PoliticaCobro[]).map((pol) => (
+                          <button
+                            key={pol}
+                            onClick={() => setPoliticaCobro(pol)}
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${
+                              politicaCobro === pol
+                                ? 'bg-[#0a1a2d] border-[#FBC519] ring-1 ring-[#FBC519]/40'
+                                : 'bg-[#132238] border-brand-border hover:border-[#38BDF8]/50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`font-bold text-sm ${politicaCobro === pol ? 'text-[#FBC519]' : 'text-text-main'}`}
+                              >
+                                {POLITICAS_COBRO[pol].etiqueta}
+                              </span>
+                              {politicaCobro === pol && (
+                                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FBC519] text-[#081423]">
+                                  Activa
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-text-secondary mt-1">
+                              {POLITICAS_COBRO[pol].descripcion}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-text-secondary mt-3 italic">
+                        Al cambiarla, cobros, banderas y totales se recalculan al instante en toda
+                        la aplicación. La confiabilidad NO cambia: la exactitud del inventario es
+                        independiente de cuánto se decida descontar.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -416,11 +550,20 @@ export default function App() {
                     <h3 className="text-xl font-bold text-brand-text">
                       Detalle de Cobros <HelpTip clave="cobros" />
                     </h3>
+                    <span
+                      className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-[#0a1a2d] text-[#FBC519] border border-[#FBC519]/40"
+                      title={POLITICAS_COBRO[politicaCobro].descripcion}
+                    >
+                      Política: {POLITICAS_COBRO[politicaCobro].etiqueta}
+                    </span>
                     <p className="text-sm text-brand-text-secondary">
                       Listado jerárquico de artículos y variaciones
                     </p>
                   </div>
-                  <ExportButtons data={filteredArticles} />
+                  <ExportButtons
+                    data={filteredArticles}
+                    politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                  />
                 </div>
                 <InventoryTable data={filteredArticles} />
                 {/* Cruce con el registro de recetas: sobrantes fantasma. */}
@@ -467,8 +610,15 @@ export default function App() {
                       KPIs, tendencias y top productos
                     </p>
                   </div>
-                  <ExportButtons data={filteredArticles} />
-                  <PDFReport data={filteredArticles} filters={filters} />
+                  <ExportButtons
+                    data={filteredArticles}
+                    politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                  />
+                  <PDFReport
+                    data={filteredArticles}
+                    filters={filters}
+                    politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                  />
                 </div>
                 <ExecutiveDashboard data={filteredArticles} />
               </div>
