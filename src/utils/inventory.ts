@@ -27,6 +27,7 @@ import {
 } from '../types';
 
 import {
+  cicloDesdeMovimientos,
   evaluarItem,
   calcularPerdidaEconomica,
   calcularEstadisticasConfiabilidad,
@@ -217,24 +218,26 @@ function findInternalName(header: string, index: number): string | null {
 }
 
 /**
- * Parser numérico regional único y robusto.
+ * Parser numérico con CONVENCIÓN FIJA del proyecto:
+ *   - PUNTO (.) = separador DECIMAL
+ *   - COMA  (,) = separador de MILES
  *
- * El export de HioPOS mezcla convenciones entre conteos:
- *   - Colombiana: punto = miles, coma = decimal  ("3.302,80", "6.220" = 6220)
- *   - US:         coma = miles,  punto = decimal ("14,554.22", "6.22" = 6.22)
+ * Decisión de negocio (Restaurantes Rocoto): el proyecto trabaja siempre con
+ * esta convención. Es además el formato exacto que producen las dos vías de
+ * entrada: SheetJS con raw:false emite strings estilo "16,251.20" (los códigos
+ * de formato de Excel son independientes del locale), y el Apps Script entrega
+ * números reales o los normaliza en origen con esta misma regla.
  *
- * Reglas (aplicadas al texto ya limpio de $, espacios y NBSP):
- *   1. Ambos separadores presentes → el ÚLTIMO que aparece es el decimal.
- *   2. Un mismo separador repetido → son separadores de miles (se eliminan).
- *   3. Un único separador:
- *      - con 1, 2 o 4+ dígitos después → decimal ("94,67", "-321,66646").
- *      - con exactamente 3 dígitos después → miles ("6.220" → 6220),
- *        salvo que la parte entera sea "" o "0" ("0,045" → 0.045) o tenga
- *        más de 3 dígitos ("1234,567" → decimal, agrupación inválida).
+ * Se eliminó la heurística regional anterior: su regla de ambigüedad
+ * ("3 dígitos tras un separador único = miles") convertía costos decimales
+ * legítimos como "32.011" en 32011 (×1000), inflando los cobros a cifras
+ * imposibles. Con convención fija no hay ambigüedad que adivinar.
  *
- * La ambigüedad residual (un valor genuinamente decimal con exactamente
- * 3 decimales, ej. "2,500" = 2.5) se mitiga aguas abajo con la identidad
- * contable Inv = Teórico + Var (ver reparación en normalizeData).
+ * Defensas que se conservan:
+ *   - "$", espacios y NBSP se eliminan; negativos con "-" o entre paréntesis.
+ *   - Si llegan varios puntos (dato malformado para esta convención), se toma
+ *     el último como decimal; la identidad contable Inv = Teórico + Var repara
+ *     la variación aguas abajo si el valor quedó inconsistente.
  */
 export function parseNumeroRegional(raw: unknown): number {
   if (typeof raw === 'number') return isFinite(raw) ? raw : 0;
@@ -254,29 +257,13 @@ export function parseNumeroRegional(raw: unknown): number {
     str = str.slice(1, -1);
   }
 
-  const tienePunto = str.includes('.');
-  const tieneComa = str.includes(',');
-  let normalizado = str;
+  // Coma = miles: se elimina siempre.
+  str = str.split(',').join('');
 
-  if (tienePunto && tieneComa) {
-    // Regla 1: el último separador que aparece es el decimal
-    const decimal = str.lastIndexOf('.') > str.lastIndexOf(',') ? '.' : ',';
-    const miles = decimal === '.' ? ',' : '.';
-    normalizado = str.split(miles).join('');
-    if (decimal === ',') normalizado = normalizado.replace(',', '.');
-  } else if (tienePunto || tieneComa) {
-    const sep = tienePunto ? '.' : ',';
-    const partes = str.split(sep);
-    if (partes.length > 2) {
-      // Regla 2: separador repetido → miles ("484.945.432" → 484945432)
-      normalizado = partes.join('');
-    } else {
-      const [entera, fraccion] = partes;
-      const esMiles =
-        fraccion.length === 3 && entera !== '' && entera !== '0' && entera.length <= 3;
-      normalizado = esMiles ? entera + fraccion : entera + '.' + fraccion; // Regla 3
-    }
-  }
+  // Punto = decimal. Si hay varios (malformado), el último es el decimal.
+  const partes = str.split('.');
+  const normalizado =
+    partes.length > 2 ? partes.slice(0, -1).join('') + '.' + partes[partes.length - 1] : str;
 
   const num = parseFloat(normalizado);
   if (!isFinite(num)) return 0;
@@ -300,6 +287,13 @@ export function clasificarDocumento(serie: string): 'CONTEO' | 'AJUSTE' | 'OTRO'
   if (/^A\s*\//.test(s)) return 'CONTEO';
   return 'OTRO';
 }
+
+/**
+ * Umbral de plausibilidad por artículo: un cobro individual por encima de este
+ * valor se marca "requiere revisión" (no se oculta ni se elimina). Ajustable
+ * según la realidad del negocio.
+ */
+export const UMBRAL_COBRO_REVISION = 5_000_000;
 
 /** Mediana de los valores positivos de una lista (robusta frente a outliers). */
 function medianaPositiva(valores: number[]): number {
@@ -807,6 +801,50 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
     return summary;
   });
 
+  // 🚩 BANDERAS DE REVISIÓN — hallazgos de calidad del ERP que la app debe
+  // exponer, no cobrar a ciegas ni ocultar:
+  //  a) Coste unitario atípico: el mismo artículo con costo >5× la mediana
+  //     entre sedes (caso típico: costo por KILO cargado en una línea de
+  //     GRAMOS). El cobro se mantiene visible pero marcado para revisión.
+  //  b) Cobro que supera el umbral de plausibilidad por artículo.
+  const costesPorArticulo = new Map<string, number[]>();
+  articles.forEach((a) => {
+    const v = a.costeMediano || a.ultimoCoste || a.costePromedio;
+    if (v > 0) {
+      if (!costesPorArticulo.has(a.articulo)) costesPorArticulo.set(a.articulo, []);
+      costesPorArticulo.get(a.articulo)!.push(v);
+    }
+  });
+  const medianaDe = (vals: number[]) => {
+    const ord = [...vals].sort((x, y) => x - y);
+    const mitad = Math.floor(ord.length / 2);
+    return ord.length % 2 === 0 ? (ord[mitad - 1] + ord[mitad]) / 2 : ord[mitad];
+  };
+  articles.forEach((a) => {
+    const motivos: string[] = [];
+    const v = a.costeMediano || a.ultimoCoste || a.costePromedio;
+    const pares = costesPorArticulo.get(a.articulo) || [];
+    if (pares.length >= 2) {
+      const medianaGlobal = medianaDe(pares);
+      if (medianaGlobal > 0 && v > medianaGlobal * 5) {
+        motivos.push(
+          `Coste unitario atípico ($${Math.round(v).toLocaleString('es-CO')}/u vs mediana ` +
+            `$${Math.round(medianaGlobal).toLocaleString('es-CO')} en otras sedes; posible costo por kilo)`
+        );
+      }
+    }
+    if (a.totalCobro > UMBRAL_COBRO_REVISION) {
+      motivos.push(
+        `Cobro supera umbral de revisión ($${UMBRAL_COBRO_REVISION.toLocaleString('es-CO')})`
+      );
+    }
+    if (motivos.length > 0) {
+      a.requiereRevision = true;
+      a.motivoRevision = motivos.join(' · ');
+      debugInfo.articulosEnRevision = (debugInfo.articulosEnRevision || 0) + 1;
+    }
+  });
+
   return { articles, errors, debug: debugInfo };
 }
 
@@ -878,17 +916,26 @@ export function getReliabilitySummary(
 
       const nivel = obtenerEstado(confiabilidad);
 
-      const variacionTotal = arts.reduce((acc, a) => acc + a.totalDiferencia, 0);
+      // Variación e impacto medidos sobre el ÚLTIMO CICLO presente (coherente
+      // con filtros de fecha) y sin sub-recetas; valorados con costo robusto.
+      const evaluables = arts.filter((a) => !a.esSubReceta);
 
-      const impactoEconomico = arts.reduce(
-        (acc, a) => acc + Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio),
+      const varCiclo = (a: ArticleSummary) =>
+        cicloDesdeMovimientos(a.movements)?.variacion ?? a.totalDiferencia;
+
+      const vu = (a: ArticleSummary) => a.costeMediano || a.ultimoCoste || a.costePromedio;
+
+      const variacionTotal = evaluables.reduce((acc, a) => acc + varCiclo(a), 0);
+
+      const impactoEconomico = evaluables.reduce(
+        (acc, a) => acc + Math.abs(varCiclo(a)) * vu(a),
         0
       );
 
-      const sortedByImpact = [...arts].sort((a, b) => {
-        const impactA = Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio);
+      const sortedByImpact = [...evaluables].sort((a, b) => {
+        const impactA = Math.abs(varCiclo(a)) * vu(a);
 
-        const impactB = Math.abs(b.totalDiferencia) * (b.ultimoCoste || b.costePromedio);
+        const impactB = Math.abs(varCiclo(b)) * vu(b);
 
         return impactB - impactA;
       });
@@ -896,23 +943,23 @@ export function getReliabilitySummary(
       const topArticulosCriticos = sortedByImpact.slice(0, 10).map((a) => ({
         articulo: a.articulo,
 
-        variacion: a.totalDiferencia,
+        variacion: varCiclo(a),
 
-        impacto: Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio),
+        impacto: Math.abs(varCiclo(a)) * vu(a),
 
         unidad: a.subarticulo,
       }));
 
-      const sortedByReliability = [...arts].sort(
-        (a, b) => Math.abs(a.totalDiferencia) - Math.abs(b.totalDiferencia)
+      const sortedByReliability = [...evaluables].sort(
+        (a, b) => Math.abs(varCiclo(a)) - Math.abs(varCiclo(b))
       );
 
       const topArticulosConfiables = sortedByReliability.slice(0, 10).map((a) => ({
         articulo: a.articulo,
 
-        variacion: a.totalDiferencia,
+        variacion: varCiclo(a),
 
-        impacto: Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio),
+        impacto: Math.abs(varCiclo(a)) * vu(a),
 
         unidad: a.subarticulo,
       }));
