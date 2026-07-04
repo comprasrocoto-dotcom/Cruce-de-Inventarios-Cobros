@@ -93,6 +93,12 @@ export interface ReliabilityStats {
   nivel: 'Confiable' | 'Aceptable' | 'Riesgo' | 'Crítico';
   articulosEvaluados: number;
   totalArticulos?: number;
+  /** Exactitud por artículos (IRA base conteo): % dentro de tolerancia. */
+  exactitudArticulos?: number;
+  /** Exactitud por valor (IRA base dinero): 1 − |desviación|$/teórico$. */
+  exactitudValor?: number;
+  /** Valor del inventario teórico del ciclo evaluado. */
+  valorInventarioTeorico?: number;
   articulosSinDiferencia: number;
   articulosConDiferencia: number;
   variacionTotal: number;
