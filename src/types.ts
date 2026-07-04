@@ -64,6 +64,10 @@ export interface ArticleSummary {
   tipoDocumentoUltimoCiclo?: 'CONTEO' | 'AJUSTE' | 'OTRO';
   /** Costo unitario mediano de los movimientos (robusto frente a outliers). */
   costeMediano?: number;
+  /** Pista de auditoría: faltante cobrable con un sobrante fuerte en la misma
+   *  sede y subfamilia — patrón típico de confusión de códigos al contar
+   *  (mismo producto bajo dos referencias). Validar antes de descontar. */
+  posibleConfusion?: string;
   /** Nº de filas cuya variación fue reparada con la identidad Inv = Teórico + Var. */
   filasReparadas?: number;
   /** true si el cobro debe revisarse manualmente (coste atípico, monto implausible). */
@@ -78,12 +82,19 @@ export interface SedeSummary {
   totalArticulos: number;
   totalFaltantes: number;
   totalCobrables: number;
+  /** Artículos con sobrante neto (síntoma de proceso: recetas sin registrar,
+   *  compras sin cargar, errores de unidad). No cobran, pero se vigilan. */
+  totalSobrantes: number;
+  /** Valor a costo de esos sobrantes (plata inmovilizada o proceso roto). */
+  valorSobranteSede: number;
 }
 export interface DashboardStats {
   totalArticulos: number;
   totalFaltantes: number;
   totalCobrables: number;
   valorTotalCobro: number;
+  totalSobrantes: number;
+  valorSobrante: number;
   sedes: SedeSummary[];
 }
 
