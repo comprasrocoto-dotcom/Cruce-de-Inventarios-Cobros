@@ -5,8 +5,14 @@
 import React from 'react';
 import { FileDown, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+// jspdf-autotable v5: se usa la función importada (el parche de prototipo
+// `doc.autoTable` del v3 ya no existe; por eso el PDF "no generaba nada").
+import autoTable from 'jspdf-autotable';
+import { agruparCobrablesParaReporte } from '../utils/agrupacion';
+import { RecetasPayload } from '../utils/recetas';
+
+export type VarianteReporte = 'jerarquico' | 'agrupado';
 import { ArticleSummary } from '../types';
 import { format, startOfMonth, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,14 +22,29 @@ interface ExportButtonsProps {
   onlyCobrables?: boolean;
   /** Etiqueta de la política de cobro activa (queda en el encabezado del Excel). */
   politicaLabel?: string;
+  /**
+   * 'jerarquico' (por defecto): reporte clásico por fechas.
+   * 'agrupado': mismos encabezados, pero los artículos ORDENADOS por grupo
+   * (recetas primero, luego semejanza de nombre) — plano en Excel, con
+   * separadores de grupo en el PDF.
+   */
+  variante?: VarianteReporte;
+  /** Catálogo de recetas (RecetasAPI) para la agrupación por recetas. */
+  recetasPayload?: RecetasPayload | null;
 }
 
-export const ExportButtons: React.FC<ExportButtonsProps> = ({
-  data,
-  onlyCobrables = false,
-  politicaLabel,
-}) => {
-  const exportToExcel = () => {
+/**
+ * Construye el libro de cobros (una hoja por sede). EXPORTADO para poder
+ * probarlo con datos reales sin pasar por el DOM — estos reportes ya nos
+ * fallaron dos veces en silencio.
+ */
+export function construirLibroCobros(
+  data: ArticleSummary[],
+  politicaLabel?: string,
+  variante: VarianteReporte = 'jerarquico',
+  recetasPayload?: RecetasPayload | null
+): XLSX.WorkBook {
+  {
     const workbook = XLSX.utils.book_new();
 
     // 1. Identify all unique dates (normalized to start of day) and group them by month
@@ -47,19 +68,30 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
     const sedes = Array.from(new Set(data.map((a) => a.sede))) as string[];
 
     sedes.forEach((sedeName) => {
-      // Filter only cobrable articles for this sede
-      const sedeArticles = data.filter((a) => a.sede === sedeName && a.debeCobrar);
+      // Solo cobrables de esta sede; en la variante 'agrupado' se ordenan
+      // por grupos (recetas -> semejanza de nombre -> solos), lista PLANA.
+      let sedeArticles = data.filter((a) => a.sede === sedeName && a.debeCobrar);
+      if (variante === 'agrupado') {
+        sedeArticles = agruparCobrablesParaReporte(sedeArticles, recetasPayload).flatMap(
+          (g) => g.articulos
+        );
+      }
       if (sedeArticles.length === 0) return;
 
       const rows: any[][] = [];
       const merges: XLSX.Range[] = [];
 
-      // --- HEADER SECTION (Rows 0-3) ---
+      // --- HEADER SECTION (banner dinámico) ---
       rows.push(['REPORTE DE COBROS POR AJUSTES DE INVENTARIO']);
       rows.push([`Sede / Almacén: ${sedeName}`]);
       rows.push([`Fecha de generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`]);
       if (politicaLabel) rows.push([`Política de cobro: ${politicaLabel}`]);
+      const bannerRows = rows.length; // cuántas filas de banner hay (3 o 4)
       rows.push([]); // Spacer
+      // Fila donde comienzan los ENCABEZADOS de la tabla. Antes estaba
+      // cableada en 4/5 y al insertar la fila de política todo se corría:
+      // los merges caían sobre filas equivocadas y "desaparecían" encabezados.
+      const rTH = rows.length;
 
       // --- DYNAMIC TABLE HEADERS (Rows 4-5) ---
       const row4: any[] = ['Artículo', 'Unidad'];
@@ -90,8 +122,8 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
 
         // Merge month header across dates + total column
         merges.push({
-          s: { r: 4, c: currentCol },
-          e: { r: 4, c: currentCol + dates.length },
+          s: { r: rTH, c: currentCol },
+          e: { r: rTH, c: currentCol + dates.length },
         });
 
         currentCol += dates.length + 1;
@@ -102,11 +134,11 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
       row5.push('', '', '');
 
       // Merge static headers vertically
-      merges.push({ s: { r: 4, c: 0 }, e: { r: 5, c: 0 } }); // Artículo
-      merges.push({ s: { r: 4, c: 1 }, e: { r: 5, c: 1 } }); // Unidad
-      merges.push({ s: { r: 4, c: currentCol }, e: { r: 5, c: currentCol } }); // Total General
-      merges.push({ s: { r: 4, c: currentCol + 1 }, e: { r: 5, c: currentCol + 1 } }); // Coste Línea
-      merges.push({ s: { r: 4, c: currentCol + 2 }, e: { r: 5, c: currentCol + 2 } }); // Total Cobro
+      merges.push({ s: { r: rTH, c: 0 }, e: { r: rTH + 1, c: 0 } }); // Artículo
+      merges.push({ s: { r: rTH, c: 1 }, e: { r: rTH + 1, c: 1 } }); // Unidad
+      merges.push({ s: { r: rTH, c: currentCol }, e: { r: rTH + 1, c: currentCol } }); // Total General
+      merges.push({ s: { r: rTH, c: currentCol + 1 }, e: { r: rTH + 1, c: currentCol + 1 } }); // Coste Línea
+      merges.push({ s: { r: rTH, c: currentCol + 2 }, e: { r: rTH + 1, c: currentCol + 2 } }); // Total Cobro
 
       rows.push(row4);
       rows.push(row5);
@@ -145,28 +177,28 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
           });
         }
 
-        const costToUse = art.ultimoCoste || art.costePromedio || 0;
-        const totalCobro = Math.abs(art.totalDiferencia) * costToUse;
-
-        // Always use art.totalDiferencia (raw sum from base records) for the final column
-        row.push(art.totalDiferencia, costToUse, totalCobro);
+        // Montos alineados con el MOTOR de la app: costo mediano (robusto a
+        // costos dañados del ERP) y el cobro de la POLÍTICA activa — antes el
+        // Excel recalculaba por su cuenta y podía discrepar de la pantalla.
+        const costToUse = art.costeMediano || art.ultimoCoste || art.costePromedio || 0;
+        row.push(art.totalDiferencia, costToUse, art.totalCobro);
         rows.push(row);
       });
 
       const worksheet = XLSX.utils.aoa_to_sheet(rows);
 
       // --- STYLING & CONFIGURATION ---
-      // Top level merges
-      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: row4.length - 1 } });
-      merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: row4.length - 1 } });
-      merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: row4.length - 1 } });
+      // Banner: una fusión por cada fila del banner (3 o 4 según política)
+      for (let b = 0; b < bannerRows; b++) {
+        merges.push({ s: { r: b, c: 0 }, e: { r: b, c: row4.length - 1 } });
+      }
 
       worksheet['!merges'] = merges;
 
       // Auto-width
       const wscols = row4.map((_, i) => {
         let maxLen = 10;
-        rows.slice(4).forEach((r) => {
+        rows.slice(rTH).forEach((r) => {
           const val = r[i]?.toString() || '';
           if (val.length > maxLen) maxLen = val.length;
         });
@@ -178,49 +210,84 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
       XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
     });
 
-    if (workbook.SheetNames.length === 0) {
-      alert('No hay datos de cobros para exportar.');
-      return;
-    }
+    return workbook;
+  }
+}
 
-    XLSX.writeFile(workbook, `Reporte_Cobros_Jerarquico_${format(new Date(), 'yyyyMMdd')}.xlsx`);
-  };
-
-  const exportToPDF = () => {
+/** Construye el documento PDF de cobros. EXPORTADO por la misma razón. */
+export function construirPDFCobros(
+  data: ArticleSummary[],
+  politicaLabel?: string,
+  variante: VarianteReporte = 'jerarquico',
+  recetasPayload?: RecetasPayload | null
+): jsPDF | null {
+  {
     const doc = new jsPDF('l', 'mm', 'a4');
     const filteredData = data.filter((a) => a.debeCobrar);
 
-    if (filteredData.length === 0) {
-      alert('No hay datos de cobros para exportar.');
-      return;
-    }
+    if (filteredData.length === 0) return null;
 
     doc.setFontSize(18);
-    doc.text('Reporte Final de Cobros por Sede', 14, 22);
+    doc.text(
+      variante === 'agrupado'
+        ? 'Reporte de Cobros Agrupado (recetas y semejanza)'
+        : 'Reporte Final de Cobros por Sede',
+      14,
+      22
+    );
 
-    doc.setFontSize(10);
-    doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
+    doc.setFontSize(9);
+    doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 29);
+    if (politicaLabel) doc.text(`Política de cobro: ${politicaLabel}`, 14, 34);
 
-    const tableData = filteredData.map((a) => [
+    const fmtCOP = (n: number) =>
+      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(n);
+    const filaDe = (a: ArticleSummary) => [
       a.sede,
       a.articulo,
       a.subarticulo,
-      a.totalDiferencia.toLocaleString(),
-      'COBRA',
-      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(
-        a.ultimoCoste || a.costePromedio
-      ),
-      new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(
-        Math.abs(a.totalDiferencia) * (a.ultimoCoste || a.costePromedio)
-      ),
-    ]);
+      (a.variacionUltimoCiclo ?? a.totalDiferencia).toLocaleString('es-CO'),
+      a.requiereRevision ? 'REVISAR' : 'COBRA',
+      fmtCOP(a.costeMediano || a.ultimoCoste || a.costePromedio || 0),
+      fmtCOP(a.totalCobro),
+    ];
 
-    (doc as any).autoTable({
-      startY: 35,
-      head: [['Sede', 'Artículo', 'Unidad', 'Diferencia Total', 'Estado', 'Costo', 'Total Cobro']],
+    let tableData: any[] = [];
+    if (variante === 'agrupado') {
+      // Agrupación por sede: separador de grupo (fila fusionada) + artículos.
+      const sedes = Array.from(new Set(filteredData.map((a) => a.sede)));
+      sedes.forEach((sede) => {
+        const grupos = agruparCobrablesParaReporte(
+          filteredData.filter((a) => a.sede === sede),
+          recetasPayload
+        );
+        grupos.forEach((g) => {
+          tableData.push([
+            {
+              content: `${sede}  ·  ${g.etiqueta}  ·  ${g.articulos.length} art. — ${fmtCOP(g.totalCobro)}`,
+              colSpan: 7,
+              styles: {
+                fillColor: g.tipo === 'RECETA' ? [10, 42, 61] : [40, 40, 48],
+                textColor: [251, 197, 25],
+                fontStyle: 'bold',
+              },
+            },
+          ]);
+          g.articulos.forEach((a) => tableData.push(filaDe(a)));
+        });
+      });
+    } else {
+      tableData = filteredData.map(filaDe);
+    }
+
+    autoTable(doc, {
+      startY: politicaLabel ? 38 : 35,
+      head: [
+        ['Sede', 'Artículo', 'Unidad', 'Dif. Neta Horizonte', 'Estado', 'Costo', 'Total Cobro'],
+      ],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [31, 58, 95] }, // #1F3A5F
+      headStyles: { fillColor: [31, 58, 95] },
       styles: { fontSize: 8 },
       columnStyles: {
         3: { halign: 'right' },
@@ -229,7 +296,36 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
       },
     });
 
-    doc.save('Reporte_Cobros.pdf');
+    return doc;
+  }
+}
+
+export const ExportButtons = ({
+  data,
+  onlyCobrables = false,
+  politicaLabel,
+  variante = 'jerarquico',
+  recetasPayload,
+}: ExportButtonsProps) => {
+  void onlyCobrables;
+  const exportToExcel = () => {
+    const wb = construirLibroCobros(data, politicaLabel, variante, recetasPayload);
+    if (wb.SheetNames.length === 0) {
+      alert('No hay datos de cobros para exportar.');
+      return;
+    }
+    XLSX.writeFile(
+      wb,
+      `Reporte_Cobros_${variante === 'agrupado' ? 'Agrupado' : 'Jerarquico'}_${format(new Date(), 'yyyyMMdd')}.xlsx`
+    );
+  };
+  const exportToPDF = () => {
+    const doc = construirPDFCobros(data, politicaLabel, variante, recetasPayload);
+    if (!doc) {
+      alert('No hay datos de cobros para exportar.');
+      return;
+    }
+    doc.save(variante === 'agrupado' ? 'Reporte_Cobros_Agrupado.pdf' : 'Reporte_Cobros.pdf');
   };
 
   return (
@@ -239,14 +335,14 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
         className="flex items-center space-x-2 bg-[#27AE60] hover:bg-[#1E8449] text-white px-4 py-2 rounded-[6px] text-sm font-bold transition-all shadow-sm"
       >
         <FileDown className="w-4 h-4" />
-        <span>Excel Jerárquico</span>
+        <span>{variante === 'agrupado' ? 'Excel Cobros Agrupado' : 'Excel Jerárquico'}</span>
       </button>
       <button
         onClick={exportToPDF}
         className="flex items-center space-x-2 bg-[#EB5757] hover:bg-[#C0392B] text-white px-4 py-2 rounded-[6px] text-sm font-bold transition-all shadow-sm"
       >
         <FileText className="w-4 h-4" />
-        <span>PDF Cobros</span>
+        <span>{variante === 'agrupado' ? 'PDF Cobros Agrupado' : 'PDF Cobros'}</span>
       </button>
     </div>
   );
