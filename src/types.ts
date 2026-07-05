@@ -39,6 +39,10 @@ export interface ArticleSummary {
   debeCobrar: boolean;
   dentroDeTolerancia: boolean;
   margenError: number;
+  /** Base teórica del horizonte (Σ|Stock a Fecha| del rango): la base sobre la
+   *  que se calcula el margen porcentual. Se persiste para poder recalcular
+   *  márgenes en caliente al cambiar la Configuración de Cobro. */
+  baseTeorica?: number;
   reglaAplicada: string;
   perdidaPorMargen: number;
   dineroRecuperable: number;
