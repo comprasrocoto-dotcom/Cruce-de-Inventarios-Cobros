@@ -1356,7 +1356,8 @@ export function getHistoricalTraceability(
     articulo?: string;
     start?: Date;
     end?: Date;
-  }
+  },
+  configMargenes?: ConfigMargenes
 ): HistoricalTraceabilityData {
   const periodMap = new Map<string, ArticleSummary[]>();
 
@@ -1429,7 +1430,7 @@ export function getHistoricalTraceability(
         stockEsperado: movements.reduce((acc, m) => acc + m.stockFecha, 0) / movements.length,
       };
 
-      const evaluado = evaluarItem(baseArt as ArticleSummary);
+      const evaluado = evaluarItem(baseArt as ArticleSummary, configMargenes);
 
       const virtualArt: ArticleSummary = {
         ...art,
