@@ -227,13 +227,6 @@ entrega (los reportes fallaron dos veces en silencio antes de este refactor).
 - **Referencias del corte vivo** (Listado 11/jun–01/jul, config default): 2.518 artículos ·
   556 cobrables · **$85.023.441** · 14 banderas · 812 sobrantes ≈ $99.7M.
 
-## Pendientes conocidos
-
-1. Borrar `src/components/RecipesView (1).tsx` (duplicado accidental en GitHub).
-2. El export actual del listado viene con la columna Centro de Costos sin diligenciar (CC=0);
-   al descargarla con datos, el filtro de CC se poblará solo.
-3. Versionar `apps-script/` en el repositorio (recomendado).
-
 ---
 
 *Construido iterativamente con validación contra datos de producción en cada entrega:
