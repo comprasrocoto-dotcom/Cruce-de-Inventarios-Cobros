@@ -748,9 +748,9 @@ export const AYUDAS: Record<
     },
   },
 
-  // ══════════════ ANÁLISIS: SECCIONES INTERNAS ══════════════
+  // ══════════════ ANÁLISIS: SECCIONES INTERNAS (5) ══════════════
   avVariaciones: {
-    titulo: 'Sección Variaciones',
+    titulo: 'Sección Variaciones — ¿qué pasó, artículo por artículo?',
     contenido: ({ articles }) => {
       const top = articles
         .filter((a) => !a.esSubReceta)
@@ -764,19 +764,21 @@ export const AYUDAS: Record<
       return (
         <>
           <P>
-            Responde "<b>¿qué pasó, artículo por artículo?</b>": el detalle de cada producto con su
-            variación en el horizonte, para explorar con el buscador y los filtros.
+            Es la <b>mesa de trabajo del auditor</b>: cada producto con su faltante total del corte,
+            su última fecha de conteo y su valor. Aquí no se decide nada todavía — se <b>explora</b>{' '}
+            para encontrar el hilo del que tirar.
           </P>
           <P>
-            Léela en pesos, no en porcentajes: un descuadre del 40% en un condimento vale poco; uno
-            del 4% en tu proteína estrella puede ser millones. Aquí es donde se encuentra el "hilo"
-            del que tirar antes de ir a la sección de Cobros.
+            <b>Cómo se usa bien:</b> ordena mentalmente por plata, no por cantidad ni porcentaje.
+            Perder 40% de un condimento de $2.000 el kilo es anécdota; perder 4% del salmón es
+            hemorragia. Y usa el campo de filtro del listado para aterrizar en un producto o sede
+            sin mover los Filtros Avanzados globales.
           </P>
           {top ? (
             <Ej>
-              El artículo con mayor desviación en plata del corte es <b>{top.articulo}</b> (
-              {top.sede}): {fmtN(top.variacionUltimoCiclo ?? top.totalDiferencia)} {top.subarticulo}
-              .
+              El mayor desvío en plata del corte actual es <b>{top.articulo}</b> ({top.sede}):{' '}
+              {fmtN(top.variacionUltimoCiclo ?? top.totalDiferencia)} {top.subarticulo}. Por ahí
+              empezaría la auditoría.
             </Ej>
           ) : (
             <SinDatos />
@@ -787,54 +789,55 @@ export const AYUDAS: Record<
   },
 
   avConsolidado: {
-    titulo: 'Sección Consolidado',
+    titulo: 'Sección Consolidado — ¿el problema es la sede o el producto?',
     contenido: () => (
       <>
         <P>
-          Responde "<b>¿qué productos fallan sin importar la sede?</b>": suma el mismo producto a
-          través de todas las sedes del corte.
+          Suma el <b>mismo producto a través de todas las sedes</b> del corte. Es la sección que
+          responde la pregunta más importante del diagnóstico: ¿este descuadre sigue a la sede o
+          sigue al producto?
         </P>
         <P>
-          Es la vista que separa dos problemas muy distintos: si un producto descuadra{' '}
-          <b>en una sola sede</b>, el problema es de esa operación (conteo, robo, proceso local); si
-          descuadra <b>en todas</b>, el problema es del producto — receta mal parametrizada en el
-          POS, unidad de compra confusa (caja vs unidad), o porcionado sin estandarizar. La solución
-          de lo primero es gestión de sede; la de lo segundo es corregir el maestro en el ERP una
-          sola vez.
+          <b>Si descuadra en UNA sede:</b> el problema es de esa operación — conteo flojo, porciones
+          sin estandarizar, pérdida local. El plan de acción es con el administrador de esa sede. ·{' '}
+          <b>Si descuadra en TODAS:</b> el problema vive en el producto — receta mal parametrizada
+          en el POS, unidad de compra confusa (caja vs unidad vs kilo), o merma natural no
+          reconocida. El plan de acción es corregir el maestro en HioPOS <b>una sola vez</b>, y
+          todas las sedes mejoran juntas.
         </P>
         <Tip>
-          Los productos que aparecen aquí arriba son los mejores candidatos para revisar su ficha en
-          HioPOS antes de cobrarle a nadie.
+          Antes de cobrarle a alguien un producto que falla en todas las sedes, revisa su ficha en
+          el ERP: castigar a seis administradores por una receta mal montada sale carísimo en
+          confianza.
         </Tip>
       </>
     ),
   },
 
   avCobros: {
-    titulo: 'Sección Cobros (del Análisis)',
+    titulo: 'Sección Cobros — ¿en qué se traduce en plata?',
     contenido: ({ articles }) => {
       const t = totales(articles);
       return (
         <>
           <P>
-            Responde "<b>¿en qué se traduce en plata?</b>": solo los artículos que generan cobro,
-            con su cantidad faltante, costo unitario y valor, más el <b>total por sede</b> al final
-            — la cifra que va a la liquidación.
+            El final del embudo: <b>solo los artículos que generan cobro</b>, con cantidad faltante,
+            costo unitario y valor, más el <b>total por sede</b> — la cifra que va a la liquidación
+            de cada responsable.
           </P>
           <P>
-            Se calcula con la <b>política de cobro activa</b> (mira la insignia amarilla en la
-            pestaña Cobros o la tarjeta Configuración del Resumen): si cambias la política, estos
-            valores cambian al instante.
+            Se calcula con la <b>política y márgenes activos</b> (la insignia amarilla de la pestaña
+            Cobros dice cuáles): si cambias la Configuración de Cobro en el Resumen, estos valores
+            se regeneran al instante.
           </P>
           {articles.length > 0 ? (
             <Ej>
-              En el corte actual: <b>{t.cobrables}</b> artículos cobrables por{' '}
-              <b>{fmt$(t.cobro)}</b>
+              Corte actual: <b>{t.cobrables}</b> cobrables por <b>{fmt$(t.cobro)}</b>
               {t.enRevision > 0 ? (
                 <>
                   {' '}
-                  — de los cuales <b>{t.enRevision}</b> traen ⚠ Revisar: resuélvelos contra el ERP
-                  antes de liquidar.
+                  — <b>{t.enRevision}</b> con ⚠ Revisar que debes resolver contra el ERP ANTES de
+                  liquidar.
                 </>
               ) : (
                 '.'
@@ -846,5 +849,92 @@ export const AYUDAS: Record<
         </>
       );
     },
+  },
+
+  avEjecutivo: {
+    titulo: 'Resumen Ejecutivo por Sede — la boleta de calificaciones',
+    contenido: ({ articles }) => {
+      // Réplica del cálculo de la vista: % de artículos SIN NINGUNA variación.
+      let ejemplo: React.ReactNode = <SinDatos />;
+      try {
+        const sedes = [...new Set(articles.map((a) => a.sede))];
+        if (sedes.length > 0) {
+          const stats = sedes
+            .map((sede) => {
+              const its = articles.filter((a) => a.sede === sede);
+              const sinDif = its.filter((a) => a.tipo === 'SIN_VARIACION').length;
+              return { sede, pct: its.length ? (sinDif / its.length) * 100 : 100, n: its.length };
+            })
+            .sort((a, b) => a.pct - b.pct);
+          const peor = stats[0];
+          const mejor = stats[stats.length - 1];
+          ejemplo = (
+            <Ej>
+              En tu corte: la sede más exigida es <b>{peor.sede}</b> — solo el{' '}
+              <b>{peor.pct.toFixed(1)}%</b> de sus {peor.n} artículos quedó EXACTO (cero variación).{' '}
+              {mejor.sede !== peor.sede && (
+                <>
+                  La mejor es <b>{mejor.sede}</b> con <b>{mejor.pct.toFixed(1)}%</b> exacto.
+                </>
+              )}
+            </Ej>
+          );
+        }
+      } catch {
+        /* sin datos */
+      }
+      return (
+        <>
+          <P>
+            Es la <b>boleta de calificaciones de cada sede</b>, agrupada en cinco niveles: 🟢{' '}
+            <b>Excelente</b> (≥98% de artículos exactos) · 🔵 <b>Buena</b> (≥95) · 🟡{' '}
+            <b>Aceptable</b> (≥90) · 🟠 <b>Riesgo</b> (≥80) · 🔴 <b>Crítica</b> (&lt;80). Cada
+            tarjeta trae los números de la sede: cuántos artículos, cuántos con diferencia y su
+            porcentaje.
+          </P>
+          <P>
+            <b>OJO — este puntaje es DISTINTO al de la pestaña Confiabilidad</b>, y la diferencia
+            importa: aquí se mide el porcentaje de artículos que quedaron{' '}
+            <b>EXACTOS, con cero variación</b> — la vara más dura posible, sin márgenes de perdón.
+            En Confiabilidad, en cambio, un artículo "cuenta bien" si quedó{' '}
+            <b>dentro de su margen de tolerancia</b>. Por eso aquí los porcentajes salen más bajos:
+            es la foto sin maquillaje.
+          </P>
+          <P>
+            <b>¿Para qué sirve cada lente?</b> Este ejecutivo responde "¿qué tan afinada está la
+            máquina de contar de cada sede?" — ideal para comparar sedes entre sí y para la
+            conversación gerencial ("Amsterdam cuenta exacto el 60%, Malanga el 85%: ¿qué hace
+            Malanga distinto?"). Confiabilidad responde "¿puedo confiar en este inventario para
+            decidir compras y cobros?" — que es una pregunta con perdón técnico incluido. Las dos
+            juntas cuentan la historia completa.
+          </P>
+          {ejemplo}
+          <Tip>
+            Si una sede está Crítica aquí pero decente en Confiabilidad, su problema son muchos
+            micro-descuadres dentro del margen: molestos pero baratos. Si está mal en AMBAS, el
+            problema es de plata y de proceso — esa es la sede que se interviene primero.
+          </Tip>
+        </>
+      );
+    },
+  },
+
+  avClasificacion: {
+    titulo: 'Sección Clasificación — pérdidas y sobrantes frente a frente',
+    contenido: () => (
+      <>
+        <P>
+          Dos columnas espejo: a la izquierda los productos con <b>pérdidas</b> (faltantes) y a la
+          derecha los de <b>sobrantes</b>, cada uno con su ranking. Es la vista rápida para barrer
+          el corte de una mirada.
+        </P>
+        <P>
+          El truco de lectura profesional: <b>búscalos en parejas</b>. Un faltante fuerte en una
+          columna con un sobrante parecido en la otra (mismo tipo de producto, misma sede) casi
+          siempre es el mismo artículo contado bajo dos códigos — la app ya te ayuda con la pista
+          azul "¿Confusión de códigos?" en la tabla de Cobros, pero aquí puedes verlo de frente.
+        </P>
+      </>
+    ),
   },
 };
