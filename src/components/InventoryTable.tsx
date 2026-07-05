@@ -18,6 +18,20 @@ interface InventoryTableProps {
 export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
   const [expandedSedes, setExpandedSedes] = useState<Record<string, boolean>>({});
   const [expandedArticles, setExpandedArticles] = useState<Record<string, boolean>>({});
+  /** Filtro LOCAL de este listado (no toca los Filtros Avanzados globales):
+   *  permite aterrizar rápido en una sede o artículo solo aquí. */
+  const [filtroLocal, setFiltroLocal] = useState('');
+
+  const dataLocal = React.useMemo(() => {
+    const q = filtroLocal.trim().toLowerCase();
+    if (!q) return data;
+    return data.filter(
+      (a) =>
+        a.articulo.toLowerCase().includes(q) ||
+        a.sede.toLowerCase().includes(q) ||
+        (a.codBarras || '').toLowerCase().includes(q)
+    );
+  }, [data, filtroLocal]);
 
   const toggleSede = (sede: string) => {
     setExpandedSedes((prev) => ({ ...prev, [sede]: !prev[sede] }));
@@ -28,7 +42,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
   };
 
   // Group by Sede
-  const groupedBySede = data.reduce(
+  const groupedBySede = dataLocal.reduce(
     (acc, art) => {
       if (!acc[art.sede]) acc[art.sede] = [];
       acc[art.sede].push(art);
@@ -56,11 +70,32 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({ data }) => {
 
   return (
     <div className="space-y-4">
-      {/* Depuración Temporal */}
-      <div className="flex items-center space-x-4 bg-slate-800 text-text-secondary px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-widest">
+      {/* Barra del listado: contadores + filtro LOCAL (solo esta tabla) */}
+      <div className="flex flex-wrap items-center gap-3 bg-slate-800 text-text-secondary px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-widest">
         <span>Sedes: {Object.keys(groupedBySede).length}</span>
         <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
-        <span>Artículos filtrados: {data.length}</span>
+        <span>
+          Artículos: {dataLocal.length}
+          {filtroLocal ? ` de ${data.length}` : ''}
+        </span>
+        <div className="relative flex-1 min-w-[220px] max-w-md ml-auto">
+          <input
+            value={filtroLocal}
+            onChange={(e) => setFiltroLocal(e.target.value)}
+            placeholder="Filtrar este listado: sede o artículo…"
+            className="w-full bg-[#0d1b2a] border border-brand-border rounded-lg pl-3 pr-8 py-1.5 text-xs font-sans normal-case tracking-normal text-text-main placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-[#38BDF8]"
+            title="Filtra SOLO este listado (los Filtros Avanzados de arriba aplican a toda la app)"
+          />
+          {filtroLocal && (
+            <button
+              onClick={() => setFiltroLocal('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
+              title="Limpiar"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto card rounded-[12px]">
