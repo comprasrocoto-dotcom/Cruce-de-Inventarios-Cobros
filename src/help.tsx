@@ -709,12 +709,20 @@ export const AYUDAS: Record<
             se cobra, visibles para que cualquier cobro sea defendible. Tiene dos partes:
           </P>
           <P>
-            <b>1. Los márgenes de tolerancia</b> (solo lectura — no se editan desde la app para
-            proteger la trazabilidad de cobros ya liquidados): <b>UNIDADES y COPAS</b> sin margen,
-            porque lo contable se cuenta con los dedos: si falta una botella, falta. · <b>ONZAS</b>{' '}
-            con ±1 de perdón: es el error normal del jigger al servir un trago. · <b>GRAMOS</b> con
-            2.5% del inventario teórico del horizonte (piso de 100 g): las mermas normales de
-            pesaje, goteo y porcionado.
+            <b>1. Los márgenes de tolerancia — ahora EDITABLES.</b> Cada unidad tiene su regla, con
+            dos modos: <b>± fijo</b> (un número de perdón en esa unidad, ej. ±3 onzas) o{' '}
+            <b>% del teórico</b> (proporcional a cuánto se manejó en el horizonte; con piso de 100 g
+            para que teóricos diminutos no colapsen el margen). Los predeterminados al abrir:{' '}
+            <b>UNIDADES ±0</b> y <b>COPAS ±0</b> (lo contable se cuenta con los dedos),{' '}
+            <b>ONZAS ±3</b> (el error del jigger) y <b>GRAMOS 2.5%</b> (mermas de pesaje). Puedes
+            jugar: unidades con ±1, gramos fijo en 500 g, onzas al 2% — lo que tu operación decida.
+          </P>
+          <P>
+            <b>Importante:</b> los cambios NO actúan hasta pulsar <b>"Aplicar configuración"</b>—
+            verás la app recalcularse completa (cobros, banderas, alertas de recetas y también la{' '}
+            <b>confiabilidad</b>, porque el margen ES el estándar técnico de exactitud). El botón{' '}
+            <b>Predeterminados</b> devuelve el borrador a los valores de fábrica. La configuración
+            activa queda impresa en el PDF y el Excel: un cobro sin su regla es indefendible.
           </P>
           <P>
             <b>2. La política de cobro</b> — qué hacer cuando el faltante supera el margen. Un
@@ -730,9 +738,10 @@ export const AYUDAS: Record<
           </P>
           {vivo}
           <Tip>
-            La confiabilidad NO cambia con la política: mide qué tan bien se cuenta, no cuánto se
-            descuenta. Y el PDF y el Excel imprimen la política activa — un reporte de descuentos
-            sin su regla es indefendible en una discusión.
+            La POLÍTICA no toca la confiabilidad (mide qué tan bien se cuenta, no cuánto se
+            descuenta). Los MÁRGENES sí la tocan: son el estándar contra el que se mide el conteo.
+            Si relajas márgenes, la nota sube — no porque cuenten mejor, sino porque bajaste la
+            vara. Tenlo presente al comparar cortes.
           </Tip>
         </>
       );
