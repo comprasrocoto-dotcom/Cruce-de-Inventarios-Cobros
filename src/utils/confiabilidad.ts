@@ -305,7 +305,14 @@ export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) =
       variacionCiclo,
       baseCiclo,
       valorUnitario: i.costeMediano || i.ultimoCoste || i.costePromedio || 0,
-      evaluado: evaluarItem({ ...i, totalDiferencia: variacionCiclo, stockEsperado: baseCiclo }),
+      // Si el articulo YA trae su evaluacion de tolerancia (normalizeData o
+      // aplicarPoliticaCobro la calculan sobre estos MISMOS insumos de ciclo,
+      // respetando la Configuracion de Cobro activa), se respeta. Re-evaluar
+      // aqui con margenes predeterminados ignoraba la config editada.
+      evaluado:
+        typeof i.dentroDeTolerancia === 'boolean'
+          ? ({ ...i } as ArticleSummary)
+          : evaluarItem({ ...i, totalDiferencia: variacionCiclo, stockEsperado: baseCiclo }),
     };
   });
   const evaluados = conCiclo.map((c) => c.evaluado);
