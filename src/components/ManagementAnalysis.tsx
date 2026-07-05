@@ -152,8 +152,9 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
         entry.total++;
         if (Math.abs(m.variacion || 0) > 0.0001) entry.conDiferencia++;
         if ((m.variacion || 0) < -0.0001)
-          entry.perdidas += Math.abs(m.variacion || 0) * (m.coste || 0);
-        if ((m.variacion || 0) > 0.0001) entry.sobrantes += (m.variacion || 0) * (m.coste || 0);
+          entry.perdidas += Math.abs(m.variacion || 0) * (m.costeLinea || 0);
+        if ((m.variacion || 0) > 0.0001)
+          entry.sobrantes += (m.variacion || 0) * (m.costeLinea || 0);
       });
     });
     const result: {
@@ -435,7 +436,7 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
               Comparativa Visual de Confiabilidad
             </h3>
           </div>
-          <div className="flex-1 min-h-[400px]">
+          <div className="h-[420px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={rankingData}
@@ -751,7 +752,10 @@ export const ManagementAnalysis: React.FC<ManagementAnalysisProps> = ({ data, se
                 </p>
               </div>
             ) : (
-              <div className="flex-1 min-h-[400px]">
+              /* Altura EXPLÍCITA: dentro de flex, ResponsiveContainer con
+                 height=100% puede medir 0px y la gráfica "no muestra nada"
+                 sin error alguno (colapso clásico de Recharts). */
+              <div className="h-[420px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartDataByMes}
