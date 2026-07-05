@@ -13,6 +13,12 @@ import { agruparCobrablesParaReporte } from '../utils/agrupacion';
 import { RecetasPayload } from '../utils/recetas';
 
 export type VarianteReporte = 'jerarquico' | 'agrupado';
+
+/** "RECETA SUB004 · SUB. ACEITE DE ACHIOTE" -> "SUB. ACEITE DE ACHIOTE" */
+const nombreSubDe = (g: { etiqueta: string }) => {
+  const partes = g.etiqueta.split('·');
+  return (partes[partes.length - 1] || g.etiqueta).trim();
+};
 import { ArticleSummary } from '../types';
 import { format, startOfMonth, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -74,10 +80,10 @@ export function construirLibroCobros(
       // En la variante 'agrupado' se ordenan por grupos: cada RECETA encabeza
       // y debajo sus ingredientes; al final, semejanza de nombre y solos.
       let sedeArticles = data.filter((a) => a.sede === sedeName);
+      let gruposSede: ReturnType<typeof agruparCobrablesParaReporte> | null = null;
       if (variante === 'agrupado') {
-        sedeArticles = agruparCobrablesParaReporte(sedeArticles, recetasPayload).flatMap(
-          (g) => g.articulos
-        );
+        gruposSede = agruparCobrablesParaReporte(sedeArticles, recetasPayload);
+        sedeArticles = gruposSede.flatMap((g) => g.articulos);
       }
       if (sedeArticles.length === 0) return;
 
@@ -147,7 +153,20 @@ export function construirLibroCobros(
       rows.push(row5);
 
       // --- DATA ROWS ---
-      sedeArticles.forEach((art) => {
+      /**
+       * La RECETA siempre encabeza su grupo (como en el PDF, donde es el
+       * separador). Si el artículo SUB. de la receta NO existe en el
+       * inventario de esta sede, se sintetiza su primera línea con la
+       * información del registro de recetas (nombre, código y unidad); las
+       * columnas de fechas/totales quedan vacías porque no hubo movimientos.
+       */
+      const pushFilaRecetaSintetica = (etiqueta: string, unidad: string) => {
+        const fila: any[] = [etiqueta, unidad];
+        while (fila.length < row4.length) fila.push('');
+        rows.push(fila);
+      };
+
+      const pushArticleRow = (art: ArticleSummary) => {
         const dateValues = new Map<number, number>();
         art.movements.forEach((m) => {
           const t = startOfDay(m.fecha).getTime();
@@ -186,7 +205,21 @@ export function construirLibroCobros(
         const costToUse = art.costeMediano || art.ultimoCoste || art.costePromedio || 0;
         row.push(art.totalDiferencia, costToUse, art.totalCobro);
         rows.push(row);
-      });
+      };
+
+      if (variante === 'agrupado' && gruposSede) {
+        gruposSede.forEach((g) => {
+          if (g.tipo === 'RECETA' && !g.contieneArticuloReceta) {
+            pushFilaRecetaSintetica(
+              `${nombreSubDe(g)} (${g.recetaCodigo || ''})`.trim(),
+              g.recetaUnidad || ''
+            );
+          }
+          g.articulos.forEach(pushArticleRow);
+        });
+      } else {
+        sedeArticles.forEach(pushArticleRow);
+      }
 
       const worksheet = XLSX.utils.aoa_to_sheet(rows);
 
