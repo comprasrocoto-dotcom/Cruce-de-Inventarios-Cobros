@@ -27,7 +27,6 @@ import {
   Link2,
 } from 'lucide-react';
 import { ArticleSummary } from '../types';
-import { HelpTip } from './HelpTip';
 import { RECETAS_API_URL } from '../config';
 import {
   fetchRecetas,
@@ -45,6 +44,7 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [soloAlertas, setSoloAlertas] = useState(false);
+  const [filtroReceta, setFiltroReceta] = useState('');
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
 
   const cargar = async () => {
@@ -70,8 +70,21 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
 
   const gruposVisibles = useMemo(() => {
     if (!cruce) return [];
-    return soloAlertas ? cruce.grupos.filter((g) => g.alertaSinRegistro) : cruce.grupos;
-  }, [cruce, soloAlertas]);
+    let lista = soloAlertas ? cruce.grupos.filter((g) => g.alertaSinRegistro) : cruce.grupos;
+    const q = filtroReceta.trim().toLowerCase();
+    if (q) {
+      lista = lista.filter(
+        (g) =>
+          g.receta.codigo.toLowerCase().includes(q) ||
+          (g.receta.nombre || '').toLowerCase().includes(q) ||
+          g.sede.toLowerCase().includes(q) ||
+          g.ingredientes.some(
+            (i) => i.nombre.toLowerCase().includes(q) || i.codigo.toLowerCase().includes(q)
+          )
+      );
+    }
+    return lista;
+  }, [cruce, soloAlertas, filtroReceta]);
 
   const toggle = (key: string) => {
     setAbiertos((prev) => {
@@ -225,7 +238,7 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
           </div>
           <div>
             <h3 className="font-bold text-text-main uppercase tracking-tight">
-              Recetas e Ingredientes <HelpTip clave="recetas" />
+              Recetas e Ingredientes
             </h3>
             <p className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">
               Cruce con el registro de recetas · detección de sobrantes fantasma
@@ -234,6 +247,23 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[220px]">
+            <input
+              value={filtroReceta}
+              onChange={(e) => setFiltroReceta(e.target.value)}
+              placeholder="Filtrar recetas (código, nombre, sede o ingrediente)…"
+              className="w-full bg-[#0d1b2a] border border-brand-border rounded-lg pl-3 pr-8 py-2 text-xs text-text-main placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-[#38BDF8]"
+            />
+            {filtroReceta && (
+              <button
+                onClick={() => setFiltroReceta('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
+                title="Limpiar"
+              >
+                ×
+              </button>
+            )}
+          </div>
           <label className="flex items-center gap-2 text-xs font-bold text-text-secondary cursor-pointer">
             <input
               type="checkbox"
