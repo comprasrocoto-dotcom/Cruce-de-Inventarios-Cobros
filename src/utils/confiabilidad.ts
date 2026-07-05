@@ -19,26 +19,71 @@ import { ArticleSummary, InventoryMovement } from '../types';
  */
 export const BASE_MINIMA_GRAMOS = 100;
 
-export const calcularMargenError = (item: Partial<ArticleSummary>) => {
-  const unidad = item.subarticulo?.toUpperCase() || '';
-  const diferencia = item.totalDiferencia || 0;
-  // Usamos stockEsperado como base de consumo teórico si no existe consumo explícito.
-  // Se toma |valor| con un piso mínimo: los teóricos ≤ 0 no anulan el margen.
+// ─────────────────── CONFIGURACIÓN DE MÁRGENES (editable) ───────────────────
+
+/** Cómo se calcula el margen de una unidad de medida. */
+export type ModoMargen = 'FIJO' | 'PORCENTAJE';
+
+export interface ReglaMargen {
+  /** FIJO = ±valor en la unidad · PORCENTAJE = valor% del teórico del horizonte. */
+  modo: ModoMargen;
+  valor: number;
+}
+
+export type UnidadMargen = 'UNIDADES' | 'COPAS' | 'ONZAS' | 'GRAMOS';
+
+export type ConfigMargenes = Record<UnidadMargen, ReglaMargen>;
+
+/**
+ * Márgenes PREDETERMINADOS al abrir la aplicación (editables en la tarjeta
+ * Configuración de Cobro; la app puede recalcular todo con otra config):
+ *   UNIDADES y COPAS: sin margen (lo contable se cuenta exacto)
+ *   ONZAS: ±3 (decisión de negocio 04/07/2026; antes ±1)
+ *   GRAMOS: 2.5% del teórico del horizonte, con piso BASE_MINIMA_GRAMOS
+ */
+export const CONFIG_MARGENES_DEFAULT: ConfigMargenes = {
+  UNIDADES: { modo: 'FIJO', valor: 0 },
+  COPAS: { modo: 'FIJO', valor: 0 },
+  ONZAS: { modo: 'FIJO', valor: 3 },
+  GRAMOS: { modo: 'PORCENTAJE', valor: 2.5 },
+};
+
+/** Resuelve a qué unidad configurable pertenece un subartículo. */
+export const unidadDeMargen = (subarticulo?: string): UnidadMargen => {
+  const u = (subarticulo || '').toUpperCase();
+  if (u.includes('ONZA')) return 'ONZAS';
+  if (u.includes('COPA')) return 'COPAS';
+  if (u.includes('GRAMO')) return 'GRAMOS';
+  return 'UNIDADES';
+};
+
+/** Texto legible de la regla (para la columna "Regla aplicada" y reportes). */
+export const reglaTexto = (regla: ReglaMargen, unidad: UnidadMargen): string => {
+  if (regla.modo === 'PORCENTAJE') return `±${regla.valor}% del teórico`;
+  if (!regla.valor) return 'Sin margen';
+  const sufijo =
+    unidad === 'ONZAS'
+      ? 'onza(s)'
+      : unidad === 'GRAMOS'
+        ? 'g'
+        : unidad === 'COPAS'
+          ? 'copa(s)'
+          : 'unidad(es)';
+  return `±${regla.valor} ${sufijo}`;
+};
+
+export const calcularMargenError = (
+  item: Partial<ArticleSummary>,
+  config: ConfigMargenes = CONFIG_MARGENES_DEFAULT
+) => {
+  // Se toma |teórico| con un piso mínimo en modo %: los teóricos ≤ 0 no anulan el margen.
   const baseConsumo = Math.abs(item.stockEsperado || 0);
-
-  // ❌ SIN margen para unidades exactas o copas
-  if (unidad.includes('UNIDAD') || unidad.includes('COPA')) return 0;
-
-  // ✅ ONZAS → ±1 permitido
-  if (unidad.includes('ONZA')) return 1;
-
-  // ✅ GRAMOS → 2.5% de margen sobre el consumo teórico (stock esperado),
-  // con piso de BASE_MINIMA_GRAMOS para bases nulas/negativas del ERP.
-  if (unidad.includes('GRAMO')) {
-    return Math.max(baseConsumo, BASE_MINIMA_GRAMOS) * 0.025;
+  const regla = config[unidadDeMargen(item.subarticulo)];
+  if (!regla) return 0;
+  if (regla.modo === 'PORCENTAJE') {
+    return (Math.max(baseConsumo, BASE_MINIMA_GRAMOS) * regla.valor) / 100;
   }
-
-  return 0;
+  return Math.max(0, regla.valor);
 };
 
 export interface AlertaInsumo {
@@ -137,12 +182,15 @@ export const obtenerRankingRiesgo = (data: ArticleSummary[], limit = 10) => {
  * Evalúa un item individual determinando si está dentro o fuera de los márgenes permitidos
  * y calculando su porcentaje de confiabilidad gradual.
  */
-export const evaluarItem = (item: ArticleSummary): ArticleSummary => {
+export const evaluarItem = (
+  item: ArticleSummary,
+  config: ConfigMargenes = CONFIG_MARGENES_DEFAULT
+): ArticleSummary => {
   const esperado = Math.abs(item.stockEsperado || 0);
   const real = Math.abs(item.stockFisico || 0);
   const diferencia = item.totalDiferencia || 0;
 
-  const margenError = calcularMargenError(item);
+  const margenError = calcularMargenError(item, config);
 
   // Diferencia que excede el margen permitido
   const diferenciaAjustada = Math.max(0, Math.abs(diferencia) - margenError);
