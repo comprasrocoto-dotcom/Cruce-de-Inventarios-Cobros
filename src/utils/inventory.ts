@@ -32,6 +32,10 @@ import {
   calcularPerdidaEconomica,
   calcularEstadisticasConfiabilidad,
   obtenerEstado,
+  CONFIG_MARGENES_DEFAULT,
+  ConfigMargenes,
+  unidadDeMargen,
+  reglaTexto,
 } from './confiabilidad';
 
 import {
@@ -787,6 +791,8 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
       stockEsperado: baseHorizonte,
     });
 
+    summary.baseTeorica = baseHorizonte;
+
     summary.margenError = evaluado.margenError;
 
     summary.dentroDeTolerancia = evaluado.dentroDeTolerancia;
@@ -819,11 +825,10 @@ export function normalizeData(rawRows: RawInventoryRow[]): {
       summary.motivoNoCobro = undefined;
     }
 
-    summary.reglaAplicada = summary.subarticulo.toUpperCase().includes('GRAMO')
-      ? '±2.5% de margen'
-      : summary.subarticulo.toUpperCase().includes('ONZA')
-        ? '±1 onza'
-        : 'Sin margen';
+    {
+      const u = unidadDeMargen(summary.subarticulo);
+      summary.reglaAplicada = reglaTexto(CONFIG_MARGENES_DEFAULT[u], u);
+    }
 
     // 💰 Cálculos económicos usando lógica central, valorados con el costo
     // mediano (robusto) y sobre la variación del ciclo de cobro.
@@ -940,7 +945,8 @@ export const POLITICAS_COBRO: Record<PoliticaCobro, { etiqueta: string; descripc
 export function aplicarPoliticaCobro(
   entrada: ArticleSummary[],
   politica: PoliticaCobro = 'COMPLETO',
-  debugInfo?: { articulosEnRevision?: number }
+  debugInfo?: { articulosEnRevision?: number },
+  configMargenes?: ConfigMargenes
 ): ArticleSummary[] {
   const articles = entrada.map((a) => ({ ...a }));
   if (debugInfo) debugInfo.articulosEnRevision = 0;
@@ -956,6 +962,23 @@ export function aplicarPoliticaCobro(
     const vu = a.costeMediano || a.ultimoCoste || a.costePromedio || 0;
     const esFaltante = v < -EPS;
     const magnitud = Math.abs(v);
+
+    // Si llega una Configuración de Cobro, el margen de tolerancia se
+    // RECALCULA aquí (misma semántica de evaluarItem que en la carga) para
+    // TODOS los artículos: también afecta dentroDeTolerancia (sobrantes,
+    // alertas de recetas) y la confiabilidad por ítem — editar los márgenes
+    // cambia el estándar técnico, no solo el cobro.
+    if (configMargenes) {
+      const ev = evaluarItem(
+        { ...a, totalDiferencia: v, stockEsperado: a.baseTeorica ?? 0 },
+        configMargenes
+      );
+      a.margenError = ev.margenError;
+      a.dentroDeTolerancia = ev.dentroDeTolerancia;
+      a.confiabilidad = ev.confiabilidad;
+      const u = unidadDeMargen(a.subarticulo);
+      a.reglaAplicada = reglaTexto(configMargenes[u], u);
+    }
     const margen = a.margenError || 0;
 
     if (a.esSubReceta || !esFaltante) {
@@ -1554,7 +1577,7 @@ export function getProductStabilityAnalysis(articles: ArticleSummary[]): Product
     .map(([producto, instances]) => {
       const totalInstancias = instances.length;
 
-      const evaluados = instances.map(evaluarItem);
+      const evaluados = instances.map((it) => evaluarItem(it));
 
       const instanciasFueraMargen = evaluados.filter((i) => !i.dentroDeTolerancia).length;
 
@@ -1610,7 +1633,7 @@ export function getResponsableStabilityAnalysis(
     .map(([responsable, instances]) => {
       const totalEvaluaciones = instances.length;
 
-      const evaluados = instances.map(evaluarItem);
+      const evaluados = instances.map((it) => evaluarItem(it));
 
       const instanciasFueraMargen = evaluados.filter((i) => !i.dentroDeTolerancia).length;
 
