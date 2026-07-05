@@ -472,26 +472,32 @@ export const AYUDAS: Record<
     ),
   },
 
-  // ══════════════ CONFIABILIDAD ══════════════
+  // ══════════════ CONFIABILIDAD (manual del analista) ══════════════
   confiabilidad: {
-    titulo: 'Confiabilidad: las DOS notas de cada sede',
+    titulo: 'Confiabilidad: el manual completo',
     contenido: ({ articles }) => {
       let ejemplo: React.ReactNode = <SinDatos />;
       try {
         const rel = getReliabilitySummary(articles, 'sede');
-        const peor = [...rel.sedesStats].sort((a, b) => a.confiabilidad - b.confiabilidad)[0];
+        const orden = [...rel.sedesStats].sort((a, b) => a.confiabilidad - b.confiabilidad);
+        const peor = orden[0];
+        const mejor = orden[orden.length - 1];
         if (peor) {
-          const problema =
-            (peor.exactitudArticulos ?? 0) < (peor.exactitudValor ?? 0)
-              ? 'su problema es de CONTEO (muchos artículos descuadrados)'
-              : 'su problema es de PLATA (pocos artículos, pero caros, concentran la pérdida)';
           ejemplo = (
             <Ej>
-              La sede más débil del corte es <b>{peor.sede}</b>: artículos{' '}
-              <b>{peor.exactitudArticulos}%</b> · valor <b>{peor.exactitudValor}%</b> → nota final{' '}
-              <b>{peor.confiabilidad}%</b> ({peor.nivel}). Como la nota más baja es la de{' '}
-              {(peor.exactitudArticulos ?? 0) < (peor.exactitudValor ?? 0) ? 'artículos' : 'valor'},{' '}
-              {problema}.
+              En tu corte: la sede más débil es <b>{peor.sede}</b> (artículos{' '}
+              <b>{peor.exactitudArticulos}%</b> · valor <b>{peor.exactitudValor}%</b> → nota{' '}
+              <b>{peor.confiabilidad}%</b>, {peor.nivel}). Su lado flojo es{' '}
+              {(peor.exactitudArticulos ?? 0) < (peor.exactitudValor ?? 0)
+                ? 'el CONTEO: muchos artículos quedan fuera de su margen, aunque la plata desviada no sea tanta. Plan: disciplina de conteo (dobles conteos, básculas calibradas, cierre de cocina antes de contar).'
+                : 'la PLATA: cuenta bien la mayoría de artículos, pero los pocos que fallan son caros. Plan: conteo dedicado a los 20 productos de mayor valor (proteínas, licores premium).'}
+              {mejor && mejor.sede !== peor.sede && (
+                <>
+                  {' '}
+                  La mejor es <b>{mejor.sede}</b> ({mejor.confiabilidad}%): vale la pena preguntarle
+                  qué hace distinto.
+                </>
+              )}
             </Ej>
           );
         }
@@ -501,32 +507,53 @@ export const AYUDAS: Record<
       return (
         <>
           <P>
-            A cada sede se le toman <b>dos notas distintas</b>, porque contar bien y cuidar la plata
-            son habilidades diferentes:
+            <b>¿Qué pregunta responde esta pestaña?</b> "¿Puedo confiar en los inventarios de cada
+            sede para tomar decisiones (compras, cobros, costos de venta)?" Un inventario poco
+            confiable contamina TODO lo que se calcula con él — por eso esta vista existe antes que
+            cualquier cobro.
           </P>
           <P>
-            <b>Exactitud por Artículos:</b> de cada 100 artículos contados, cuántos quedaron dentro
-            de su margen de tolerancia. Mide la <b>disciplina de conteo</b>.
+            <b>Cómo se construye la nota (paso a paso):</b> a cada artículo se le compara su conteo
+            físico contra el teórico del ERP, con su margen de tolerancia (ver Configuración de
+            Cobro). Con eso se calculan DOS exactitudes por sede:
           </P>
           <P>
-            <b>Exactitud por Valor:</b> de cada $100 de inventario teórico, cuántos NO se desviaron
-            en el conteo (los faltantes no se tapan con sobrantes: se suman los dos). Mide el{' '}
-            <b>cuidado de la plata</b>.
+            <b>① Exactitud por Artículos</b> = de cada 100 artículos contados, cuántos quedaron
+            dentro de su margen. Mide la <b>disciplina de conteo</b> del equipo: si está baja, el
+            problema es humano/proceso (conteos apurados, unidades confundidas, cocina operando
+            mientras se cuenta).
           </P>
           <P>
-            <b>La nota final es la MENOR de las dos.</b> ¿Por qué? Porque una sede puede contar
-            perfecto 400 artículos baratos y aun así fugar millones en 5 productos caros — con una
-            sola nota promedio eso quedaría escondido. Con dos notas, se ve de inmediato si el
-            problema es de conteo o de plata, y el plan de acción es distinto en cada caso.
+            <b>② Exactitud por Valor</b> = de cada $100 de inventario teórico, cuántos NO se
+            desviaron. Aquí los faltantes NO se tapan con sobrantes: se suman ambos en valor
+            absoluto (estándar IRA de la industria — un inventario que "sobra" es tan poco confiable
+            como uno que falta). Mide el <b>cuidado de la plata</b>.
           </P>
           <P>
-            Además, las <b>sub-recetas no entran</b> a estas notas: su variación es producción
-            normal, no un error de conteo de la sede.
+            <b>③ La nota final es la MENOR de las dos.</b> ¿Por qué la menor y no el promedio?
+            Porque el promedio esconde: una sede puede contar perfecto 400 artículos baratos (①=95%)
+            y fugar millones en 5 caros (②=60%) — promediando saldría "aceptable" y el hueco
+            seguiría abierto. Tomando la menor, la dimensión enferma siempre queda a la vista, y el
+            plan de acción es distinto según cuál sea (ver ejemplo abajo).
+          </P>
+          <P>
+            <b>Qué NO entra a la nota:</b> las sub-recetas (SUB.) — su variación es producción
+            normal, no error de conteo. Y qué SÍ la afecta sin ser culpa de la sede: los cobros con
+            ⚠ Revisar (costos dañados del ERP) inflan la desviación en valor — resuélvelos primero y
+            la nota real puede ser mejor.
+          </P>
+          <P>
+            <b>El resto de la pantalla:</b> las tarjetas de arriba (mejor/peor sede, mayor impacto),
+            el selector de sub-reporte (Reporte General · Top Pérdidas · Top Ganancias · Riesgo
+            Operativo), las barras de confiabilidad por sede, la clasificación por nivel de riesgo y
+            las conclusiones automáticas del sistema. Todo obedece a los filtros activos: filtra una
+            sede o una subfamilia y la nota se recalcula solo con ese corte.
           </P>
           {ejemplo}
           <Tip>
-            Los cobros con ⚠ Revisar también bajan la nota de valor. Corrige primero esos datos en
-            HioPOS: la exactitud real de la sede puede ser mejor de lo que parece.
+            Regla de oro del analista: la nota NO se compara entre cortes con configuraciones de
+            margen distintas (relajar márgenes sube la nota sin que nadie cuente mejor). Compara
+            siempre con la misma vara.
           </Tip>
         </>
       );
@@ -534,129 +561,244 @@ export const AYUDAS: Record<
   },
 
   niveles: {
-    titulo: 'El semáforo: Confiable, Aceptable, Riesgo, Crítico',
+    titulo: 'El semáforo: qué significa cada nivel y qué hacer',
     contenido: () => (
       <>
         <P>
-          Los niveles siguen los <b>estándares de la industria de restaurantes</b> para la
-          desviación entre inventario real y teórico:
+          Los niveles siguen los{' '}
+          <b>estándares de exactitud de inventario (IRA) de la industria de restaurantes</b>. La
+          lectura correcta no es "qué color me tocó" sino "qué acción dispara cada color":
         </P>
         <P>
-          🟢 <b>Confiable (≥98%):</b> desviación menor al 2% — operación bien gestionada. · 🟡{' '}
-          <b>Aceptable (95–98%):</b> desviación de 2 a 5% — normal, pero con espacio de mejora. · 🟠{' '}
-          <b>Riesgo (90–95%):</b> desviación de 5 a 10% — hay que investigar ya. · 🔴{' '}
-          <b>Crítico (&lt;90%):</b> más del 10% desviado — problema sistémico (registro, porciones,
-          recetas sin registrar o pérdidas reales).
+          🟢 <b>Confiable (≥98%)</b> — desviación menor al 2%. El inventario sirve para decidir:
+          compras automáticas, costos de venta, cobros sin discusión. Acción: mantener y reconocer
+          al equipo.
         </P>
         <P>
-          Son umbrales exigentes a propósito: en un restaurante los márgenes son delgados y cada
-          punto de desviación es plata que salió de la cocina sin una venta que la respalde.
+          🟡 <b>Aceptable (95–98%)</b> — desviación de 2 a 5%. Normal en operaciones reales, pero
+          con fuga lenta. Acción: identificar los 5-10 artículos que concentran la desviación (casi
+          siempre el 80% está en el 20% de los productos) y atacarlos puntual.
+        </P>
+        <P>
+          🟠 <b>Riesgo (90–95%)</b> — desviación de 5 a 10%. Las decisiones tomadas con este
+          inventario ya tienen error material: los pedidos se inflan o se quiebran, los costos de
+          receta mienten. Acción: investigar YA — conteo de verificación en caliente sobre los
+          artículos top y revisión del proceso de conteo (¿quién cuenta?, ¿con qué báscula?, ¿la
+          cocina sigue operando mientras se cuenta?).
+        </P>
+        <P>
+          🔴 <b>Crítico (&lt;90%)</b> — más del 10% desviado. El inventario ya no describe la
+          realidad: es un problema SISTÉMICO, no de un mal día. Causas típicas en restaurantes:
+          recetas sin registrar en producción (revisa la sección Recetas y sus alertas ⚠ SIN
+          REGISTRO), ventas que no descargan la receta en el POS, unidades de compra confusas, o
+          pérdidas reales. Acción: intervención con plan y fecha, no regaño.
+        </P>
+        <P>
+          <b>¿Por qué la vara es tan exigente?</b> Porque en un restaurante el margen neto suele ser
+          un dígito: cada punto porcentual de inventario desviado es plata que salió de la cocina
+          sin una venta que la respalde. Con 5% de desviación sostenida, la utilidad del mes puede
+          irse completa por el sifón.
         </P>
         <Tip>
-          Que todas las sedes salgan en un nivel bajo no es motivo de pánico sino el punto de
-          partida: el sistema te está mostrando por primera vez la foto completa. Lo importante es
-          la tendencia corte a corte.
+          Si TODAS las sedes salen bajas en el primer corte, no es motivo de pánico: es la línea
+          base. El indicador que importa desde hoy es la <b>tendencia</b> — corte a corte, con la
+          misma configuración de márgenes (pestaña Trazabilidad).
         </Tip>
       </>
     ),
   },
 
   confTecnico: {
-    titulo: 'Informe Técnico de Márgenes',
+    titulo: 'Informe Técnico de Márgenes — el soporte de cada cobro',
     contenido: () => (
       <>
         <P>
-          Es la vista de <b>referencia por artículo</b>: inventario inicial (teórico), variación,
-          inventario final (contado), y el <b>margen de tolerancia exacto</b> que se le aplicó a
-          cada uno con su regla ("±1 onza", "±2.5%", "Sin margen").
+          Es la <b>vista de defensa de la auditoría</b>: artículo por artículo, muestra el
+          inventario inicial (teórico), la variación, el inventario final (contado), el{' '}
+          <b>margen de tolerancia EXACTO en números</b> que se le aplicó, y la regla que lo generó
+          ("±3 onza(s)", "±2.5% del teórico", "Sin margen").
         </P>
         <P>
-          Sirve para responder la pregunta que siempre llega en la auditoría: "
-          <b>¿por qué a este sí le cobraron y a este no?</b>" — aquí está el número exacto del
-          margen y de cuánto se pasó (o no).
+          <b>¿Cuándo la usa un analista?</b> Cada vez que llega LA pregunta: "¿por qué a este
+          artículo sí le cobraron y a este otro no, si a ambos les faltó?". La respuesta está aquí
+          en números: uno se pasó de su margen y el otro no. Sin esta vista, la respuesta es "porque
+          el sistema lo dice" — con ella, es matemática verificable delante del responsable.
         </P>
+        <P>
+          <b>Detalle importante del margen porcentual (GRAMOS):</b> la base es el teórico del
+          HORIZONTE filtrado (la suma de |Stock a Fecha| de los inventarios del rango), con piso de
+          100 g. Por eso el mismo producto puede tener margen distinto en dos sedes: manejan
+          volúmenes distintos — al que mueve 40 kg se le perdona más gramaje que al que mueve 2 kg,
+          proporcionalmente lo mismo.
+        </P>
+        <Tip>
+          Antes de una reunión de descargos, exporta o captura esta vista filtrada al artículo en
+          disputa: la conversación cambia cuando el margen y el exceso están en números y no en
+          opiniones.
+        </Tip>
       </>
     ),
   },
 
   estabilidad: {
-    titulo: 'Estabilidad de Productos',
+    titulo: 'Estabilidad de Productos — el reincidente y el patrón',
     contenido: () => (
       <>
         <P>
-          Mientras Cobros mira <b>un corte</b>, esta vista mira la <b>repetición</b>: qué productos
-          se salen del margen una y otra vez, sin importar en qué sede.
+          Mientras Cobros mira <b>una foto</b>, esta vista mira <b>la película</b>: qué productos se
+          salen del margen UNA Y OTRA VEZ a lo largo de los conteos, y qué responsables repiten
+          patrón. Un descuadre aislado es ruido; un descuadre que se repite es una causa esperando
+          ser encontrada.
         </P>
         <P>
-          Un producto que falla siempre no es mala suerte: o su unidad de medida se presta a error,
-          o su receta está mal parametrizada, o es goloso (se pierde caminando). El ranking por
-          responsables complementa la lectura: si el patrón sigue a la persona y no al producto, el
-          problema es de proceso o capacitación.
+          <b>Cómo leer el ranking de productos:</b> el que falla siempre no es mala suerte. Las
+          causas, en orden de frecuencia real en restaurantes: (1) su unidad se presta a error — se
+          compra por caja, se cuenta por unidad, se consume por gramo; (2) su receta está mal
+          parametrizada en el POS y descarga de más o de menos en cada venta; (3) es "goloso" —
+          producto que se pierde caminando (licores premium, proteínas porcionadas); (4) merma
+          natural no reconocida (deshidratación, goteo). Cada causa tiene arreglo distinto, y las
+          tres primeras NO se arreglan cobrando.
+        </P>
+        <P>
+          <b>Cómo leer el ranking de responsables:</b> con cuidado y en pareja con el de productos.
+          Si el patrón sigue al PRODUCTO (falla con cualquier responsable), el problema es del
+          producto. Si sigue a la PERSONA (varios productos fallan solo en sus conteos), el problema
+          es de capacitación o proceso — y la conversación es de entrenamiento antes que de
+          descuento.
         </P>
         <Tip>
-          Ataca primero los productos inestables que además son caros: arreglar uno solo puede mover
-          más plata que diez baratos.
+          Prioriza por plata: arreglar UN producto inestable y caro (un salmón, un whisky) mueve más
+          pesos que arreglar diez condimentos. El orden de batalla sale de cruzar frecuencia ×
+          costo.
         </Tip>
       </>
     ),
   },
 
   confGerencial: {
-    titulo: 'Dashboard Gerencial (predicciones)',
+    titulo: 'Dashboard Gerencial (predicciones a 30 días)',
     contenido: () => (
       <>
         <P>
-          Proyecta el comportamiento actual a <b>30 días</b>: si nada cambia, cuánta plata se
-          perdería en el mes, qué insumos encabezan ese riesgo y cuántas alertas críticas hay
-          abiertas.
+          Toma el ritmo de pérdida del corte actual y lo <b>proyecta a 30 días</b>: si nada cambia,
+          cuánta plata se perdería en el mes, qué insumos encabezan ese riesgo y cuántas alertas
+          críticas están abiertas.
         </P>
         <P>
-          Es una <b>proyección, no una profecía</b>: asume que el ritmo de pérdida del corte se
-          mantiene. Su valor es priorizar — el "Top Riesgo Financiero" es tu lista de batalla
-          ordenada por plata.
+          <b>De dónde sale el número:</b> la pérdida del horizonte filtrado se lleva a ritmo mensual
+          (regla de tres sobre los días del corte). Por eso los tres bloques se leen juntos: la{' '}
+          <b>proyección total</b> da la magnitud del incendio, el <b>Top de insumos en riesgo</b>{' '}
+          dice dónde están las llamas (ordenado por plata mensualizada, no por porcentaje), y las{' '}
+          <b>alertas críticas</b> cuentan cuántos frentes están abiertos a la vez — si son muchos,
+          el problema es de proceso general, no de productos sueltos.
         </P>
+        <P>
+          <b>Cómo leerla sin engañarse:</b> es una proyección lineal, no una profecía — asume que el
+          comportamiento del corte se mantiene. Su valor NO es adivinar el futuro sino{' '}
+          <b>priorizar el presente</b>: el "Top Riesgo Financiero" es la lista de batalla ordenada
+          por plata mensualizada, que es el idioma en que gerencia decide. "Este producto pierde
+          $80.000 por corte" suena menor; "este producto va a perder $2.4 millones este mes si nadie
+          lo toca" consigue presupuesto.
+        </P>
+        <P>
+          <b>Trampa a evitar:</b> si el corte filtrado es muy corto (un solo inventario) o atípico
+          (semana de fiesta, cierre por remodelación), la proyección hereda esa distorsión. Proyecta
+          sobre horizontes representativos — dos o más ciclos normales.
+        </P>
+        <Tip>
+          Úsala para abrir la reunión mensual: tres números (proyección total, top insumo, alertas
+          críticas) y de ahí a los planes. El detalle fino vive en las otras pestañas.
+        </Tip>
       </>
     ),
   },
 
-  // ══════════════ OTRAS PESTAÑAS ══════════════
+  // ══════════════ OTRAS PESTAÑAS (manual del analista) ══════════════
   gerencial: {
-    titulo: 'Vista Gerencial',
-    contenido: () => (
-      <>
-        <P>
-          Es el <b>resumen para dirección</b>: los indicadores agregados del corte, la confiabilidad
-          por sede o centro de costos, y los focos de pérdida — sin el detalle artículo por
-          artículo.
-        </P>
-        <P>
-          Alterna entre <b>Por Sede</b> y <b>Por CC</b> para cambiar el ángulo: la misma plata puede
-          verse concentrada en una sede, o repartida entre sus centros (Bar vs Cocina), y esa
-          diferencia cambia a quién le corresponde el plan de acción.
-        </P>
-      </>
-    ),
+    titulo: 'Vista Gerencial — el ranking de control',
+    contenido: ({ articles }) => {
+      let ejemplo: React.ReactNode = <SinDatos />;
+      try {
+        const rel = getReliabilitySummary(articles, 'sede');
+        const criticas = rel.sedesStats.filter((s) => s.nivel === 'Crítico').length;
+        if (rel.sedesStats.length > 0) {
+          ejemplo = (
+            <Ej>
+              En tu corte: {rel.sedesStats.length} sedes evaluadas, <b>{criticas}</b> en nivel
+              Crítico. El Top de impacto económico te dice a cuál entrarle primero.
+            </Ej>
+          );
+        }
+      } catch {
+        /* sin datos */
+      }
+      return (
+        <>
+          <P>
+            Es el <b>tablero de dirección</b>: cuántas sedes (o centros de costos) están Confiables,
+            en Alerta o Críticas; el ranking de control y auditoría; y el Top 5 de mayor impacto
+            económico. Sin detalle artículo por artículo — esa es tarea de las otras vistas; aquí se
+            decide DÓNDE poner la atención esta semana.
+          </P>
+          <P>
+            <b>El interruptor Por Sede / Por CC es más importante de lo que parece:</b> la misma
+            plata perdida puede verse concentrada en "la sede X" (→ el plan es con su administrador)
+            o repartida entre "Bar" y "Cocina" de varias sedes (→ el plan es con el proceso de esa
+            área en toda la cadena). Cambiar el ángulo cambia el responsable del plan — míralo de
+            las dos formas antes de asignar tareas.
+          </P>
+          <P>
+            <b>Umbrales del ranking:</b> Excelente ≥98 · Aceptable ≥90 · Riesgo ≥80 · debajo,
+            Crítico. Nota para el analista: estos cortes son los de gestión gerencial; la pestaña
+            CONFIABILIDAD usa la escala fina de industria (98/95/90) con la nota dual. No te alarmes
+            si un mismo dato "cambia de color" entre vistas — están midiendo con lentes de distinta
+            graduación a propósito.
+          </P>
+          {ejemplo}
+          <Tip>
+            Para el comité: entra con esta vista (dónde), sigue con Confiabilidad (por qué: ¿conteo
+            o plata?) y cierra con Cobros (cuánto y a quién). Tres pestañas, una historia.
+          </Tip>
+        </>
+      );
+    },
   },
 
   trazabilidad: {
-    titulo: 'Trazabilidad Histórica',
+    titulo: 'Trazabilidad Histórica — la película, no la foto',
     contenido: ({ articles }) => {
       const fechas = fechasDelCorte(articles);
       return (
         <>
           <P>
-            Muestra la <b>película en el tiempo</b>: cómo evolucionan las variaciones periodo a
-            periodo, para distinguir un mal día de una tendencia.
+            Ordena los conteos en el tiempo y muestra, <b>periodo a periodo</b>: artículos
+            evaluados, con y sin diferencia, % de confiabilidad, impacto en $ y la variación contra
+            el periodo anterior — más las curvas de Evolución General y por Sede, y la etiqueta de
+            tendencia (Mejorando / Empeorando).
           </P>
           <P>
-            Recuerda que cada punto es un <b>periodo entre inventarios</b> (el ERP ajusta el stock
-            en cada carga): una barra grande en una fecha significa "en ese periodo se perdió esto",
-            no "desde el inicio de los tiempos".
+            <b>El concepto que hay que tener claro para leerla:</b> cada punto es un{' '}
+            <b>PERIODO ENTRE INVENTARIOS</b>, no un acumulado. Como el ERP ajusta el stock en cada
+            carga, la barra del 24 de junio significa "esto pasó ENTRE el conteo anterior y el 24",
+            no "esto se ha perdido desde siempre". Por eso los periodos se pueden comparar entre sí
+            limpiamente.
+          </P>
+          <P>
+            <b>Para qué la usa un analista:</b> (1) separar el mal día de la tendencia — un pico
+            aislado se investiga como evento (¿hubo fiesta?, ¿cambió el que cuenta?); una pendiente
+            sostenida se ataca como proceso; (2) <b>medir si las intervenciones funcionan</b> —
+            capacitaste al equipo el día 15: la curva después del 15 es tu evidencia; (3) detectar
+            estacionalidad (los fines de quincena pierden más).
+          </P>
+          <P>
+            <b>Trampa clásica:</b> comparar periodos de longitudes muy distintas (3 días vs 15 días)
+            en valores absolutos — el largo siempre "pierde más". Compara en % de confiabilidad o
+            normaliza mentalmente por días.
           </P>
           {fechas.length > 1 ? (
             <Ej>
-              Tu corte actual tiene <b>{fechas.length} fechas de inventario</b> ({fechas[0]} a{' '}
-              {fechas[fechas.length - 1]}): suficiente para ver tendencia, no solo foto.
+              Tu corte tiene <b>{fechas.length} fechas de inventario</b> ({fechas[0]} →{' '}
+              {fechas[fechas.length - 1]}): suficiente para hablar de tendencia y no solo de foto.
             </Ej>
           ) : (
             <SinDatos />
@@ -667,20 +809,54 @@ export const AYUDAS: Record<
   },
 
   ejecutivo: {
-    titulo: 'Dashboard Ejecutivo',
-    contenido: () => (
-      <>
-        <P>
-          La <b>página de portada</b> del corte: los grandes números y gráficas comparativas entre
-          sedes, pensada para abrir una reunión o acompañar el informe.
-        </P>
-        <P>
-          Todo respeta los filtros activos: si quieres el ejecutivo de una sola sede o de un solo
-          inventario, filtra primero y esta vista se convierte en su portada.
-        </P>
-      </>
-    ),
+    titulo: 'Dashboard Ejecutivo — la portada del corte',
+    contenido: ({ articles }) => {
+      const t = totales(articles);
+      const top = sedeMayorCobro(articles);
+      return (
+        <>
+          <P>
+            La <b>página de portada</b>: los grandes números del corte, las comparativas entre
+            sedes, la clasificación por severidad y los productos de mayor impacto — pensada para
+            abrir una reunión o encabezar el informe que se envía. Desde aquí también se exportan el
+            Excel y el PDF ejecutivos.
+          </P>
+          <P>
+            <b>Cómo presentarla en 90 segundos:</b> (1) el total del corte y cuántos artículos lo
+            generan — la magnitud; (2) la comparativa entre sedes — dónde se concentra; (3) la
+            clasificación por severidad — cuántos focos son críticos vs manejables; (4) cierre con
+            la acción: "los tres focos de esta semana son…". Los porqués viven en Confiabilidad y el
+            detalle en Cobros — no los presentes desde aquí o la reunión se hunde en filas.
+          </P>
+          <P>
+            <b>Truco del filtro:</b> todo obedece a los Filtros Avanzados. ¿Necesitas el ejecutivo
+            de UNA sede para su administrador, o de un solo inventario para el comité? Filtra
+            primero y esta vista se convierte en esa portada exacta — y sus exportes salen igual de
+            filtrados.
+          </P>
+          {articles.length > 0 && top ? (
+            <Ej>
+              Portada de tu corte actual: <b>{t.n}</b> artículos revisados, <b>{t.cobrables}</b>{' '}
+              cobrables por <b>{fmt$(t.cobro)}</b>; la sede que concentra más es <b>{top[0]}</b> con{' '}
+              {fmt$(top[1])}
+              {t.enRevision > 0 ? (
+                <>
+                  {' '}
+                  — y ojo: <b>{t.enRevision}</b> cobros traen ⚠ Revisar; menciónalo antes de que te
+                  lo pregunten.
+                </>
+              ) : (
+                '.'
+              )}
+            </Ej>
+          ) : (
+            <SinDatos />
+          )}
+        </>
+      );
+    },
   },
+
   // ══════════════ CONFIGURACIÓN DE COBRO ══════════════
   configuracion: {
     titulo: 'Configuración de Cobro: reglas y política',
