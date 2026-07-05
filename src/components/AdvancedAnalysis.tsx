@@ -236,7 +236,11 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
               ? 'avVariaciones'
               : activeSection === 'consolidado'
                 ? 'avConsolidado'
-                : 'avCobros'
+                : activeSection === 'cobros'
+                  ? 'avCobros'
+                  : activeSection === 'ejecutivo'
+                    ? 'avEjecutivo'
+                    : 'avClasificacion'
           }
           className="ml-2"
         />
@@ -500,7 +504,7 @@ export const AdvancedAnalysis: React.FC<AdvancedAnalysisProps> = ({ data }) => {
       {activeSection === 'ejecutivo' && (
         <div className="space-y-6">
           <h3 className="text-base font-bold text-white">
-            Resumen Ejecutivo por Sede <HelpTip clave="analisisAvanzado" />
+            Resumen Ejecutivo por Sede <HelpTip clave="avEjecutivo" />
           </h3>
 
           {/* Tarjetas agrupadas por categoria */}
