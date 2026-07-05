@@ -16,6 +16,7 @@ import { InventoryTable } from './components/InventoryTable';
 import { RecipesView } from './components/RecipesView';
 import { HelpProvider, HelpTip } from './components/HelpTip';
 import type { PoliticaCobro } from './utils/inventory';
+import { fetchRecetas, RecetasPayload } from './utils/recetas';
 import {
   CONFIG_MARGENES_DEFAULT,
   reglaTexto,
@@ -103,6 +104,14 @@ export default function App() {
     return CONFIG_MARGENES_DEFAULT;
   });
   const [borradorMargenes, setBorradorMargenes] = useState<ConfigMargenes>(configMargenes);
+
+  // Catálogo de recetas para el reporte AGRUPADO del Detalle de Cobros.
+  const [recetasPayload, setRecetasPayload] = useState<RecetasPayload | null>(null);
+  useEffect(() => {
+    fetchRecetas()
+      .then(setRecetasPayload)
+      .catch(() => setRecetasPayload(null));
+  }, []);
   const [recalculando, setRecalculando] = useState(false);
   const hayCambiosMargenes = JSON.stringify(borradorMargenes) !== JSON.stringify(configMargenes);
 
@@ -444,7 +453,7 @@ export default function App() {
                     </div>
                     <ExportButtons
                       data={filteredArticles}
-                      politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                      politicaLabel={`${POLITICAS_COBRO[politicaCobro].etiqueta}  |  Márgenes: ${margenesLabel}`}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -695,7 +704,9 @@ export default function App() {
                   </div>
                   <ExportButtons
                     data={filteredArticles}
-                    politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                    politicaLabel={`${POLITICAS_COBRO[politicaCobro].etiqueta}  |  Márgenes: ${margenesLabel}`}
+                    variante="agrupado"
+                    recetasPayload={recetasPayload}
                   />
                 </div>
                 <InventoryTable data={filteredArticles} />
@@ -745,12 +756,12 @@ export default function App() {
                   </div>
                   <ExportButtons
                     data={filteredArticles}
-                    politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                    politicaLabel={`${POLITICAS_COBRO[politicaCobro].etiqueta}  |  Márgenes: ${margenesLabel}`}
                   />
                   <PDFReport
                     data={filteredArticles}
                     filters={filters}
-                    politicaLabel={POLITICAS_COBRO[politicaCobro].etiqueta}
+                    politicaLabel={`${POLITICAS_COBRO[politicaCobro].etiqueta}  |  Márgenes: ${margenesLabel}`}
                   />
                 </div>
                 <ExecutiveDashboard data={filteredArticles} />
