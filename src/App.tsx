@@ -195,7 +195,7 @@ export default function App() {
     const startDate = filters.fechaInicio ? new Date(filters.fechaInicio + 'T00:00:00') : null;
     const endDate = filters.fechaFin ? new Date(filters.fechaFin + 'T23:59:59') : null;
 
-    return articlesConPolitica
+    const base = articlesConPolitica
       .filter((art) => {
         const matchesSede = filters.sedes.length === 0 || filters.sedes.includes(art.sede);
         const matchesCC = filters.ccs.length === 0 || filters.ccs.includes(art.cc);
@@ -261,16 +261,12 @@ export default function App() {
         const horizonte = resumenHorizonte(movements);
         const variacionCiclo = horizonte.variacion;
 
-        // La tolerancia se re-evalúa para el rango (base = volumen teórico auditado).
-        const evaluadoPeriodo = evaluarItem({
-          ...art,
-          totalDiferencia: variacionCiclo,
-          stockEsperado: horizonte.base,
-        });
-
-        const debeCobrar =
-          variacionCiclo < -0.0001 && !evaluadoPeriodo.dentroDeTolerancia && !art.esSubReceta;
-
+        // OJO: aquí NO se evalúa tolerancia ni se calcula cobro. Antes este
+        // bloque re-evaluaba con márgenes PREDETERMINADOS y política COMPLETO
+        // fijos, así que al filtrar por fechas se perdía la Configuración de
+        // Cobro. Ahora solo se reconstruyen los números del rango y, al final
+        // del memo, aplicarPoliticaCobro recalcula margen/tolerancia/cobro/
+        // banderas con la config y política ACTIVAS (una sola fuente de verdad).
         return {
           ...art,
           movements,
@@ -278,29 +274,36 @@ export default function App() {
           totalDiferencia,
           totalFaltantes,
           totalSobrantes,
-          cantidadACobrar: debeCobrar ? Math.abs(variacionCiclo) : 0,
           ultimoCoste,
           tipo,
-          margenError: evaluadoPeriodo.margenError,
-          dentroDeTolerancia: evaluadoPeriodo.dentroDeTolerancia,
-          confiabilidad: evaluadoPeriodo.confiabilidad,
           variacionUltimoCiclo: variacionCiclo,
+          baseTeorica: horizonte.base,
           fechaUltimoCiclo: lastMov.fecha,
           serieUltimoCiclo: lastMov.serie,
-          debeCobrar,
-          totalCobro: debeCobrar ? Math.abs(variacionCiclo) * valorUnitario : 0,
           valorPerdida: totalFaltantes * valorUnitario,
           valorSobrante: totalSobrantes * valorUnitario,
         } as ArticleSummary;
       })
-      .filter((art): art is ArticleSummary => art !== null)
-      .filter((art) => {
-        if (filters.status === 'cobrables') return art.debeCobrar;
-        if (filters.status === 'faltantes') return art.tipo === 'FALTANTE';
-        if (filters.status === 'sobrantes') return art.tipo === 'SOBRANTE';
-        return true;
-      });
-  }, [articlesConPolitica, filters]);
+      .filter((art): art is ArticleSummary => art !== null);
+
+    // Con rango de fechas: re-aplicar reglas ACTIVAS sobre el corte reconstruido.
+    const conReglas =
+      startDate || endDate
+        ? aplicarPoliticaCobro(base, politicaCobro, undefined, configMargenes).map((a) => ({
+            ...a,
+            cantidadACobrar: a.debeCobrar
+              ? Math.abs(a.variacionUltimoCiclo ?? a.totalDiferencia)
+              : 0,
+          }))
+        : base;
+
+    return conReglas.filter((art) => {
+      if (filters.status === 'cobrables') return art.debeCobrar;
+      if (filters.status === 'faltantes') return art.tipo === 'FALTANTE';
+      if (filters.status === 'sobrantes') return art.tipo === 'SOBRANTE';
+      return true;
+    });
+  }, [articlesConPolitica, filters, politicaCobro, configMargenes]);
 
   const dashboardStats = useMemo(() => getDashboardStats(filteredArticles), [filteredArticles]);
 
@@ -770,6 +773,7 @@ export default function App() {
 
             {activeTab === 'TRAZABILIDAD' && (
               <HistoricalTraceability
+                configMargenes={configMargenes}
                 data={filteredArticles}
                 sedes={uniqueSedes}
                 ccs={uniqueCCs}
