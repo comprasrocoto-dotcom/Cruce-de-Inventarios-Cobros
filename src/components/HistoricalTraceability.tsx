@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArticleSummary, HistoricalPeriodStats, HistoricalTraceabilityData } from '../types';
 import { getHistoricalTraceability } from '../utils/inventory';
+import type { ConfigMargenes } from '../utils/confiabilidad';
 import {
   LineChart,
   Line,
@@ -48,6 +49,8 @@ import { HelpTip } from './HelpTip';
 
 interface HistoricalTraceabilityProps {
   data: ArticleSummary[];
+  /** Configuración de márgenes activa: los periodos se evalúan con ella. */
+  configMargenes?: ConfigMargenes;
   sedes: string[];
   ccs: string[];
   subfamilias: string[];
@@ -57,6 +60,7 @@ interface HistoricalTraceabilityProps {
 
 export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
   data,
+  configMargenes,
   sedes,
   ccs,
   subfamilias,
@@ -74,14 +78,19 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
   });
 
   const historicalData: HistoricalTraceabilityData = useMemo(() => {
-    return getHistoricalTraceability(data, filters.groupBy, {
-      sede: filters.sede,
-      cc: filters.cc,
-      subfamilia: filters.subfamilia,
-      articulo: filters.articulo,
-      start: filters.start ? new Date(filters.start) : undefined,
-      end: filters.end ? new Date(filters.end) : undefined,
-    });
+    return getHistoricalTraceability(
+      data,
+      filters.groupBy,
+      {
+        sede: filters.sede,
+        cc: filters.cc,
+        subfamilia: filters.subfamilia,
+        articulo: filters.articulo,
+        start: filters.start ? new Date(filters.start) : undefined,
+        end: filters.end ? new Date(filters.end) : undefined,
+      },
+      configMargenes
+    );
   }, [data, filters]);
 
   const stats = historicalData.periods;
