@@ -68,9 +68,12 @@ export function construirLibroCobros(
     const sedes = Array.from(new Set(data.map((a) => a.sede))) as string[];
 
     sedes.forEach((sedeName) => {
-      // Solo cobrables de esta sede; en la variante 'agrupado' se ordenan
-      // por grupos (recetas -> semejanza de nombre -> solos), lista PLANA.
-      let sedeArticles = data.filter((a) => a.sede === sedeName && a.debeCobrar);
+      // TODOS los artículos de la sede (recetas SUB. incluidas), no solo los
+      // cobrables: el Excel es el reporte COMPLETO del corte (pedido del
+      // negocio 04/07/2026). El PDF sí sigue siendo solo de cobros.
+      // En la variante 'agrupado' se ordenan por grupos: cada RECETA encabeza
+      // y debajo sus ingredientes; al final, semejanza de nombre y solos.
+      let sedeArticles = data.filter((a) => a.sede === sedeName);
       if (variante === 'agrupado') {
         sedeArticles = agruparCobrablesParaReporte(sedeArticles, recetasPayload).flatMap(
           (g) => g.articulos
