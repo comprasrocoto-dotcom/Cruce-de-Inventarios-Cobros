@@ -76,7 +76,10 @@ export function agruparCobrablesParaReporte(
   articulos: ArticleSummary[],
   payload?: RecetasPayload | null
 ): GrupoReporte[] {
-  const cobrables = articulos.filter((a) => a.debeCobrar);
+  // NOTA: agrupa la lista TAL CUAL llega. El llamador decide el universo
+  // (el PDF de cobros pasa solo cobrables; el Excel pasa TODOS los artículos,
+  // recetas incluidas, por pedido del negocio 04/07/2026).
+  const cobrables = articulos;
   if (cobrables.length === 0) return [];
 
   // ── Fase 1: recetas (SUB. + sus ingredientes) ──
@@ -161,7 +164,18 @@ export function agruparCobrablesParaReporte(
   // ── Orden del reporte ──
   const orden = { RECETA: 0, SEMEJANZA: 1, SOLO: 2 } as const;
   const lista = [...grupos.values()];
-  lista.forEach((g) => g.articulos.sort((x, y) => x.articulo.localeCompare(y.articulo)));
+  lista.forEach((g) => {
+    g.articulos.sort((x, y) => {
+      // En grupos de RECETA, la receta misma (el artículo SUB.) va PRIMERO
+      // y debajo sus ingredientes — "empieza la receta y luego ingredientes".
+      if (g.tipo === 'RECETA') {
+        const xEsReceta = nombreReceta.has(norm(x.codBarras)) ? 0 : 1;
+        const yEsReceta = nombreReceta.has(norm(y.codBarras)) ? 0 : 1;
+        if (xEsReceta !== yEsReceta) return xEsReceta - yEsReceta;
+      }
+      return x.articulo.localeCompare(y.articulo);
+    });
+  });
   lista.sort((a, b) => {
     if (orden[a.tipo] !== orden[b.tipo]) return orden[a.tipo] - orden[b.tipo];
     return b.totalCobro - a.totalCobro;
