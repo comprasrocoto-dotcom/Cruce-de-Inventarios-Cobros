@@ -25,6 +25,13 @@ export interface GrupoReporte {
   tipo: 'RECETA' | 'SEMEJANZA' | 'SOLO';
   articulos: ArticleSummary[];
   totalCobro: number;
+  /** Solo grupos RECETA: código de la receta (SUBnnn). */
+  recetaCodigo?: string;
+  /** Solo grupos RECETA: unidad declarada en el registro de recetas. */
+  recetaUnidad?: string;
+  /** Solo grupos RECETA: ¿el artículo SUB. de la receta está presente en la lista?
+   *  Si NO, los reportes deben sintetizar la primera línea con la info de la receta. */
+  contieneArticuloReceta?: boolean;
 }
 
 /** Palabras de empaque/medida que no cuentan como semejanza de producto. */
@@ -84,12 +91,14 @@ export function agruparCobrablesParaReporte(
 
   // ── Fase 1: recetas (SUB. + sus ingredientes) ──
   const nombreReceta = new Map<string, string>();
+  const unidadReceta = new Map<string, string>();
   const ingredienteAReceta = new Map<string, string>();
   if (payload) {
     payload.recetas.forEach((r) => {
       const cod = norm(r.codigo);
       if (cod && !nombreReceta.has(cod)) {
         nombreReceta.set(cod, r.nombre ? String(r.nombre).split('|').pop()!.trim() : cod);
+        unidadReceta.set(cod, String(r.unidad || '').trim());
       }
     });
     // Un ingrediente puede estar en varias recetas: se asigna a la PRIMERA
@@ -129,6 +138,10 @@ export function agruparCobrablesParaReporte(
         'RECETA',
         a
       );
+      const g = grupos.get(`R|${receta}`)!;
+      g.recetaCodigo = receta;
+      g.recetaUnidad = unidadReceta.get(receta) || '';
+      if (cod === receta) g.contieneArticuloReceta = true;
     } else {
       restantes.push(a);
     }
