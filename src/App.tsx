@@ -16,6 +16,12 @@ import { InventoryTable } from './components/InventoryTable';
 import { RecipesView } from './components/RecipesView';
 import { HelpProvider, HelpTip } from './components/HelpTip';
 import type { PoliticaCobro } from './utils/inventory';
+import {
+  CONFIG_MARGENES_DEFAULT,
+  reglaTexto,
+  type ConfigMargenes,
+  type UnidadMargen,
+} from './utils/confiabilidad';
 import { ReliabilityView } from './components/ReliabilityView';
 import { ManagementAnalysis } from './components/ManagementAnalysis';
 import { ExportButtons } from './components/ExportButtons';
@@ -38,6 +44,8 @@ import {
   Activity,
   TrendingUp,
   Settings,
+  RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
@@ -70,11 +78,76 @@ export default function App() {
     }
   }, [politicaCobro]);
 
+  // Márgenes de tolerancia: config APLICADA (persistida) y BORRADOR editable.
+  const [configMargenes, setConfigMargenes] = useState<ConfigMargenes>(() => {
+    try {
+      const raw = window.localStorage.getItem('configMargenes');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const unidades: UnidadMargen[] = ['UNIDADES', 'COPAS', 'ONZAS', 'GRAMOS'];
+        if (
+          unidades.every(
+            (u) =>
+              parsed?.[u] &&
+              (parsed[u].modo === 'FIJO' || parsed[u].modo === 'PORCENTAJE') &&
+              typeof parsed[u].valor === 'number' &&
+              parsed[u].valor >= 0
+          )
+        ) {
+          return parsed as ConfigMargenes;
+        }
+      }
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    return CONFIG_MARGENES_DEFAULT;
+  });
+  const [borradorMargenes, setBorradorMargenes] = useState<ConfigMargenes>(configMargenes);
+  const [recalculando, setRecalculando] = useState(false);
+  const hayCambiosMargenes = JSON.stringify(borradorMargenes) !== JSON.stringify(configMargenes);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('configMargenes', JSON.stringify(configMargenes));
+    } catch {
+      /* almacenamiento no disponible */
+    }
+  }, [configMargenes]);
+
+  /** Aplica el borrador con recálculo VISIBLE: el usuario ve que está pasando. */
+  const aplicarConfiguracion = () => {
+    setRecalculando(true);
+    // pequeño respiro para que el estado "Recalculando…" alcance a pintarse
+    window.setTimeout(() => {
+      setConfigMargenes(borradorMargenes);
+      window.setTimeout(() => setRecalculando(false), 400);
+    }, 60);
+  };
+
+  const editarMargen = (u: UnidadMargen, campo: 'modo' | 'valor', valor: string) => {
+    setBorradorMargenes((prev) => ({
+      ...prev,
+      [u]:
+        campo === 'modo'
+          ? { ...prev[u], modo: valor as 'FIJO' | 'PORCENTAJE' }
+          : { ...prev[u], valor: Math.max(0, Number(valor) || 0) },
+    }));
+  };
+
   // Artículos con la política aplicada: recalcula cobros, banderas y pistas
   // en caliente al cambiar el selector (copias nuevas -> React refresca todo).
   const articlesConPolitica = useMemo(
-    () => aplicarPoliticaCobro(articles, politicaCobro),
-    [articles, politicaCobro]
+    () => aplicarPoliticaCobro(articles, politicaCobro, undefined, configMargenes),
+    [articles, politicaCobro, configMargenes]
+  );
+
+  /** Resumen corto de la configuración activa (insignias, PDF y Excel). */
+  const margenesLabel = useMemo(
+    () =>
+      (['UNIDADES', 'COPAS', 'ONZAS', 'GRAMOS'] as UnidadMargen[])
+        .map((u) => `${u.slice(0, u === 'GRAMOS' ? 4 : 3)} ${reglaTexto(configMargenes[u], u)}`)
+        .join(' · '),
+    [configMargenes]
   );
   const [fileName, setFileName] = useState<string>('');
   // Muestra el panel de carga (dropdown) para subir un Excel aunque ya haya datos.
@@ -455,47 +528,106 @@ export default function App() {
                   </div>
 
                   <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Reglas de tolerancia (solo lectura: el contrato de la auditoría) */}
+                    {/* Márgenes de tolerancia EDITABLES: borrador + Aplicar */}
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-3">
                         Margen de tolerancia por unidad de medida
                       </p>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#132238] border border-brand-border">
-                          <div>
-                            <span className="font-bold text-text-main">UNIDADES y COPAS</span>
-                            <p className="text-xs text-text-secondary">
-                              Lo contable se cuenta exacto: no hay excusa de báscula.
+                      <div className="space-y-2">
+                        {(
+                          [
+                            ['UNIDADES', 'Lo contable se cuenta con los dedos.'],
+                            ['COPAS', 'Vasos y copas: conteo exacto.'],
+                            ['ONZAS', 'El error normal del jigger al servir.'],
+                            ['GRAMOS', 'Mermas de pesaje y porcionado. En %, piso de 100 g.'],
+                          ] as [UnidadMargen, string][]
+                        ).map(([u, porQue]) => (
+                          <div
+                            key={u}
+                            className={`p-3 rounded-lg border bg-[#132238] ${
+                              JSON.stringify(borradorMargenes[u]) !==
+                              JSON.stringify(configMargenes[u])
+                                ? 'border-[#FBC519]/60'
+                                : 'border-brand-border'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="min-w-[110px]">
+                                <span className="font-bold text-text-main text-sm">{u}</span>
+                                <p className="text-[10px] text-text-secondary">{porQue}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={borradorMargenes[u].modo}
+                                  onChange={(e) => editarMargen(u, 'modo', e.target.value)}
+                                  className="bg-[#0a1a2d] border border-brand-border rounded-lg px-2 py-1.5 text-xs font-bold text-text-main focus:outline-none focus:ring-1 focus:ring-[#FBC519]"
+                                >
+                                  <option value="FIJO">± fijo</option>
+                                  <option value="PORCENTAJE">% del teórico</option>
+                                </select>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step={borradorMargenes[u].modo === 'PORCENTAJE' ? 0.1 : 1}
+                                  value={borradorMargenes[u].valor}
+                                  onChange={(e) => editarMargen(u, 'valor', e.target.value)}
+                                  className="w-20 bg-[#0a1a2d] border border-brand-border rounded-lg px-2 py-1.5 text-sm font-bold text-right text-text-main focus:outline-none focus:ring-1 focus:ring-[#FBC519]"
+                                />
+                                <span className="text-[10px] font-bold text-text-secondary w-16">
+                                  {borradorMargenes[u].modo === 'PORCENTAJE'
+                                    ? '%'
+                                    : u.toLowerCase().slice(0, -1) + '(s)'}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-[#38BDF8] mt-1 font-bold">
+                              Activo: {reglaTexto(configMargenes[u], u)}
+                              {JSON.stringify(borradorMargenes[u]) !==
+                                JSON.stringify(configMargenes[u]) && (
+                                <span className="text-[#FBC519]">
+                                  {' '}
+                                  → nuevo: {reglaTexto(borradorMargenes[u], u)} (sin aplicar)
+                                </span>
+                              )}
                             </p>
                           </div>
-                          <span className="font-black text-status-faltante whitespace-nowrap">
-                            Sin margen
-                          </span>
-                        </div>
-                        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#132238] border border-brand-border">
-                          <div>
-                            <span className="font-bold text-text-main">ONZAS</span>
-                            <p className="text-xs text-text-secondary">
-                              El error normal del jigger al servir.
-                            </p>
-                          </div>
-                          <span className="font-black text-amber-400 whitespace-nowrap">
-                            ±1 onza
-                          </span>
-                        </div>
-                        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#132238] border border-brand-border">
-                          <div>
-                            <span className="font-bold text-text-main">GRAMOS</span>
-                            <p className="text-xs text-text-secondary">
-                              Mermas normales de pesaje y porcionado. Piso de 100 g para teóricos
-                              muy pequeños.
-                            </p>
-                          </div>
-                          <span className="font-black text-status-sobrante whitespace-nowrap">
-                            2.5% del teórico
-                          </span>
-                        </div>
+                        ))}
                       </div>
+
+                      <div className="flex items-center gap-2 mt-4">
+                        <button
+                          onClick={aplicarConfiguracion}
+                          disabled={!hayCambiosMargenes || recalculando}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                            hayCambiosMargenes && !recalculando
+                              ? 'bg-[#FBC519] text-[#081423] hover:brightness-110'
+                              : 'bg-[#132238] text-text-secondary border border-brand-border cursor-not-allowed'
+                          }`}
+                        >
+                          {recalculando ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Recalculando toda la app…
+                            </>
+                          ) : (
+                            <>Aplicar configuración</>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setBorradorMargenes(CONFIG_MARGENES_DEFAULT)}
+                          disabled={recalculando}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-text-secondary border border-brand-border hover:text-text-main hover:bg-[#132238] transition-colors"
+                          title="Vuelve el borrador a los valores predeterminados (UNID ±0, COPAS ±0, ONZAS ±3, GRAMOS 2.5%). Recuerda Aplicar."
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Predeterminados
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-text-secondary mt-2 italic">
+                        Los cambios NO actúan hasta pulsar Aplicar. Editar los márgenes cambia el
+                        estándar técnico: también recalcula tolerancias, confiabilidad y alertas de
+                        recetas — y queda impreso en PDF y Excel.
+                      </p>
                     </div>
 
                     {/* Política de cobro (seleccionable, recalcula en vivo) */}
@@ -555,6 +687,7 @@ export default function App() {
                       title={POLITICAS_COBRO[politicaCobro].descripcion}
                     >
                       Política: {POLITICAS_COBRO[politicaCobro].etiqueta}
+                      <span className="opacity-70 normal-case font-bold"> · {margenesLabel}</span>
                     </span>
                     <p className="text-sm text-brand-text-secondary">
                       Listado jerárquico de artículos y variaciones
