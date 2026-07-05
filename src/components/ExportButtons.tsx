@@ -19,6 +19,13 @@ const nombreSubDe = (g: { etiqueta: string }) => {
   const partes = g.etiqueta.split('·');
   return (partes[partes.length - 1] || g.etiqueta).trim();
 };
+
+/** "RECETA SUB004 · ..." -> "SUB004" (autosuficiente: no depende de metadatos). */
+const codigoRecetaDe = (g: { etiqueta: string; recetaCodigo?: string }) => {
+  if (g.recetaCodigo) return g.recetaCodigo;
+  const m = /^RECETA\s+(\S+)/.exec(g.etiqueta);
+  return m ? m[1] : '';
+};
 import { ArticleSummary } from '../types';
 import { format, startOfMonth, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -209,11 +216,32 @@ export function construirLibroCobros(
 
       if (variante === 'agrupado' && gruposSede) {
         gruposSede.forEach((g) => {
-          if (g.tipo === 'RECETA' && !g.contieneArticuloReceta) {
-            pushFilaRecetaSintetica(
-              `${nombreSubDe(g)} (${g.recetaCodigo || ''})`.trim(),
-              g.recetaUnidad || ''
-            );
+          if (g.tipo === 'RECETA') {
+            // Presencia verificada AQUÍ mismo por Cód. Barras (autosuficiente:
+            // no confía en banderas externas — un deploy a medias produjo
+            // sintéticas duplicadas con "()" vacío el 05/07/2026).
+            const codigo = codigoRecetaDe(g);
+            const subPresente =
+              codigo !== '' &&
+              g.articulos.some(
+                (a) =>
+                  String(a.codBarras || '')
+                    .trim()
+                    .toUpperCase() === codigo
+              );
+            if (!subPresente) {
+              const unidad =
+                g.recetaUnidad ||
+                recetasPayload?.recetas.find(
+                  (r) =>
+                    String(r.codigo || '')
+                      .trim()
+                      .toUpperCase() === codigo
+                )?.unidad ||
+                '';
+              const sufijo = codigo ? ` (${codigo})` : '';
+              pushFilaRecetaSintetica(`${nombreSubDe(g)}${sufijo}`, String(unidad));
+            }
           }
           g.articulos.forEach(pushArticleRow);
         });
