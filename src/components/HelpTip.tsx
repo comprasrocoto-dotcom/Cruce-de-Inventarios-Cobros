@@ -58,30 +58,30 @@ export const HelpProvider: React.FC<{
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', duration: 0.25 }}
-              className="fixed right-0 top-0 h-full w-[420px] max-w-[94vw] z-[71] bg-[#0F1C2E] border-l border-brand-border shadow-2xl flex flex-col"
+              className="fixed right-0 top-0 h-full w-[420px] max-w-[94vw] z-[71] bg-[#f5f7fa] border-l border-brand-border shadow-2xl flex flex-col"
             >
-              <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-brand-border bg-[#081423]">
+              <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-brand-border bg-[#f7f8fa]">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="bg-[#38BDF8]/15 p-1.5 rounded-lg text-[#38BDF8] flex-shrink-0">
+                  <div className="bg-[#1976d2]/15 p-1.5 rounded-lg text-[#1976d2] flex-shrink-0">
                     <HelpCircle className="w-4 h-4" />
                   </div>
-                  <h3 className="font-bold text-white text-sm uppercase tracking-tight truncate">
+                  <h3 className="font-bold text-text-main text-sm uppercase tracking-tight truncate">
                     {entrada.titulo}
                   </h3>
                 </div>
                 <button
                   onClick={() => setClave(null)}
-                  className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-black/5 transition-colors flex-shrink-0"
                   title="Cerrar"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 text-[13px] leading-relaxed text-[#C9D4E3]">
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 text-[13px] leading-relaxed text-[#424242]">
                 {entrada.contenido(ctx)}
               </div>
-              <div className="px-5 py-3 border-t border-brand-border bg-[#081423] text-[10px] text-text-secondary">
-                Toca <b className="text-[#38BDF8]">?</b> en cualquier sección para entender qué
+              <div className="px-5 py-3 border-t border-brand-border bg-[#f7f8fa] text-[10px] text-text-secondary">
+                Toca <b className="text-[#1976d2]">?</b> en cualquier sección para entender qué
                 estás viendo. Los ejemplos usan los datos del corte actual.
               </div>
             </motion.aside>
@@ -104,7 +104,7 @@ export const HelpTip: React.FC<{ clave: string; className?: string }> = ({
         e.stopPropagation();
         abrir(clave);
       }}
-      className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-[#38BDF8]/20 text-[#38BDF8] text-[11px] font-black leading-none hover:bg-[#38BDF8] hover:text-[#081423] transition-colors flex-shrink-0 align-middle ${className}`}
+      className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-[#1976d2]/20 text-[#1976d2] text-[11px] font-black leading-none hover:bg-[#1976d2] hover:text-[#ffffff] transition-colors flex-shrink-0 align-middle ${className}`}
       title="¿Qué estoy viendo? (abre explicación al costado)"
       type="button"
     >

@@ -106,7 +106,7 @@ export const Filters: React.FC<FiltersProps> = ({
     filters.fechaFin !== '';
 
   return (
-    <div className="bg-card p-6 rounded-2xl mb-8 border border-brand-border shadow-sm">
+    <div className="bg-card p-6 rounded-md mb-8 border border-brand-border shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2 text-text-main">
           <Filter className="w-5 h-5 text-primary" />
@@ -119,7 +119,7 @@ export const Filters: React.FC<FiltersProps> = ({
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-[#1A2E4A] rounded-lg transition-colors border border-rose-900"
+            className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-[#e3f2fd] rounded-lg transition-colors border border-rose-900"
           >
             <RotateCcw className="w-3 h-3" />
             Limpiar Filtros
@@ -141,7 +141,7 @@ export const Filters: React.FC<FiltersProps> = ({
 
               e.target.value = '';
             }}
-            className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
+            className="w-full bg-[#ffffff] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
           >
             <option value="">Seleccionar sedes...</option>
 
@@ -166,7 +166,7 @@ export const Filters: React.FC<FiltersProps> = ({
 
               e.target.value = '';
             }}
-            className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
+            className="w-full bg-[#ffffff] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
           >
             <option value="">Seleccionar CC...</option>
 
@@ -191,7 +191,7 @@ export const Filters: React.FC<FiltersProps> = ({
 
               e.target.value = '';
             }}
-            className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
+            className="w-full bg-[#ffffff] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium text-text-main"
           >
             <option value="">Seleccionar subfamilia...</option>
 
@@ -213,7 +213,7 @@ export const Filters: React.FC<FiltersProps> = ({
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="w-full bg-[#132238] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-bold text-text-main"
+            className="w-full bg-[#ffffff] border border-brand-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all font-bold text-text-main"
           >
             <option value="all">Todos los registros</option>
 
@@ -240,7 +240,7 @@ export const Filters: React.FC<FiltersProps> = ({
                 type="date"
                 value={filters.fechaInicio}
                 onChange={(e) => setFilters({ ...filters, fechaInicio: e.target.value })}
-                className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                className="w-full bg-[#ffffff] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                 style={{ colorScheme: 'dark' }}
               />
             </div>
@@ -252,7 +252,7 @@ export const Filters: React.FC<FiltersProps> = ({
                 type="date"
                 value={filters.fechaFin}
                 onChange={(e) => setFilters({ ...filters, fechaFin: e.target.value })}
-                className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                className="w-full bg-[#ffffff] border border-brand-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                 style={{ colorScheme: 'dark' }}
               />
             </div>
@@ -274,7 +274,7 @@ export const Filters: React.FC<FiltersProps> = ({
               placeholder="Ej: Carne de Res, 770123..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full bg-[#132238] border border-brand-border rounded-2xl pl-12 pr-4 py-4 text-sm text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="w-full bg-[#ffffff] border border-brand-border rounded-md pl-12 pr-4 py-4 text-sm text-text-main placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
             />
           </div>
         </div>
@@ -287,11 +287,11 @@ export const Filters: React.FC<FiltersProps> = ({
           {filters.sedes.map((s) => (
             <div
               key={s}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-primary rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-primary rounded-full text-xs font-bold border border-brand-border"
             >
               <span className="opacity-60 uppercase text-[9px]">Sede:</span> {s}
               <button onClick={() => removeChip('sedes', s)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
@@ -299,11 +299,11 @@ export const Filters: React.FC<FiltersProps> = ({
           {filters.ccs.map((c) => (
             <div
               key={c}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-secondary rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-secondary rounded-full text-xs font-bold border border-brand-border"
             >
               <span className="opacity-60 uppercase text-[9px]">CC:</span> {c}
               <button onClick={() => removeChip('ccs', c)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
@@ -311,14 +311,14 @@ export const Filters: React.FC<FiltersProps> = ({
           {filters.responsables.map((r) => (
             <div
               key={r}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-text-main rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-text-main rounded-full text-xs font-bold border border-brand-border"
             >
               <User className="w-3 h-3 opacity-50" />
 
               {r}
 
               <button onClick={() => removeChip('responsables', r)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
@@ -326,11 +326,11 @@ export const Filters: React.FC<FiltersProps> = ({
           {filters.subfamilias.map((sf) => (
             <div
               key={sf}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-emerald-400 rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-emerald-700 rounded-full text-xs font-bold border border-brand-border"
             >
               <span className="opacity-60 uppercase text-[9px]">Subfam:</span> {sf}
               <button onClick={() => removeChip('subfamilias', sf)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
@@ -338,11 +338,11 @@ export const Filters: React.FC<FiltersProps> = ({
           {(filters.familias || []).map((f) => (
             <div
               key={f}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-sky-300 rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-sky-300 rounded-full text-xs font-bold border border-brand-border"
             >
               <span className="opacity-60 uppercase text-[9px]">Familia:</span> {f}
               <button onClick={() => removeChip('familias', f)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
@@ -350,11 +350,11 @@ export const Filters: React.FC<FiltersProps> = ({
           {(filters.subArticulos || []).map((u) => (
             <div
               key={u}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-indigo-300 rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-indigo-300 rounded-full text-xs font-bold border border-brand-border"
             >
               <span className="opacity-60 uppercase text-[9px]">Unidad:</span> {u}
               <button onClick={() => removeChip('subArticulos', u)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
@@ -362,17 +362,17 @@ export const Filters: React.FC<FiltersProps> = ({
           {(filters.proveedores || []).map((pv) => (
             <div
               key={pv}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-fuchsia-300 rounded-full text-xs font-bold border border-brand-border"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-fuchsia-300 rounded-full text-xs font-bold border border-brand-border"
             >
               <span className="opacity-60 uppercase text-[9px]">Proveedor:</span> {pv}
               <button onClick={() => removeChip('proveedores', pv)}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           ))}
 
           {filters.status !== 'all' && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-amber-400 rounded-full text-xs font-bold border border-brand-border">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-amber-700 rounded-full text-xs font-bold border border-brand-border">
               <span className="opacity-60 uppercase text-[9px]">Estado:</span>{' '}
               {filters.status === 'cobrables'
                 ? 'Solo cobrables'
@@ -380,34 +380,34 @@ export const Filters: React.FC<FiltersProps> = ({
                   ? 'Solo faltantes'
                   : 'Solo sobrantes'}
               <button onClick={() => setFilters({ ...filters, status: 'all' })}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           )}
 
           {filters.search && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-rose-300 rounded-full text-xs font-bold border border-brand-border">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-rose-300 rounded-full text-xs font-bold border border-brand-border">
               <span className="opacity-60 uppercase text-[9px]">Busca:</span> "{filters.search}"
               <button onClick={() => setFilters({ ...filters, search: '' })}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           )}
 
           {filters.fechaInicio && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-warning rounded-full text-xs font-bold border border-brand-border">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-warning rounded-full text-xs font-bold border border-brand-border">
               <span className="opacity-60 uppercase text-[9px]">Desde:</span> {filters.fechaInicio}
               <button onClick={() => setFilters({ ...filters, fechaInicio: '' })}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           )}
 
           {filters.fechaFin && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0F1C2E] text-warning rounded-full text-xs font-bold border border-brand-border">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f5f7fa] text-warning rounded-full text-xs font-bold border border-brand-border">
               <span className="opacity-60 uppercase text-[9px]">Hasta:</span> {filters.fechaFin}
               <button onClick={() => setFilters({ ...filters, fechaFin: '' })}>
-                <X className="w-3 h-3 hover:text-white" />
+                <X className="w-3 h-3 hover:text-text-main" />
               </button>
             </div>
           )}

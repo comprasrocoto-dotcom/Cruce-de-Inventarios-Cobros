@@ -77,7 +77,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
     <div className="space-y-6">
       {/* KPIs Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <Package className="w-4 h-4 text-brand-text" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">
@@ -87,39 +87,39 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
           <p className="text-2xl font-bold text-brand-text">{fmtNumber(summary.totalProductos)}</p>
         </div>
 
-        <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-[#FBC519]" />
+            <AlertTriangle className="w-4 h-4 text-[#ef6c00]" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">
               Con Novedades
             </span>
           </div>
-          <p className="text-2xl font-bold text-[#FBC519]">{fmtNumber(summary.conNovedades)}</p>
+          <p className="text-2xl font-bold text-[#ef6c00]">{fmtNumber(summary.conNovedades)}</p>
         </div>
 
-        <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingDown className="w-4 h-4 text-[#EF4444]" />
+            <TrendingDown className="w-4 h-4 text-[#d32f2f]" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">
               Total Pérdidas
             </span>
           </div>
-          <p className="text-lg font-bold text-[#EF4444]">{fmtCurrency(summary.totalPerdidas)}</p>
+          <p className="text-lg font-bold text-[#d32f2f]">{fmtCurrency(summary.totalPerdidas)}</p>
         </div>
 
-        <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-[#22C55E]" />
+            <TrendingUp className="w-4 h-4 text-[#2e7d32]" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">
               Total Sobrantes
             </span>
           </div>
-          <p className="text-lg font-bold text-[#22C55E]">
+          <p className="text-lg font-bold text-[#2e7d32]">
             {fmtCurrency(summary.totalSobrantesVal)}
           </p>
         </div>
 
-        <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-brand-text" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">
@@ -127,40 +127,40 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
             </span>
           </div>
           <p
-            className={`text-lg font-bold ${summary.balanceFinal >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}
+            className={`text-lg font-bold ${summary.balanceFinal >= 0 ? 'text-[#2e7d32]' : 'text-[#d32f2f]'}`}
           >
             {fmtCurrency(summary.balanceFinal)}
           </p>
         </div>
 
-        <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
+            <CheckCircle2 className="w-4 h-4 text-[#2e7d32]" />
             <span className="text-xs text-brand-text-secondary uppercase tracking-tight">
               Sin Novedad
             </span>
           </div>
-          <p className="text-2xl font-bold text-[#22C55E]">
+          <p className="text-2xl font-bold text-[#2e7d32]">
             {fmtNumber(summary.totalProductos - summary.conNovedades)}
           </p>
         </div>
       </div>
 
       {/* Severity Indicators */}
-      <div className="bg-[#132238] rounded-xl border border-brand-border p-4">
+      <div className="bg-[#ffffff] rounded-xl border border-brand-border p-4">
         <h3 className="font-bold text-brand-text mb-3">Clasificación por Severidad</h3>
         <div className="flex gap-4">
-          <div className="flex-1 bg-[#2d0f0f] rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold text-[#EF4444]">{summary.sevAlta}</p>
-            <p className="text-xs text-[#EF4444] uppercase">ALTA</p>
+          <div className="flex-1 bg-[#fdecea] rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-[#d32f2f]">{summary.sevAlta}</p>
+            <p className="text-xs text-[#d32f2f] uppercase">ALTA</p>
           </div>
-          <div className="flex-1 bg-[#2d2000] rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold text-[#FBC519]">{summary.sevMedia}</p>
-            <p className="text-xs text-[#FBC519] uppercase">MEDIA</p>
+          <div className="flex-1 bg-[#fff3e0] rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-[#ef6c00]">{summary.sevMedia}</p>
+            <p className="text-xs text-[#ef6c00] uppercase">MEDIA</p>
           </div>
-          <div className="flex-1 bg-[#0a2d1a] rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold text-[#22C55E]">{summary.sevBaja}</p>
-            <p className="text-xs text-[#22C55E] uppercase">BAJA / SIN</p>
+          <div className="flex-1 bg-[#e8f5e9] rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-[#2e7d32]">{summary.sevBaja}</p>
+            <p className="text-xs text-[#2e7d32] uppercase">BAJA / SIN</p>
           </div>
         </div>
       </div>
@@ -168,15 +168,15 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
       {/* Top 10 Tables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top 10 by difference */}
-        <div className="bg-[#132238] rounded-xl border border-brand-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-brand-border bg-[#0F1C2E]">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-brand-border bg-[#f5f7fa]">
             <h3 className="font-bold text-brand-text text-sm uppercase tracking-wide">
               Top 10 - Mayores Diferencias
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#0F1C2E]">
+              <thead className="bg-[#f5f7fa]">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">#</th>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">
@@ -192,14 +192,14 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
                 {summary.top10Diff.map((a, idx) => (
                   <tr
                     key={idx}
-                    className={`border-t border-brand-border ${a.severidad === 'ALTA' ? 'bg-[#2d0f0f]' : a.severidad === 'MEDIA' ? 'bg-[#2d2000]' : ''}`}
+                    className={`border-t border-brand-border ${a.severidad === 'ALTA' ? 'bg-[#fdecea]' : a.severidad === 'MEDIA' ? 'bg-[#fff3e0]' : ''}`}
                   >
                     <td className="px-3 py-2 text-brand-text-secondary">{idx + 1}</td>
                     <td className="px-3 py-2 font-medium text-brand-text max-w-[180px] truncate">
                       {a.articulo}
                     </td>
                     <td
-                      className={`px-3 py-2 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : 'text-[#22C55E]'}`}
+                      className={`px-3 py-2 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#d32f2f]' : 'text-[#2e7d32]'}`}
                     >
                       {a.totalDiferencia > 0 ? '+' : ''}
                       {fmtNumber(a.totalDiferencia)}
@@ -215,15 +215,15 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
         </div>
 
         {/* Top 10 by recurrence */}
-        <div className="bg-[#132238] rounded-xl border border-brand-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-brand-border bg-[#0F1C2E]">
+        <div className="bg-[#ffffff] rounded-xl border border-brand-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-brand-border bg-[#f5f7fa]">
             <h3 className="font-bold text-brand-text text-sm uppercase tracking-wide">
               Top 10 - Más Recurrentes
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#0F1C2E]">
+              <thead className="bg-[#f5f7fa]">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">#</th>
                   <th className="px-3 py-2 text-left text-xs text-brand-text-secondary">
@@ -244,7 +244,7 @@ export const ExecutiveDashboard: React.FC<Props> = ({ data }) => {
                     </td>
                     <td className="px-3 py-2 text-right text-brand-text">{a.movements.length}</td>
                     <td
-                      className={`px-3 py-2 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-brand-text-secondary'}`}
+                      className={`px-3 py-2 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#d32f2f]' : a.totalDiferencia > 0 ? 'text-[#2e7d32]' : 'text-brand-text-secondary'}`}
                     >
                       {a.totalDiferencia > 0 ? '+' : ''}
                       {fmtNumber(a.totalDiferencia)}

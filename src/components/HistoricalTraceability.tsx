@@ -210,12 +210,12 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
   return (
     <div className="space-y-8 pb-12">
       {/* Header Section */}
-      <div className="bg-[#0F1C2E] text-white p-8 rounded-[12px] shadow-lg relative overflow-hidden">
+      <div className="bg-[#f5f7fa] text-text-main p-8 rounded-[12px] shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-1 uppercase tracking-tight">
             TRAZABILIDAD <HelpTip clave="trazabilidad" />
           </h2>
-          <p className="text-[#C9D4E3] font-medium">
+          <p className="text-[#424242] font-medium">
             Comparativo histórico de confiabilidad e impacto económico
           </p>
         </div>
@@ -229,17 +229,17 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#0a2d1a] border border-emerald-100 p-6 rounded-[12px] flex items-center justify-between shadow-sm"
+          className="bg-[#e8f5e9] border border-emerald-100 p-6 rounded-[12px] flex items-center justify-between shadow-sm"
         >
           <div className="flex items-center gap-4">
-            <div className="bg-[#0a2d1a] p-3 rounded-full">
+            <div className="bg-[#e8f5e9] p-3 rounded-full">
               <CheckCircle2 className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
               <h4 className="text-emerald-900 font-bold uppercase text-xs tracking-wider">
                 ARCHIVO HISTÓRICO CARGADO CORRECTAMENTE
               </h4>
-              <p className="text-emerald-400 text-sm font-medium">{fileName}</p>
+              <p className="text-emerald-700 text-sm font-medium">{fileName}</p>
               <p className="text-emerald-600 text-[10px] font-bold uppercase mt-1">
                 {data.length} registros históricos procesados con éxito
               </p>
@@ -247,7 +247,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
           </div>
           <button
             onClick={onReset}
-            className="px-4 py-2 bg-white border border-emerald-200 text-emerald-400 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#0a2d1a] transition-colors shadow-sm"
+            className="px-4 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#e8f5e9] transition-colors shadow-sm"
           >
             Cargar otro
           </button>
@@ -365,7 +365,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
             </button>
             <button
               onClick={downloadPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-md text-xs font-bold uppercase tracking-wider hover:bg-rose-700 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-text-main rounded-md text-xs font-bold uppercase tracking-wider hover:bg-rose-700 transition-colors shadow-sm"
             >
               <FileText className="w-4 h-4" /> PDF Histórico
             </button>
@@ -385,7 +385,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                 {kpis.currentReliability.toFixed(1)}%
               </p>
               <span
-                className={`text-[10px] font-bold mb-1 flex items-center ${kpis.accumulatedVariation >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                className={`text-[10px] font-bold mb-1 flex items-center ${kpis.accumulatedVariation >= 0 ? 'text-emerald-700' : 'text-rose-500'}`}
               >
                 {kpis.accumulatedVariation >= 0 ? (
                   <ArrowUpRight className="w-3 h-3" />
@@ -400,7 +400,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
             <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
               Mejor Período
             </p>
-            <p className="text-xl font-bold text-[#22C55E] truncate">{kpis.bestPeriod.period}</p>
+            <p className="text-xl font-bold text-[#2e7d32] truncate">{kpis.bestPeriod.period}</p>
             <p className="text-[10px] font-bold text-text-secondary uppercase">
               {kpis.bestPeriod.confiabilidad.toFixed(1)}% confiabilidad
             </p>
@@ -409,7 +409,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
             <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
               Peor Período
             </p>
-            <p className="text-xl font-bold text-[#EF4444] truncate">{kpis.worstPeriod.period}</p>
+            <p className="text-xl font-bold text-[#d32f2f] truncate">{kpis.worstPeriod.period}</p>
             <p className="text-[10px] font-bold text-text-secondary uppercase">
               {kpis.worstPeriod.confiabilidad.toFixed(1)}% confiabilidad
             </p>
@@ -445,7 +445,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
             </p>
             <div className="flex items-center gap-2">
               {kpis.trend === 'Mejorando' ? (
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <TrendingUp className="w-5 h-5 text-emerald-700" />
               ) : kpis.trend === 'Empeoró' ? (
                 <TrendingDown className="w-5 h-5 text-rose-500" />
               ) : (
@@ -463,14 +463,14 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
 
       {/* Analysis Section (Conclusiones Historicas) */}
       {kpis && (
-        <div className="bg-[#132238] p-8 rounded-[12px] border border-brand-border shadow-inner">
+        <div className="bg-[#ffffff] p-8 rounded-[12px] border border-brand-border shadow-inner">
           <h3 className="text-sm font-bold text-text-main uppercase tracking-widest mb-6 flex items-center gap-2">
             <Activity className="w-4 h-4" /> Conclusiones Históricas
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] mt-1.5 flex-shrink-0"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#1976d2] mt-1.5 flex-shrink-0"></div>
                 <p className="text-text-secondary leading-relaxed">
                   En el rango analizado, la confiabilidad pasó de{' '}
                   <span className="font-bold text-text-main">
@@ -490,7 +490,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] mt-1.5 flex-shrink-0"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#1976d2] mt-1.5 flex-shrink-0"></div>
                 <p className="text-text-secondary leading-relaxed">
                   El impacto económico disminuyó de{' '}
                   <span className="font-bold text-text-main">
@@ -504,7 +504,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] mt-1.5 flex-shrink-0"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#1976d2] mt-1.5 flex-shrink-0"></div>
                 <p className="text-text-secondary leading-relaxed">
                   El período con peor desempeño fue{' '}
                   <span className="font-bold text-rose-600 uppercase">
@@ -518,10 +518,10 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
             <div className="space-y-4">
               {Object.entries(historicalData.bySede).length > 0 && (
                 <div className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] mt-1.5 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1976d2] mt-1.5 flex-shrink-0"></div>
                   <p className="text-text-secondary leading-relaxed">
                     La sede con mejor evolución fue{' '}
-                    <span className="font-bold text-[#38BDF8] uppercase">
+                    <span className="font-bold text-[#1976d2] uppercase">
                       {
                         Object.entries(historicalData.bySede)
                           .map(([name, s]) => ({
@@ -537,10 +537,10 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
               )}
               {Object.entries(historicalData.byCC).length > 0 && (
                 <div className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] mt-1.5 flex-shrink-0"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1976d2] mt-1.5 flex-shrink-0"></div>
                   <p className="text-text-secondary leading-relaxed">
                     El centro de costos con mayor mejora fue{' '}
-                    <span className="font-bold text-[#38BDF8] uppercase">
+                    <span className="font-bold text-[#1976d2] uppercase">
                       {
                         Object.entries(historicalData.byCC)
                           .map(([name, s]) => ({
@@ -564,12 +564,12 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
         {/* Reliability Evolution */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
           <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#38BDF8]" /> Evolución de la Confiabilidad %
+            <TrendingUp className="w-4 h-4 text-[#1976d2]" /> Evolución de la Confiabilidad %
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3f2fd" />
                 <XAxis dataKey="period" tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <YAxis
                   domain={[0, 100]}
@@ -611,7 +611,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3f2fd" />
                 <XAxis dataKey="period" tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <YAxis tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <Tooltip
@@ -622,7 +622,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                   }}
                   formatter={(value: number) => [formatCurrency(value), 'Impacto']}
                 />
-                <Bar dataKey="impactoEconomico" fill="#EB5757" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="impactoEconomico" fill="#d32f2f" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -631,12 +631,12 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
         {/* Faltantes vs Sobrantes */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
           <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-[#FBC519]" /> Faltantes vs Sobrantes por Período
+            <AlertTriangle className="w-4 h-4 text-[#ef6c00]" /> Faltantes vs Sobrantes por Período
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3f2fd" />
                 <XAxis dataKey="period" tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <YAxis tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                 <Tooltip contentStyle={{ borderRadius: '8px' }} />
@@ -649,8 +649,8 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                     textTransform: 'uppercase',
                   }}
                 />
-                <Bar dataKey="faltantes" name="Faltantes" fill="#EB5757" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="sobrantes" name="Sobrantes" fill="#27AE60" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faltantes" name="Faltantes" fill="#d32f2f" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="sobrantes" name="Sobrantes" fill="#2e7d32" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -659,12 +659,12 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
         {/* Evolution by Sede */}
         <div className="bg-white p-6 rounded-[12px] border border-brand-border shadow-sm">
           <h3 className="text-sm font-bold text-text-main uppercase tracking-wider mb-8 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-[#38BDF8]" /> Evolución por Sede
+            <Building2 className="w-4 h-4 text-[#1976d2]" /> Evolución por Sede
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={[]}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a2d45" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3f2fd" />
                 <XAxis
                   dataKey="period"
                   allowDuplicatedCategory={false}
@@ -695,12 +695,12 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                       stroke={
                         [
                           '#2F80ED',
-                          '#27AE60',
-                          '#F2C94C',
-                          '#EB5757',
+                          '#2e7d32',
+                          '#ef6c00',
+                          '#d32f2f',
                           '#9B51E0',
                           '#2D9CDB',
-                          '#F2994A',
+                          '#ef6c00',
                         ][idx % 7]
                       }
                       strokeWidth={2}
@@ -716,10 +716,10 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
 
       {/* Comparative Table */}
       <div className="bg-white rounded-[12px] border border-brand-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-brand-border bg-[#0F1C2E] flex items-center justify-between">
+        <div className="p-6 border-b border-brand-border bg-[#f5f7fa] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TableIcon className="w-5 h-5 text-white" />
-            <h3 className="font-bold text-white uppercase tracking-tight">
+            <TableIcon className="w-5 h-5 text-text-main" />
+            <h3 className="font-bold text-text-main uppercase tracking-tight">
               COMPARATIVO POR PERÍODO
             </h3>
           </div>
@@ -727,7 +727,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-[#0F1C2E]">
+              <tr className="bg-[#f5f7fa]">
                 <th className="px-4 py-3 text-[10px] font-bold text-text-main uppercase tracking-widest">
                   Período
                 </th>
@@ -762,7 +762,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
             </thead>
             <tbody className="divide-y divide-brand-border">
               {stats.map((s) => (
-                <tr key={s.period} className="hover:bg-[#132238] transition-colors">
+                <tr key={s.period} className="hover:bg-[#ffffff] transition-colors">
                   <td className="px-4 py-4 font-bold text-text-main text-sm">{s.period}</td>
                   <td className="px-4 py-4 text-center text-text-secondary text-sm font-bold">
                     {s.evaluados}
@@ -775,7 +775,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                   </td>
                   <td className="px-4 py-4 text-center">
                     <span
-                      className={`font-bold text-sm ${s.confiabilidad >= 85 ? 'text-emerald-600' : s.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}
+                      className={`font-bold text-sm ${s.confiabilidad >= 85 ? 'text-emerald-600' : s.confiabilidad >= 70 ? 'text-amber-700' : 'text-rose-600'}`}
                     >
                       {s.confiabilidad.toFixed(1)}%
                     </span>
@@ -786,7 +786,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                   <td className="px-4 py-4 text-center text-rose-500 text-xs font-bold">
                     {s.faltantes}
                   </td>
-                  <td className="px-4 py-4 text-center text-emerald-500 text-xs font-bold">
+                  <td className="px-4 py-4 text-center text-emerald-700 text-xs font-bold">
                     {s.sobrantes}
                   </td>
                   <td className="px-4 py-4 text-center">
@@ -809,10 +809,10 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
                         s.estado === 'Mejoró'
-                          ? 'bg-[#0a2d1a] text-emerald-400'
+                          ? 'bg-[#e8f5e9] text-emerald-700'
                           : s.estado === 'Empeoró'
                             ? 'bg-rose-100 text-rose-700'
-                            : 'bg-[#0F1C2E] text-text-secondary'
+                            : 'bg-[#f5f7fa] text-text-secondary'
                       }`}
                     >
                       {s.estado}
@@ -856,7 +856,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                         >
                           <span className="text-text-secondary">{period.period}</span>
                           <span
-                            className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}
+                            className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-700' : 'text-rose-600'}`}
                           >
                             {period.confiabilidad.toFixed(0)}%
                           </span>
@@ -926,7 +926,7 @@ export const HistoricalTraceability: React.FC<HistoricalTraceabilityProps> = ({
                         >
                           <span className="text-text-secondary">{period.period}</span>
                           <span
-                            className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-500' : 'text-rose-600'}`}
+                            className={`font-bold ${period.confiabilidad >= 85 ? 'text-emerald-600' : period.confiabilidad >= 70 ? 'text-amber-700' : 'text-rose-600'}`}
                           >
                             {period.confiabilidad.toFixed(0)}%
                           </span>

@@ -182,8 +182,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   // --- Render: estado de carga -------------------------------------------------
   if (loading) {
     return (
-      <div className="flex items-center gap-3 px-4 py-2 bg-[#0A1A2A] border border-[#1A3A5A] rounded-xl">
-        <Loader2 className="w-4 h-4 text-[#38BDF8] animate-spin" />
+      <div className="flex items-center gap-3 px-4 py-2 bg-[#f7f8fa] border border-[#e0e0e0] rounded-xl">
+        <Loader2 className="w-4 h-4 text-[#1976d2] animate-spin" />
         <span className="text-sm text-blue-700 font-medium">
           Cargando inventarios desde Supabase...
         </span>
@@ -205,18 +205,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     <div
       className={
         comoDropdown
-          ? 'absolute right-6 top-full mt-2 z-50 w-96 max-w-[90vw] bg-[#081423] border border-[#1A3A5A] rounded-xl p-4 shadow-2xl flex flex-col gap-3'
+          ? 'absolute right-6 top-full mt-2 z-50 w-96 max-w-[90vw] bg-[#f7f8fa] border border-[#e0e0e0] rounded-xl p-4 shadow-2xl flex flex-col gap-3'
           : 'flex flex-col gap-3'
       }
     >
       {comoDropdown && (
-        <p className="text-[10px] uppercase tracking-widest text-[#8EA3BF] font-bold">
-          Cargar otra fuente de datos
+        <p className="text-[10px] uppercase tracking-widest text-[#5f6368] font-bold">
+          Inventarios en la base
         </p>
       )}
       {/* Banner de error con acción de reintento sobre Supabase. */}
       {error && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-[#2A1010] border border-[#5A2020] rounded-xl text-[#EF4444] text-sm">
+        <div className="flex items-center gap-2 px-4 py-2 bg-[#fdecea] border border-[#f5c6c2] rounded-xl text-[#d32f2f] text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
           <button
@@ -229,7 +229,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       )}
 
       {aviso && (
-        <div className="px-4 py-2 bg-[#0B2A1A] border border-[#1F5A3A] rounded-xl text-emerald-400 text-sm">{aviso}</div>
+        <div className="px-4 py-2 bg-[#0B2A1A] border border-[#1F5A3A] rounded-xl text-emerald-700 text-sm">{aviso}</div>
       )}
 
       {/* Acción principal: recarga manual desde Supabase. */}
@@ -244,9 +244,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       {/* Separador visual entre las dos fuentes de datos. */}
       <div className="relative flex items-center gap-2 text-xs text-gray-400">
-        <div className="flex-1 h-px bg-[#243A57]" />
+        <div className="flex-1 h-px bg-[#e3f2fd]" />
         <span>o bien</span>
-        <div className="flex-1 h-px bg-[#243A57]" />
+        <div className="flex-1 h-px bg-[#e3f2fd]" />
       </div>
 
       {/* Zona de carga local: drag & drop o clic para abrir el selector de archivos. */}
@@ -254,7 +254,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-[#243A57] rounded-xl p-4 text-center cursor-pointer hover:border-[#38BDF8] hover:bg-[#1A2E4A] transition-colors"
+        className="border-2 border-dashed border-[#e0e0e0] rounded-xl p-4 text-center cursor-pointer hover:border-[#1976d2] hover:bg-[#e3f2fd] transition-colors"
       >
         <input
           ref={fileInputRef}
@@ -264,7 +264,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           onChange={handleFileInput}
         />
         <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-        <p className="text-xs font-medium text-[#8EA3BF]">Subir inventario de HioPOS a la base</p>
+        <p className="text-xs font-medium text-[#5f6368]">Subir inventario de HioPOS a la base</p>
         <p className="text-xs text-gray-400">
           Arrastra el archivo .csv o .xlsx o haz clic para seleccionar. Se suma a lo que ya está.
         </p>
@@ -272,11 +272,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       {/* Borrar toda la base: solo administrador, con confirmación escrita. */}
       {esAdmin && (
-        <div className="border border-[#5A2020] rounded-xl p-3 text-xs text-[#8EA3BF]">
+        <div className="border border-[#f5c6c2] rounded-xl p-3 text-xs text-[#5f6368]">
           {confirmarBorrado === null ? (
             <button
               onClick={() => setConfirmarBorrado('')}
-              className="flex items-center gap-1 text-[#EF4444] hover:text-red-300 font-medium"
+              className="flex items-center gap-1 text-[#d32f2f] hover:text-red-300 font-medium"
             >
               <Trash2 className="w-3.5 h-3.5" /> Borrar toda la base de inventarios
             </button>
@@ -290,16 +290,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <input
                   value={confirmarBorrado}
                   onChange={(e) => setConfirmarBorrado(e.target.value)}
-                  className="flex-1 rounded-lg bg-[#050D18] border border-[#5A2020] px-2 py-1 text-white"
+                  className="flex-1 rounded-lg bg-[#f7f8fa] border border-[#f5c6c2] px-2 py-1 text-text-main"
                 />
                 <button
                   disabled={confirmarBorrado !== 'BORRAR'}
                   onClick={borrarBase}
-                  className="rounded-lg bg-[#EF4444] disabled:opacity-40 text-white px-3 py-1 font-bold"
+                  className="rounded-lg bg-[#d32f2f] disabled:opacity-40 text-white px-3 py-1 font-bold"
                 >
                   Borrar
                 </button>
-                <button onClick={() => setConfirmarBorrado(null)} className="text-[#8EA3BF] underline">
+                <button onClick={() => setConfirmarBorrado(null)} className="text-[#5f6368] underline">
                   Cancelar
                 </button>
               </div>

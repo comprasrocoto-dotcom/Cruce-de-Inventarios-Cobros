@@ -40,19 +40,19 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#050D18] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa] px-4">
       <form
         onSubmit={entrar}
-        className="w-full max-w-sm bg-[#0A1A2A] border border-[#1A3A5A] rounded-2xl p-6 space-y-4 shadow-xl"
+        className="w-full max-w-sm space-y-4 rounded border border-linea bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]" style={{ borderTop: '4px solid #1976d2' }}
       >
-        <div className="flex items-center gap-2 text-white">
-          <Lock className="w-5 h-5 text-[#38BDF8]" />
-          <h1 className="text-lg font-bold">Cruce de Inventarios y Cobros</h1>
+        <div className="flex items-center gap-2 text-text-main">
+          <Lock className="w-5 h-5 text-[#1976d2]" />
+          <h1 className="text-lg font-medium text-tinta">Cruce de Inventarios y Cobros</h1>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-text-secondary">
           Entra con el mismo correo y contraseña del Informe de Rentabilidad.
         </p>
-        <label className="block text-sm text-slate-300">
+        <label className="block text-xs text-text-secondary">
           Correo
           <input
             type="email"
@@ -60,10 +60,10 @@ const Login: React.FC = () => {
             autoComplete="email"
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
-            className="mt-1 w-full rounded-lg bg-[#050D18] border border-[#1A3A5A] px-3 py-2 text-white outline-none focus:border-[#38BDF8]"
+            className="mt-1 h-9 w-full rounded-sm border border-linea bg-white px-2.5 text-text-main outline-none focus:border-[#1976d2]"
           />
         </label>
-        <label className="block text-sm text-slate-300">
+        <label className="block text-xs text-text-secondary">
           Contraseña
           <input
             type="password"
@@ -71,25 +71,25 @@ const Login: React.FC = () => {
             autoComplete="current-password"
             value={clave}
             onChange={(e) => setClave(e.target.value)}
-            className="mt-1 w-full rounded-lg bg-[#050D18] border border-[#1A3A5A] px-3 py-2 text-white outline-none focus:border-[#38BDF8]"
+            className="mt-1 h-9 w-full rounded-sm border border-linea bg-white px-2.5 text-text-main outline-none focus:border-[#1976d2]"
           />
         </label>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-[#d32f2f]">{error}</p>}
         <button
           type="submit"
           disabled={enviando}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] disabled:opacity-60 text-[#050D18] font-semibold py-2"
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-sm bg-[#1976d2] font-medium text-white hover:bg-[#1565c0] disabled:opacity-60"
         >
           {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
           Entrar
         </button>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-text-secondary">
           ¿No tienes cuenta u olvidaste la contraseña? Créala o cámbiala en el{' '}
           <a
             href={URL_RENTABILIDAD}
             target="_blank"
             rel="noreferrer"
-            className="text-[#38BDF8] underline"
+            className="text-[#1976d2] underline"
           >
             Informe de Rentabilidad
           </a>
@@ -122,28 +122,28 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   if (!listo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050D18]">
-        <Loader2 className="w-6 h-6 text-[#38BDF8] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa]">
+        <Loader2 className="w-6 h-6 text-[#1976d2] animate-spin" />
       </div>
     );
   }
   if (!session) return <Login />;
   if (rol === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050D18]">
-        <Loader2 className="w-6 h-6 text-[#38BDF8] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa]">
+        <Loader2 className="w-6 h-6 text-[#1976d2] animate-spin" />
       </div>
     );
   }
   if (rol === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050D18] px-4">
-        <div className="w-full max-w-sm bg-[#0A1A2A] border border-[#1A3A5A] rounded-2xl p-6 space-y-3 text-slate-300 text-sm">
-          <p className="text-white font-bold">Tu correo no tiene acceso al Cruce de Inventarios</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa] px-4">
+        <div className="w-full max-w-sm space-y-3 rounded border border-linea bg-white p-6 text-sm text-text-secondary">
+          <p className="text-text-main font-bold">Tu correo no tiene acceso al Cruce de Inventarios</p>
           <p>
             Entraste como <b>{session.user.email}</b>. Pídele al administrador que te agregue al Cruce.
           </p>
-          <button onClick={() => supabase.auth.signOut()} className="text-[#38BDF8] underline">
+          <button onClick={() => supabase.auth.signOut()} className="text-[#1976d2] underline">
             Cerrar sesión
           </button>
         </div>
@@ -155,12 +155,12 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     <>
       {children}
       {/* Usuario conectado + salir (esquina inferior derecha, no tapa el header). */}
-      <div className="fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-full bg-[#0A1A2A]/95 border border-[#1A3A5A] px-3 py-1.5 text-xs text-slate-300 shadow-lg">
+      <div className="fixed right-3 bottom-3 z-50 flex items-center gap-2 rounded-full border border-linea bg-white/95 px-3 py-1.5 text-xs text-text-secondary shadow-md">
         <span className="max-w-[180px] truncate">{session.user.email}</span>
         <span className="uppercase text-[10px] text-slate-500">{rol}</span>
         <button
           onClick={() => supabase.auth.signOut()}
-          className="flex items-center gap-1 text-[#38BDF8] hover:text-white"
+          className="flex items-center gap-1 text-[#1976d2] hover:text-[#0d47a1]"
           title="Cerrar sesión"
         >
           <LogOut className="w-3.5 h-3.5" />

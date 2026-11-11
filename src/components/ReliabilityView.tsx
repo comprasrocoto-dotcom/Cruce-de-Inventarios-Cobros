@@ -187,11 +187,11 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   }, [data]);
 
   const getHeatmapCellColor = (reliability: number | null) => {
-    if (reliability === null) return 'bg-[#132238] text-slate-300';
-    if (reliability >= 95) return 'bg-[#22C55E] text-white';
-    if (reliability >= 80) return 'bg-[#FBC519] text-black';
-    if (reliability >= 60) return 'bg-[#F59E0B] text-white';
-    return 'bg-[#EF4444] text-white';
+    if (reliability === null) return 'bg-[#ffffff] text-slate-600';
+    if (reliability >= 95) return 'bg-[#2e7d32] text-white';
+    if (reliability >= 80) return 'bg-[#1976d2] text-black';
+    if (reliability >= 60) return 'bg-[#ef6c00] text-white';
+    return 'bg-[#d32f2f] text-white';
   };
 
   const handleHeatmapCellClick = (sedeName: string, ccName: string, reliabilityData: any) => {
@@ -218,7 +218,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#F8FAFC', // Matching bg-[#132238]
+        backgroundColor: '#F8FAFC', // Matching bg-[#ffffff]
       });
       const imgData = canvas.toDataURL('image/png');
 
@@ -283,15 +283,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   const getLevelColor = (nivel: string) => {
     switch (nivel) {
       case 'Confiable':
-        return 'text-[#22C55E] bg-[#0a2d1a] border-[#27AE60]/20';
+        return 'text-[#2e7d32] bg-[#e8f5e9] border-[#2e7d32]/20';
       case 'Aceptable':
-        return 'text-[#FBC519] bg-[#2d2000] border-[#F2C94C]/20';
+        return 'text-[#ef6c00] bg-[#fff3e0] border-[#ef6c00]/20';
       case 'Riesgo':
-        return 'text-[#F59E0B] bg-[#1a0f00] border-[#F2994A]/20';
+        return 'text-[#ef6c00] bg-[#fff3e0] border-[#ef6c00]/20';
       case 'Crítico':
-        return 'text-[#EF4444] bg-[#2d0f0f] border-[#EB5757]/20';
+        return 'text-[#d32f2f] bg-[#fdecea] border-[#d32f2f]/20';
       default:
-        return 'text-brand-text-secondary bg-[#132238] border-brand-border';
+        return 'text-brand-text-secondary bg-[#ffffff] border-brand-border';
     }
   };
 
@@ -311,15 +311,15 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
   const ReliabilityBar = ({ percentage }: { percentage: number }) => {
     const getColor = (p: number) => {
-      if (p >= 95) return '#27AE60';
-      if (p >= 80) return '#F2C94C';
-      if (p >= 60) return '#F2994A';
-      return '#EB5757';
+      if (p >= 95) return '#2e7d32';
+      if (p >= 80) return '#ef6c00';
+      if (p >= 60) return '#ef6c00';
+      return '#d32f2f';
     };
 
     return (
       <div className="w-full mt-2">
-        <div className="w-full h-[10px] bg-[#0F1C2E] rounded-[8px] overflow-hidden">
+        <div className="w-full h-[10px] bg-[#f5f7fa] rounded-[8px] overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
@@ -340,10 +340,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       }
     });
     return [
-      { name: 'Confiable', value: counts.Confiable, color: '#27AE60' },
-      { name: 'Aceptable', value: counts.Aceptable, color: '#F2C94C' },
-      { name: 'Riesgo', value: counts.Riesgo, color: '#F2994A' },
-      { name: 'Crítico', value: counts.Crítico, color: '#EB5757' },
+      { name: 'Confiable', value: counts.Confiable, color: '#2e7d32' },
+      { name: 'Aceptable', value: counts.Aceptable, color: '#ef6c00' },
+      { name: 'Riesgo', value: counts.Riesgo, color: '#ef6c00' },
+      { name: 'Crítico', value: counts.Crítico, color: '#d32f2f' },
     ].filter((d) => d.value > 0);
   }, [summary]);
 
@@ -356,9 +356,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
   }, [summary]);
 
   const getStatusColor = (p: number) => {
-    if (p >= 85) return '#27AE60';
-    if (p >= 70) return '#F2C94C';
-    return '#EB5757';
+    if (p >= 85) return '#2e7d32';
+    if (p >= 70) return '#ef6c00';
+    return '#d32f2f';
   };
 
   const downloadGeneralPDF = (sede: ReliabilityStats) => {
@@ -1234,31 +1234,31 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="flex flex-col gap-4">
-          <div className="inline-flex bg-[#0F1C2E] p-1 rounded-xl w-fit border border-brand-border shadow-sm">
+          <div className="inline-flex bg-[#f5f7fa] p-1 rounded-xl w-fit border border-brand-border shadow-sm">
             <button
               onClick={() => setMainTab('operativo')}
-              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'operativo' ? 'bg-[#0F1C2E] text-white shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'operativo' ? 'bg-[#f5f7fa] text-text-main shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
             >
               <Target className="w-4 h-4" />
               Dashboard Operativo
             </button>
             <button
               onClick={() => setMainTab('tecnico')}
-              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'tecnico' ? 'bg-[#0F1C2E] text-white shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'tecnico' ? 'bg-[#f5f7fa] text-text-main shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               Informe Técnico de Márgenes
             </button>
             <button
               onClick={() => setMainTab('estabilidad')}
-              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'estabilidad' ? 'bg-[#0F1C2E] text-white shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'estabilidad' ? 'bg-[#f5f7fa] text-text-main shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
             >
               <Activity className="w-4 h-4" />
               Estabilidad de Productos
             </button>
             <button
               onClick={() => setMainTab('gerencial')}
-              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'gerencial' ? 'bg-indigo-900 text-white shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${mainTab === 'gerencial' ? 'bg-indigo-900 text-text-main shadow-lg' : 'text-text-secondary hover:bg-white hover:shadow-sm'}`}
             >
               <Zap className="w-4 h-4" />
               Dashboard Gerencial
@@ -1302,13 +1302,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             <div className="bg-brand-bg p-1 rounded-[6px] flex mr-4 border border-brand-border">
               <button
                 onClick={() => setViewMode('sede')}
-                className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-[#38BDF8] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+                className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'sede' ? 'bg-[#1976d2] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
               >
                 Por Sede
               </button>
               <button
                 onClick={() => setViewMode('cc')}
-                className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-[#38BDF8] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
+                className={`px-4 py-1.5 rounded-[4px] text-xs font-bold transition-all ${viewMode === 'cc' ? 'bg-[#1976d2] text-white shadow-sm' : 'text-brand-text-secondary hover:text-brand-text'}`}
               >
                 Por CC
               </button>
@@ -1316,21 +1316,21 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           )}
           <button
             onClick={exportToExcel}
-            className="flex items-center space-x-2 bg-white border border-brand-border text-text-main px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#132238] transition-all"
+            className="flex items-center space-x-2 bg-white border border-brand-border text-text-main px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#ffffff] transition-all"
           >
             <FileDown className="w-4 h-4" />
             <span>Exportar Excel</span>
           </button>
           <button
             onClick={exportarPDF}
-            className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm"
+            className="flex items-center space-x-2 bg-indigo-600 text-text-main px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm"
           >
             <FileText className="w-4 h-4" />
             <span>Reporte Ejecutivo (PDF)</span>
           </button>
           <button
             onClick={exportDashboardToPDF}
-            className="flex items-center space-x-2 bg-[#38BDF8] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#0ea5e9] transition-all shadow-sm"
+            className="flex items-center space-x-2 bg-[#1976d2] text-white px-4 py-2 rounded-[6px] text-sm font-bold hover:bg-[#1565c0] transition-all shadow-sm"
           >
             <FileDown className="w-4 h-4" />
             <span>Exportar PDF</span>
@@ -1341,14 +1341,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
       {mainTab === 'operativo' && (
         <div id="reporte-confiabilidad" className="space-y-6">
           {/* Main Findings Block */}
-          <div className="bg-[#0a1a2d]/50 border border-blue-100 rounded-2xl p-6">
+          <div className="bg-[#f7f8fa]/50 border border-blue-100 rounded-md p-6">
             <div className="flex items-center space-x-2 mb-4 text-brand-secondary">
               <Target className="w-5 h-5" />
               <h3 className="font-bold uppercase tracking-wider text-sm">Hallazgos Principales</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="flex items-start space-x-3">
-                <div className="bg-[#0a2d1a] p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
+                <div className="bg-[#e8f5e9] p-2 rounded-lg text-status-sobrante mt-1 border border-emerald-100">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div>
@@ -1359,7 +1359,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="bg-[#2d0f0f] p-2 rounded-lg text-status-faltante mt-1 border border-rose-100">
+                <div className="bg-[#fdecea] p-2 rounded-lg text-status-faltante mt-1 border border-rose-100">
                   <TrendingDown className="w-4 h-4" />
                 </div>
                 <div>
@@ -1370,7 +1370,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="bg-[#2d2000] p-2 rounded-lg text-amber-600 mt-1 border border-amber-100">
+                <div className="bg-[#fff3e0] p-2 rounded-lg text-amber-600 mt-1 border border-amber-100">
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <div>
@@ -1383,7 +1383,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="bg-[#0a1a2d] p-2 rounded-lg text-secondary mt-1 border border-blue-100">
+                <div className="bg-[#f7f8fa] p-2 rounded-lg text-secondary mt-1 border border-blue-100">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
@@ -1400,13 +1400,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
           {/* REPORTE FINANCIERO DE PÉRDIDAS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#2d2000] border border-yellow-100 p-6 rounded-2xl flex items-center justify-between">
+            <div className="bg-[#fff3e0] border border-yellow-100 p-6 rounded-md flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="bg-[#2d2000] p-3 rounded-full text-yellow-600 shadow-sm">
+                <div className="bg-[#fff3e0] p-3 rounded-full text-amber-700 shadow-sm">
                   <TrendingDown className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-yellow-600 uppercase tracking-widest">
+                  <p className="text-xs font-bold text-amber-700 uppercase tracking-widest">
                     💸 Pérdida por margen
                   </p>
                   <p className="text-3xl font-black text-yellow-700">
@@ -1421,7 +1421,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
             </div>
 
-            <div className="bg-[#2d0f0f] border border-rose-100 p-6 rounded-2xl flex items-center justify-between">
+            <div className="bg-[#fdecea] border border-rose-100 p-6 rounded-md flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="bg-rose-100 p-3 rounded-full text-rose-600 shadow-sm">
                   <AlertTriangle className="w-6 h-6" />
@@ -1445,9 +1445,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#27AE60] shadow-sm">
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#2e7d32] shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
+                <CheckCircle2 className="w-5 h-5 text-[#2e7d32]" />
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
                   Confiables
                 </span>
@@ -1457,9 +1457,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </p>
               <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} ≥ 95%</p>
             </div>
-            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#F2C94C] shadow-sm">
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#ef6c00] shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-5 h-5 text-[#FBC519]" />
+                <TrendingUp className="w-5 h-5 text-[#ef6c00]" />
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
                   Aceptables
                 </span>
@@ -1472,9 +1472,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </p>
               <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} 80-94%</p>
             </div>
-            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#F2994A] shadow-sm">
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#ef6c00] shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
+                <AlertTriangle className="w-5 h-5 text-[#ef6c00]" />
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
                   Riesgo
                 </span>
@@ -1487,9 +1487,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </p>
               <p className="text-[10px] text-text-secondary mt-1">{entitiesLabel} 60-79%</p>
             </div>
-            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#EB5757] shadow-sm">
+            <div className="bg-white p-5 rounded-[12px] border border-brand-border border-l-4 border-[#d32f2f] shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
+                <AlertTriangle className="w-5 h-5 text-[#d32f2f]" />
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
                   Críticos
                 </span>
@@ -1504,7 +1504,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-2xl card">
+            <div className="bg-white p-6 rounded-md card">
               <div className="flex items-center justify-between mb-2">
                 <Building2 className="w-5 h-5 text-text-secondary" />
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
@@ -1514,7 +1514,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               <p className="text-3xl font-bold text-text-main">{summary.totalSedes}</p>
               <p className="text-sm text-text-secondary mt-1">{entitiesLabel} evaluados</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl card">
+            <div className="bg-white p-6 rounded-md card">
               <div className="flex items-center justify-between mb-2">
                 <Target className="w-5 h-5 text-secondary" />
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
@@ -1526,7 +1526,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </p>
               <p className="text-sm text-text-secondary mt-1">Confiabilidad general</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl card">
+            <div className="bg-white p-6 rounded-md card">
               <div className="flex items-center justify-between mb-2">
                 <AlertTriangle className="w-5 h-5 text-warning" />
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
@@ -1536,7 +1536,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               <p className="text-3xl font-bold text-text-main">{summary.totalDiferencias}</p>
               <p className="text-sm text-text-secondary mt-1">Artículos con descuadre</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl card">
+            <div className="bg-white p-6 rounded-md card">
               <div className="flex items-center justify-between mb-2">
                 <DollarSign className="w-5 h-5 text-success" />
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
@@ -1552,7 +1552,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-2xl card">
+            <div className="bg-white p-6 rounded-md card">
               <div className="flex items-center space-x-2 mb-6 text-text-secondary">
                 <BarChart3 className="w-4 h-4" />
                 <span className="text-xs font-bold uppercase tracking-widest">
@@ -1586,10 +1586,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           key={`cell-${index}`}
                           fill={
                             entry.confiabilidad >= 85
-                              ? '#27AE60'
+                              ? '#2e7d32'
                               : entry.confiabilidad >= 70
-                                ? '#F2C94C'
-                                : '#EB5757'
+                                ? '#ef6c00'
+                                : '#d32f2f'
                           }
                         />
                       ))}
@@ -1599,7 +1599,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl card">
+            <div className="bg-white p-6 rounded-md card">
               <div className="flex items-center space-x-2 mb-6 text-text-secondary">
                 <PieChart className="w-4 h-4" />
                 <span className="text-xs font-bold uppercase tracking-widest">
@@ -1631,7 +1631,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
 
           {/* Filters Section */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-brand-border">
+          <div className="bg-white p-6 rounded-md shadow-sm border border-brand-border">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center space-x-2 text-brand-text-secondary">
                 <Filter className="w-4 h-4" />
@@ -1647,13 +1647,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     placeholder={`Buscar ${entityLabel.toLowerCase()}...`}
                     value={filters.search}
                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    className="w-full bg-[#132238] border border-brand-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
+                    className="w-full bg-[#ffffff] border border-brand-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
                   />
                 </div>
                 <select
                   value={levelFilter}
                   onChange={(e) => setLevelFilter(e.target.value)}
-                  className="bg-[#132238] border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
+                  className="bg-[#ffffff] border border-brand-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary"
                 >
                   <option value="all">Todos los niveles</option>
                   <option value="Confiable">Confiable</option>
@@ -1677,7 +1677,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 {/* FILA SUPERIOR: Nombre (izq) */}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0 pr-4">
-                    <h4 className="font-bold text-text-main group-hover:text-[#38BDF8] transition-colors text-lg line-clamp-2 leading-tight">
+                    <h4 className="font-bold text-text-main group-hover:text-[#1976d2] transition-colors text-lg line-clamp-2 leading-tight">
                       {sede.sede}
                     </h4>
                     {/* DEBAJO DEL NOMBRE: Etiqueta de estado */}
@@ -1701,7 +1701,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       Permite ver si el problema de la sede es de CONTEO o de PLATA. */}
                   {sede.exactitudArticulos !== undefined && (
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div className="bg-[#0F1C2E] px-3 py-2 rounded-[6px] border border-brand-border">
+                      <div className="bg-[#f5f7fa] px-3 py-2 rounded-[6px] border border-brand-border">
                         <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">
                           Exact. Artículos
                         </p>
@@ -1709,7 +1709,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           {sede.exactitudArticulos?.toFixed(1)}%
                         </p>
                       </div>
-                      <div className="bg-[#0F1C2E] px-3 py-2 rounded-[6px] border border-brand-border">
+                      <div className="bg-[#f5f7fa] px-3 py-2 rounded-[6px] border border-brand-border">
                         <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">
                           Exact. Valor
                         </p>
@@ -1724,13 +1724,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 {/* Bloques de Artículos, Diferencias, Impacto */}
                 <div className="space-y-4 flex-1">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-[#132238] p-3 rounded-[6px] border border-brand-border">
+                    <div className="bg-[#ffffff] p-3 rounded-[6px] border border-brand-border">
                       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
                         Artículos
                       </p>
                       <p className="text-sm font-bold text-text-main">{sede.articulosEvaluados}</p>
                     </div>
-                    <div className="bg-[#132238] p-3 rounded-[6px] border border-brand-border">
+                    <div className="bg-[#ffffff] p-3 rounded-[6px] border border-brand-border">
                       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
                         Diferencias
                       </p>
@@ -1738,7 +1738,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         {sede.articulosConDiferencia}
                       </p>
                     </div>
-                    <div className="col-span-2 bg-[#2d0f0f]/50 p-3 rounded-[6px] border border-rose-100/50">
+                    <div className="col-span-2 bg-[#fdecea]/50 p-3 rounded-[6px] border border-rose-100/50">
                       <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">
                         Impacto Económico
                       </p>
@@ -1750,7 +1750,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </div>
 
                 {/* Link: Ver detalle completo */}
-                <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[#38BDF8] font-bold text-xs group-hover:translate-x-1 transition-transform">
+                <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[#1976d2] font-bold text-xs group-hover:translate-x-1 transition-transform">
                   <span>Ver detalle completo</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
@@ -1759,7 +1759,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
 
           {/* Ranking Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-brand-border overflow-hidden">
+          <div className="bg-white rounded-md shadow-sm border border-brand-border overflow-hidden">
             <div className="p-6 border-b border-slate-50 flex items-center justify-between">
               <div className="flex items-center space-x-2 text-text-secondary">
                 <TrendingUp className="w-4 h-4" />
@@ -1771,7 +1771,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-[#0F1C2E]">
+                  <tr className="bg-[#f5f7fa]">
                     <th className="px-6 py-4 text-[10px] font-bold text-text-main uppercase tracking-widest">
                       Pos
                     </th>
@@ -1804,10 +1804,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {summary.sedesStats.map((s, idx) => (
-                    <tr key={s.sede} className="hover:bg-[#132238]/50 transition-colors group">
+                    <tr key={s.sede} className="hover:bg-[#ffffff]/50 transition-colors group">
                       <td className="px-6 py-4">
                         <span
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#0a2d1a] text-emerald-400' : idx === summary.sedesStats.length - 1 ? 'bg-rose-100 text-rose-400' : 'bg-[#0F1C2E] text-text-secondary'}`}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-[#e8f5e9] text-emerald-700' : idx === summary.sedesStats.length - 1 ? 'bg-rose-100 text-rose-400' : 'bg-[#f5f7fa] text-text-secondary'}`}
                         >
                           {idx + 1}
                         </span>
@@ -1823,10 +1823,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                             <span
                               className={
                                 s.confiabilidad >= 85
-                                  ? 'text-[#22C55E]'
+                                  ? 'text-[#2e7d32]'
                                   : s.confiabilidad >= 70
-                                    ? 'text-[#FBC519]'
-                                    : 'text-[#EF4444]'
+                                    ? 'text-[#ef6c00]'
+                                    : 'text-[#d32f2f]'
                               }
                             >
                               {getStatusLabel(s.confiabilidad)}
@@ -1880,41 +1880,41 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         <div className="space-y-8 pb-20">
           {/* Technical KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-[#0F1C2E] p-6 rounded-2xl text-white shadow-xl overflow-hidden relative group">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
+            <div className="bg-[#f5f7fa] p-6 rounded-md text-text-main shadow-xl overflow-hidden relative group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-black/5 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-60">
                 Referencias Evaluadas
               </p>
               <p className="text-4xl font-black">{data.length}</p>
               <div className="mt-4 flex items-center gap-2">
-                <div className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-1 flex-1 bg-black/10 rounded-full overflow-hidden">
                   <div className="h-full bg-white w-full" />
                 </div>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">
                 Confiabilidad Técnica Alta
               </p>
-              <p className="text-4xl font-black text-[#22C55E]">
+              <p className="text-4xl font-black text-[#2e7d32]">
                 {data.filter((a) => a.confiabilidadTecnica === 'ALTA').length}
               </p>
               <p className="text-xs text-text-secondary mt-2">Referencias con ajuste &lt; 2%</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">
                 Confiabilidad Técnica Media
               </p>
-              <p className="text-4xl font-black text-[#FBC519]">
+              <p className="text-4xl font-black text-[#ef6c00]">
                 {data.filter((a) => a.confiabilidadTecnica === 'MEDIA').length}
               </p>
               <p className="text-xs text-text-secondary mt-2">Referencias con ajuste 2% - 10%</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-text-secondary">
                 Referencias Críticas (Baja)
               </p>
-              <p className="text-4xl font-black text-[#EF4444]">
+              <p className="text-4xl font-black text-[#d32f2f]">
                 {data.filter((a) => a.confiabilidadTecnica === 'BAJA').length}
               </p>
               <p className="text-xs text-text-secondary mt-2">Referencias con ajuste &gt; 10%</p>
@@ -1922,10 +1922,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
 
           {/* Technical Data Grid */}
-          <div className="bg-white rounded-2xl border border-brand-border shadow-md overflow-hidden">
-            <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#132238]/50">
+          <div className="bg-white rounded-md border border-brand-border shadow-md overflow-hidden">
+            <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#ffffff]/50">
               <div className="flex items-center gap-3">
-                <div className="bg-[#0F1C2E] p-2 rounded-lg text-white">
+                <div className="bg-[#f5f7fa] p-2 rounded-lg text-text-main">
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div>
@@ -1940,7 +1940,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-[#132238] text-[10px] font-black uppercase tracking-widest text-text-secondary border-b border-brand-border">
+                <thead className="bg-[#ffffff] text-[10px] font-black uppercase tracking-widest text-text-secondary border-b border-brand-border">
                   <tr>
                     <th className="px-6 py-4">Producto / Sede / CC</th>
                     <th className="px-4 py-4 text-right">Inv. Inicial</th>
@@ -1953,16 +1953,16 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {data.slice(0, 100).map((a, i) => (
-                    <tr key={i} className="hover:bg-[#132238] transition-colors group">
+                    <tr key={i} className="hover:bg-[#ffffff] transition-colors group">
                       <td className="px-6 py-4">
                         <div className="font-bold text-text-main group-hover:text-blue-600 transition-colors uppercase tracking-tight">
                           {a.articulo}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] font-black bg-[#0F1C2E] text-text-secondary px-1.5 py-0.5 rounded uppercase">
+                          <span className="text-[9px] font-black bg-[#f5f7fa] text-text-secondary px-1.5 py-0.5 rounded uppercase">
                             {a.sede}
                           </span>
-                          <span className="text-[9px] font-black bg-[#0a1a2d] text-[#38BDF8] px-1.5 py-0.5 rounded uppercase">
+                          <span className="text-[9px] font-black bg-[#f7f8fa] text-[#1976d2] px-1.5 py-0.5 rounded uppercase">
                             {a.cc}
                           </span>
                           <span className="text-[9px] font-medium text-text-secondary uppercase italic leading-none">
@@ -1994,7 +1994,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span
-                          className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                          className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${a.dentroDeTolerancia ? 'bg-[#e8f5e9] text-emerald-600 border-emerald-100' : 'bg-[#fdecea] text-rose-600 border-rose-100'}`}
                         >
                           {a.dentroDeTolerancia ? 'DENTRO DE MARGEN' : 'EXCEDE TOLERANCIA'}
                         </span>
@@ -2003,10 +2003,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         <span
                           className={`px-2 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-tighter shadow-sm ${
                             a.confiabilidadTecnica === 'ALTA'
-                              ? 'bg-[#22C55E] text-white'
+                              ? 'bg-[#2e7d32] text-white'
                               : a.confiabilidadTecnica === 'MEDIA'
-                                ? 'bg-[#FBC519] text-text-main'
-                                : 'bg-[#EF4444] text-white'
+                                ? 'bg-[#1976d2] text-white'
+                                : 'bg-[#d32f2f] text-white'
                           }`}
                         >
                           {a.confiabilidadTecnica}
@@ -2017,7 +2017,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </tbody>
               </table>
               {data.length > 100 && (
-                <div className="p-4 bg-[#132238] text-center text-[10px] font-bold uppercase tracking-widest text-text-secondary italic">
+                <div className="p-4 bg-[#ffffff] text-center text-[10px] font-bold uppercase tracking-widest text-text-secondary italic">
                   Mostrando las primeras 100 de {data.length} referencias totales.
                 </div>
               )}
@@ -2030,8 +2030,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         <div className="space-y-8 pb-20">
           {/* Stability KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
-              <div className="bg-[#0a2d1a] p-3 rounded-xl text-emerald-600">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex items-center gap-4">
+              <div className="bg-[#e8f5e9] p-3 rounded-xl text-emerald-600">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
@@ -2043,7 +2043,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex items-center gap-4">
               <div className="bg-amber-100 p-3 rounded-xl text-amber-600">
                 <AlertTriangle className="w-6 h-6" />
               </div>
@@ -2056,7 +2056,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex items-center gap-4">
               <div className="bg-rose-100 p-3 rounded-xl text-rose-600">
                 <ShieldAlert className="w-6 h-6" />
               </div>
@@ -2069,9 +2069,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </p>
               </div>
             </div>
-            <div className="bg-[#0F1C2E] p-6 rounded-2xl text-white shadow-xl flex items-center gap-4 overflow-hidden relative group">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
-              <div className="bg-white/10 p-3 rounded-xl z-10">
+            <div className="bg-[#f5f7fa] p-6 rounded-md text-text-main shadow-xl flex items-center gap-4 overflow-hidden relative group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-black/5 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
+              <div className="bg-black/5 p-3 rounded-xl z-10">
                 <TrendingDown className="w-6 h-6" />
               </div>
               <div className="z-10">
@@ -2113,7 +2113,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       strokeDasharray="3 3"
                       horizontal={true}
                       vertical={false}
-                      stroke="#243A57"
+                      stroke="#e0e0e0"
                     />
                     <XAxis type="number" domain={[0, 100]} hide />
                     <YAxis
@@ -2130,7 +2130,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         if (active && payload && payload.length) {
                           const item = payload[0].payload;
                           return (
-                            <div className="bg-[#0F1C2E] p-4 rounded-xl shadow-2xl text-white border border-white/10">
+                            <div className="bg-[#f5f7fa] p-4 rounded-xl shadow-2xl text-text-main border border-black/10">
                               <p className="text-xs font-black uppercase mb-1">{item.producto}</p>
                               <p className="text-2xl font-black">
                                 {Math.round(item.porcentajeFueraMargen)}%{' '}
@@ -2138,7 +2138,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                   Fuera de Margen
                                 </span>
                               </p>
-                              <p className="text-sm font-bold mt-2 text-emerald-400">
+                              <p className="text-sm font-bold mt-2 text-emerald-700">
                                 {Math.round(item.confiabilidad)}% Confiabilidad
                               </p>
                             </div>
@@ -2153,10 +2153,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           key={`cell-${index}`}
                           fill={
                             entry.porcentajeFueraMargen > 60
-                              ? '#EB5757'
+                              ? '#d32f2f'
                               : entry.porcentajeFueraMargen > 30
-                                ? '#F2C94C'
-                                : '#27AE60'
+                                ? '#ef6c00'
+                                : '#2e7d32'
                           }
                         />
                       ))}
@@ -2167,17 +2167,17 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             </div>
 
             {/* Ranking Card */}
-            <div className="bg-white p-8 rounded-2xl border border-brand-border shadow-sm flex flex-col h-[600px]">
+            <div className="bg-white p-8 rounded-md border border-brand-border shadow-sm flex flex-col h-[600px]">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="bg-[#2d2000] p-2 rounded-lg text-amber-600">
+                  <div className="bg-[#fff3e0] p-2 rounded-lg text-amber-600">
                     <Activity className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-text-main uppercase tracking-tight">
                     Ranking de Estabilidad
                   </h3>
                 </div>
-                <span className="text-[10px] font-black bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">
+                <span className="text-[10px] font-black bg-[#f5f7fa] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">
                   Top Críticos
                 </span>
               </div>
@@ -2186,7 +2186,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   <div
                     key={i}
                     onClick={() => setSelectedProduct(item)}
-                    className="flex items-center justify-between p-4 rounded-xl border border-slate-50 hover:border-brand-border hover:bg-[#132238]/50 transition-all cursor-pointer group"
+                    className="flex items-center justify-between p-4 rounded-xl border border-slate-50 hover:border-brand-border hover:bg-[#ffffff]/50 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -2195,7 +2195,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                             ? 'bg-rose-100 text-rose-600'
                             : item.estado === 'Inestable'
                               ? 'bg-amber-100 text-amber-600'
-                              : 'bg-[#0a2d1a] text-emerald-600'
+                              : 'bg-[#e8f5e9] text-emerald-600'
                         }`}
                       >
                         {Math.round(item.confiabilidad)}%
@@ -2207,9 +2207,9 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         <p
                           className={`text-[10px] font-black mt-1 uppercase tracking-tight ${
                             item.confiabilidad >= 95
-                              ? 'text-emerald-500'
+                              ? 'text-emerald-700'
                               : item.confiabilidad >= 80
-                                ? 'text-amber-500'
+                                ? 'text-amber-700'
                                 : item.confiabilidad >= 60
                                   ? 'text-orange-500'
                                   : 'text-rose-500'
@@ -2229,7 +2229,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <p className="text-lg font-black text-text-main">
                         {Math.round(item.porcentajeFueraMargen)}%
                       </p>
-                      <p className="text-[9px] font-black text-slate-300 uppercase leading-none">
+                      <p className="text-[9px] font-black text-slate-600 uppercase leading-none">
                         Fuera Margen
                       </p>
                     </div>
@@ -2240,7 +2240,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
 
           {/* Ranking por Responsables */}
-          <div className="bg-white p-8 rounded-2xl border border-brand-border shadow-sm mb-8">
+          <div className="bg-white p-8 rounded-md border border-brand-border shadow-sm mb-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
@@ -2250,7 +2250,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   Ranking por Responsables
                 </h3>
               </div>
-              <span className="text-[10px] font-black bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">
+              <span className="text-[10px] font-black bg-[#f5f7fa] text-text-secondary px-2 py-1 rounded-md uppercase tracking-widest">
                 Desempeño Operativo
               </span>
             </div>
@@ -2262,7 +2262,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     data={analisisResponsables}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#243A57" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
                     <XAxis
                       dataKey="responsable"
                       axisLine={false}
@@ -2280,7 +2280,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         if (active && payload && payload.length) {
                           const item = payload[0].payload;
                           return (
-                            <div className="bg-[#0F1C2E] p-4 rounded-xl shadow-2xl text-white border border-white/10">
+                            <div className="bg-[#f5f7fa] p-4 rounded-xl shadow-2xl text-text-main border border-black/10">
                               <p className="text-xs font-black uppercase mb-1">
                                 {item.responsable}
                               </p>
@@ -2288,7 +2288,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                 {Math.round(item.porcentajeFallo)}%{' '}
                                 <span className="text-[10px] font-bold opacity-60">Fallo</span>
                               </p>
-                              <p className="text-sm font-bold mt-2 text-emerald-400">
+                              <p className="text-sm font-bold mt-2 text-emerald-700">
                                 {Math.round(item.confiabilidad)}% Confiabilidad
                               </p>
                             </div>
@@ -2303,10 +2303,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           key={`cell-${index}`}
                           fill={
                             entry.porcentajeFallo > 60
-                              ? '#EB5757'
+                              ? '#d32f2f'
                               : entry.porcentajeFallo > 30
-                                ? '#F2C94C'
-                                : '#27AE60'
+                                ? '#ef6c00'
+                                : '#2e7d32'
                           }
                         />
                       ))}
@@ -2319,7 +2319,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 {analisisResponsables.slice(0, 10).map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-[#132238]/30"
+                    className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-[#ffffff]/30"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black border border-brand-border shadow-sm text-text-secondary">
@@ -2332,12 +2332,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p
-                          className={`text-sm font-black ${item.porcentajeFallo > 60 ? 'text-rose-600' : item.porcentajeFallo > 30 ? 'text-amber-500' : 'text-emerald-600'}`}
+                          className={`text-sm font-black ${item.porcentajeFallo > 60 ? 'text-rose-600' : item.porcentajeFallo > 30 ? 'text-amber-700' : 'text-emerald-600'}`}
                         >
                           {Math.round(item.porcentajeFallo)}% fallo
                         </p>
                         <p
-                          className={`text-[9px] font-black uppercase mt-0.5 ${item.confiabilidad < 70 ? 'text-rose-400' : 'text-emerald-400'}`}
+                          className={`text-[9px] font-black uppercase mt-0.5 ${item.confiabilidad < 70 ? 'text-rose-400' : 'text-emerald-700'}`}
                         >
                           {Math.round(item.confiabilidad)}% confiabilidad
                         </p>
@@ -2350,8 +2350,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
           </div>
 
           {/* Tabla de Detalle de Confiabilidad (Executive Table) */}
-          <div className="bg-white rounded-2xl border border-brand-border shadow-sm overflow-hidden mb-20">
-            <div className="p-6 border-b border-brand-border bg-[#132238]/50 flex items-center justify-between">
+          <div className="bg-white rounded-md border border-brand-border shadow-sm overflow-hidden mb-20">
+            <div className="p-6 border-b border-brand-border bg-[#ffffff]/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
                   <FileSpreadsheet className="w-5 h-5" />
@@ -2363,7 +2363,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-[#0F1C2E] text-white">
+                <thead className="bg-[#f5f7fa] text-text-main">
                   <tr>
                     <th className="px-8 py-4 font-bold uppercase tracking-wider text-[10px]">
                       Producto
@@ -2384,7 +2384,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     <tr
                       key={i}
                       onClick={() => setSelectedProduct(item)}
-                      className="hover:bg-[#132238] transition-colors cursor-pointer group"
+                      className="hover:bg-[#ffffff] transition-colors cursor-pointer group"
                     >
                       <td className="px-8 py-4 font-bold text-text-main group-hover:text-blue-600 transition-colors uppercase">
                         {item.producto}
@@ -2394,7 +2394,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           item.porcentajeFueraMargen > 60
                             ? 'text-rose-600'
                             : item.porcentajeFueraMargen > 30
-                              ? 'text-amber-500'
+                              ? 'text-amber-700'
                               : 'text-emerald-600'
                         }`}
                       >
@@ -2407,12 +2407,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         <span
                           className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                             item.confiabilidad >= 95
-                              ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100'
+                              ? 'bg-[#e8f5e9] text-emerald-600 border-emerald-100'
                               : item.confiabilidad >= 80
-                                ? 'bg-[#2d2000] text-amber-600 border-amber-100'
+                                ? 'bg-[#fff3e0] text-amber-600 border-amber-100'
                                 : item.confiabilidad >= 60
-                                  ? 'bg-[#1a0f00] text-orange-600 border-orange-100'
-                                  : 'bg-[#2d0f0f] text-rose-600 border-rose-100'
+                                  ? 'bg-[#fff3e0] text-orange-600 border-orange-100'
+                                  : 'bg-[#fdecea] text-rose-600 border-rose-100'
                           }`}
                         >
                           {item.confiabilidad >= 95
@@ -2438,8 +2438,8 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
         <div className="space-y-8 pb-20">
           {/* Executive KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-[#0F1C2E] p-6 rounded-2xl text-white shadow-xl relative overflow-hidden group">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl transition-all" />
+            <div className="bg-[#f5f7fa] p-6 rounded-md text-text-main shadow-xl relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-black/5 rounded-full blur-2xl transition-all" />
               <div className="relative z-10">
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
                   Riesgo Mensual Proyectado
@@ -2454,7 +2454,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex items-center gap-4">
               <div className="bg-rose-100 p-3 rounded-xl text-rose-600">
                 <ShieldAlert className="w-6 h-6" />
               </div>
@@ -2468,7 +2468,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex items-center gap-4">
               <div className="bg-amber-100 p-3 rounded-xl text-amber-600">
                 <DollarSign className="w-6 h-6" />
               </div>
@@ -2482,7 +2482,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex items-center gap-4">
               <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600">
                 <Target className="w-6 h-6" />
               </div>
@@ -2497,7 +2497,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm flex flex-col h-[700px]">
+          <div className="bg-white p-6 rounded-md border border-brand-border shadow-sm flex flex-col h-[700px]">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
@@ -2511,7 +2511,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-left">
                 <thead className="sticky top-0 bg-white z-10">
-                  <tr className="bg-[#132238]/50">
+                  <tr className="bg-[#ffffff]/50">
                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-secondary">
                       Insumo / Sede
                     </th>
@@ -2525,13 +2525,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {resumenFinanciero.rankingRiesgo.map((item, i) => (
-                    <tr key={i} className="hover:bg-[#132238]/80 transition-colors group">
+                    <tr key={i} className="hover:bg-[#ffffff]/80 transition-colors group">
                       <td className="px-6 py-4">
                         <p className="text-sm font-bold text-text-main uppercase group-hover:text-indigo-600 transition-colors">
                           {item.articulo}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Building2 className="w-3 h-3 text-slate-300" />
+                          <Building2 className="w-3 h-3 text-slate-600" />
                           <p className="text-[10px] font-bold text-text-secondary uppercase leading-none">
                             {item.sede}
                           </p>
@@ -2543,7 +2543,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="bg-rose-600 text-white px-3 py-1.5 rounded-lg inline-block font-black text-sm shadow-sm">
+                        <div className="bg-rose-600 text-text-main px-3 py-1.5 rounded-lg inline-block font-black text-sm shadow-sm">
                           {formatCurrency(item.perdidaProyectada)}
                         </div>
                       </td>
@@ -2577,7 +2577,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[12px] shadow-2xl overflow-hidden flex flex-col border border-brand-border"
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#132238]">
+              <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#ffffff]">
                 <div>
                   <h3 className="text-xl font-bold text-text-main">
                     Detalle de Confiabilidad - {selectedSede.sede}
@@ -2587,7 +2587,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">
                         Filtrado por:
                       </span>
-                      <span className="bg-[#0a1a2d] text-[#38BDF8] px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase border border-blue-100">
+                      <span className="bg-[#f7f8fa] text-[#1976d2] px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase border border-blue-100">
                         {selectedCCFilter}
                       </span>
                       <button
@@ -2609,7 +2609,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                   <div className="flex bg-white p-1 rounded-[6px] border border-brand-border">
                     <button
                       onClick={() => downloadGeneralPDF(selectedSede)}
-                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-text-main hover:bg-[#132238] transition-all border-r border-brand-border"
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-text-main hover:bg-[#ffffff] transition-all border-r border-brand-border"
                       title="Reporte General"
                     >
                       <FileText className="w-3 h-3" />
@@ -2617,7 +2617,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     </button>
                     <button
                       onClick={() => downloadLossesPDF(selectedSede)}
-                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#EF4444] hover:bg-[#2d0f0f] transition-all border-r border-brand-border"
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#d32f2f] hover:bg-[#fdecea] transition-all border-r border-brand-border"
                       title="Top Pérdidas"
                     >
                       <TrendingDown className="w-3 h-3" />
@@ -2625,7 +2625,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     </button>
                     <button
                       onClick={() => downloadGainsPDF(selectedSede)}
-                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#22C55E] hover:bg-[#0a2d1a] transition-all border-r border-brand-border"
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#2e7d32] hover:bg-[#e8f5e9] transition-all border-r border-brand-border"
                       title="Top Ganancias"
                     >
                       <TrendingUp className="w-3 h-3" />
@@ -2633,7 +2633,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     </button>
                     <button
                       onClick={() => downloadProblematicPDF(selectedSede)}
-                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#38BDF8] hover:bg-[#0a1a2d] transition-all"
+                      className="flex items-center space-x-2 px-3 py-1.5 rounded-[4px] text-[10px] font-bold text-[#1976d2] hover:bg-[#f7f8fa] transition-all"
                       title="Riesgo Operativo"
                     >
                       <ShieldAlert className="w-3 h-3" />
@@ -2658,7 +2658,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               <div className="p-6 overflow-y-auto flex-1 space-y-8">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
+                  <div className="bg-[#ffffff] p-4 rounded-[8px] border border-brand-border">
                     <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
                       Confiabilidad
                     </p>
@@ -2672,7 +2672,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       </p>
                     )}
                   </div>
-                  <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
+                  <div className="bg-[#ffffff] p-4 rounded-[8px] border border-brand-border">
                     <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
                       Evaluados
                     </p>
@@ -2680,37 +2680,37 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                       {selectedSede.articulosEvaluados}
                     </p>
                   </div>
-                  <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
+                  <div className="bg-[#ffffff] p-4 rounded-[8px] border border-brand-border">
                     <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
                       Sin Diferencia
                     </p>
-                    <p className="text-2xl font-bold text-[#22C55E]">
+                    <p className="text-2xl font-bold text-[#2e7d32]">
                       {selectedSede.articulosSinDiferencia}
                     </p>
                   </div>
-                  <div className="bg-[#132238] p-4 rounded-[8px] border border-brand-border">
+                  <div className="bg-[#ffffff] p-4 rounded-[8px] border border-brand-border">
                     <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">
                       Con Diferencia
                     </p>
-                    <p className="text-2xl font-bold text-[#EF4444]">
+                    <p className="text-2xl font-bold text-[#d32f2f]">
                       {selectedSede.articulosConDiferencia}
                     </p>
                   </div>
                 </div>
 
                 {/* Modal Tabs & Filters */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#132238] p-4 rounded-[8px] border border-brand-border">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#ffffff] p-4 rounded-[8px] border border-brand-border">
                   <div className="flex bg-white p-1 rounded-[8px] border border-brand-border shadow-sm">
                     <button
                       onClick={() => setModalTab('operacion')}
-                      className={`px-4 py-2 rounded-[6px] text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${modalTab === 'operacion' ? 'bg-[#0F1C2E] text-white shadow-md' : 'text-text-secondary hover:bg-[#132238]'}`}
+                      className={`px-4 py-2 rounded-[6px] text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${modalTab === 'operacion' ? 'bg-[#f5f7fa] text-text-main shadow-md' : 'text-text-secondary hover:bg-[#ffffff]'}`}
                     >
                       <BarChart3 className="w-3.5 h-3.5" />
                       Auditoría Operativa
                     </button>
                     <button
                       onClick={() => setModalTab('tecnico')}
-                      className={`px-4 py-2 rounded-[6px] text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${modalTab === 'tecnico' ? 'bg-[#0F1C2E] text-white shadow-md' : 'text-text-secondary hover:bg-[#132238]'}`}
+                      className={`px-4 py-2 rounded-[6px] text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${modalTab === 'tecnico' ? 'bg-[#f5f7fa] text-text-main shadow-md' : 'text-text-secondary hover:bg-[#ffffff]'}`}
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5" />
                       Control Técnico
@@ -2724,7 +2724,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         <button
                           key={f}
                           onClick={() => setModalFilter(f)}
-                          className={`px-3 py-1 rounded-[4px] text-xs font-bold transition-all ${modalFilter === f ? 'bg-[#38BDF8] text-white shadow-sm' : 'text-text-secondary hover:bg-[#132238]'}`}
+                          className={`px-3 py-1 rounded-[4px] text-xs font-bold transition-all ${modalFilter === f ? 'bg-[#1976d2] text-white shadow-sm' : 'text-text-secondary hover:bg-[#ffffff]'}`}
                         >
                           {f}
                         </button>
@@ -2742,14 +2742,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           <BarChart3 className="w-4 h-4 mr-2" />
                           Listado de Referencias - Auditoría
                         </h4>
-                        <span className="text-[10px] font-bold bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md">
+                        <span className="text-[10px] font-bold bg-[#f5f7fa] text-text-secondary px-2 py-1 rounded-md">
                           Referencias: {filteredItems.length}
                         </span>
                       </div>
 
                       <div className="overflow-hidden rounded-[8px] border border-brand-border shadow-sm">
                         <table className="w-full text-left text-sm">
-                          <thead className="bg-[#0F1C2E] text-text-main">
+                          <thead className="bg-[#f5f7fa] text-text-main">
                             <tr>
                               <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
                                 ARTÍCULO
@@ -2772,14 +2772,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                             {filteredItems.map((a, i) => (
                               <tr
                                 key={i}
-                                className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-[#0F1C2E] transition-colors`}
+                                className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#ffffff]'} hover:bg-[#f5f7fa] transition-colors`}
                               >
                                 <td className="px-6 py-3 font-bold text-text-main">{a.articulo}</td>
                                 <td className="px-6 py-3 text-text-secondary text-[10px] font-bold">
                                   {a.subarticulo}
                                 </td>
                                 <td
-                                  className={`px-4 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-text-secondary'}`}
+                                  className={`px-4 py-3 text-right font-bold ${a.totalDiferencia < 0 ? 'text-[#d32f2f]' : a.totalDiferencia > 0 ? 'text-[#2e7d32]' : 'text-text-secondary'}`}
                                 >
                                   {a.totalDiferencia > 0 ? '+' : ''}
                                   {formatVariation(a.totalDiferencia, a.subarticulo)}
@@ -2791,7 +2791,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   <span
-                                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${a.dentroDeTolerancia ? 'bg-[#e8f5e9] text-emerald-600 border-emerald-100' : 'bg-[#fdecea] text-rose-600 border-rose-100'}`}
                                   >
                                     {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
                                   </span>
@@ -2809,14 +2809,14 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                           <FileSpreadsheet className="w-4 h-4 mr-2" />
                           Informe Técnico de Margen de Error
                         </h4>
-                        <span className="text-[10px] font-bold bg-[#0F1C2E] text-text-secondary px-2 py-1 rounded-md">
+                        <span className="text-[10px] font-bold bg-[#f5f7fa] text-text-secondary px-2 py-1 rounded-md">
                           Referencias: {filteredItems.length}
                         </span>
                       </div>
 
                       <div className="overflow-hidden rounded-[8px] border border-brand-border shadow-sm">
                         <table className="w-full text-left text-sm">
-                          <thead className="bg-[#0F1C2E] text-white">
+                          <thead className="bg-[#f5f7fa] text-text-main">
                             <tr>
                               <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
                                 ARTÍCULO
@@ -2842,7 +2842,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                             {filteredItems.map((a, i) => (
                               <tr
                                 key={i}
-                                className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-indigo-50 transition-colors`}
+                                className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#ffffff]'} hover:bg-indigo-50 transition-colors`}
                               >
                                 <td className="px-6 py-3 font-bold text-text-main">
                                   {a.articulo}
@@ -2854,7 +2854,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                   {formatVariation(a.stockEsperado, a.subarticulo)}
                                 </td>
                                 <td
-                                  className={`px-4 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-[#EF4444]' : a.totalDiferencia > 0 ? 'text-[#22C55E]' : 'text-text-secondary'}`}
+                                  className={`px-4 py-3 text-right font-black ${a.totalDiferencia < 0 ? 'text-[#d32f2f]' : a.totalDiferencia > 0 ? 'text-[#2e7d32]' : 'text-text-secondary'}`}
                                 >
                                   {a.totalDiferencia > 0 ? '+' : ''}
                                   {formatVariation(a.totalDiferencia, a.subarticulo)}
@@ -2873,7 +2873,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   <div
-                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#e8f5e9] text-emerald-600 border-emerald-100' : 'bg-[#fdecea] text-rose-600 border-rose-100'}`}
                                   >
                                     {a.dentroDeTolerancia
                                       ? 'DENTRO DE MARGEN'
@@ -2891,13 +2891,13 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 bg-[#132238] border-t border-brand-border flex items-center justify-between">
+              <div className="p-6 bg-[#ffffff] border-t border-brand-border flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div>
                     <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
                       Impacto Total {entityLabel}
                     </p>
-                    <p className="text-2xl font-bold text-[#EF4444]">
+                    <p className="text-2xl font-bold text-[#d32f2f]">
                       {formatCurrency(selectedSede.impactoEconomico)}
                     </p>
                   </div>
@@ -2908,7 +2908,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     setModalFilter('Todos');
                     setShowOnlyFaltantes(false);
                   }}
-                  className="bg-[#0F1C2E] text-white px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#38BDF8] transition-all"
+                  className="bg-[#f5f7fa] text-text-main px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#1976d2] transition-all"
                 >
                   Cerrar Detalle
                 </button>
@@ -2933,7 +2933,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               layoutId={selectedProduct.producto}
               className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-[12px] shadow-2xl overflow-hidden flex flex-col border border-brand-border"
             >
-              <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#132238]">
+              <div className="p-6 border-b border-brand-border flex items-center justify-between bg-[#ffffff]">
                 <div>
                   <h3 className="text-xl font-bold text-text-main">
                     Trazabilidad de Producto: {selectedProduct.producto}
@@ -2942,12 +2942,12 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                     <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
                       Nivel de Estabilidad:
                       <span
-                        className={`ml-2 px-2 py-0.5 rounded-[4px] text-white ${
+                        className={`ml-2 px-2 py-0.5 rounded-[4px] text-text-main ${
                           selectedProduct.estado === 'Crítico'
-                            ? 'bg-[#2d0f0f]0'
+                            ? 'bg-[#fdecea]0'
                             : selectedProduct.estado === 'Inestable'
-                              ? 'bg-[#2d2000]0'
-                              : 'bg-[#0a2d1a]0'
+                              ? 'bg-[#fff3e0]0'
+                              : 'bg-[#e8f5e9]0'
                         }`}
                       >
                         {selectedProduct.estado}
@@ -2969,7 +2969,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
               <div className="p-6 overflow-y-auto">
                 <div className="bg-white rounded-[8px] border border-brand-border shadow-sm overflow-hidden">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-[#0F1C2E] text-white">
+                    <thead className="bg-[#f5f7fa] text-text-main">
                       <tr>
                         <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px]">
                           Sede / Centro de Costo
@@ -2991,7 +2991,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                         .map((a, i) => (
                           <tr
                             key={i}
-                            className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#132238]'} hover:bg-[#0F1C2E] transition-colors`}
+                            className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#ffffff]'} hover:bg-[#f5f7fa] transition-colors`}
                           >
                             <td className="px-6 py-4">
                               <div className="font-bold text-text-main">{a.sede}</div>
@@ -3012,7 +3012,7 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                             </td>
                             <td className="px-4 py-4 text-center">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#0a2d1a] text-emerald-600 border-emerald-100' : 'bg-[#2d0f0f] text-rose-600 border-rose-100'}`}
+                                className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${a.dentroDeTolerancia ? 'bg-[#e8f5e9] text-emerald-600 border-emerald-100' : 'bg-[#fdecea] text-rose-600 border-rose-100'}`}
                               >
                                 {a.dentroDeTolerancia ? 'ESTABLE' : 'FUERA MARGEN'}
                               </span>
@@ -3024,10 +3024,10 @@ export const ReliabilityView: React.FC<ReliabilityViewProps> = ({ data, filters,
                 </div>
               </div>
 
-              <div className="p-6 bg-[#132238] border-t border-brand-border flex justify-end">
+              <div className="p-6 bg-[#ffffff] border-t border-brand-border flex justify-end">
                 <button
                   onClick={() => setSelectedProduct(null)}
-                  className="bg-[#0F1C2E] text-white px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#38BDF8] transition-all"
+                  className="bg-[#f5f7fa] text-text-main px-6 py-2 rounded-[6px] text-sm font-bold hover:bg-[#1976d2] transition-all"
                 >
                   Cerrar Trazabilidad
                 </button>

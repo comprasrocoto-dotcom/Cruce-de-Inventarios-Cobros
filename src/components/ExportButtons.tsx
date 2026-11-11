@@ -396,14 +396,14 @@ export const ExportButtons = ({
     <div className="flex flex-wrap gap-3">
       <button
         onClick={exportToExcel}
-        className="flex items-center space-x-2 bg-[#27AE60] hover:bg-[#1E8449] text-white px-4 py-2 rounded-[6px] text-sm font-bold transition-all shadow-sm"
+        className="flex items-center space-x-2 bg-[#2e7d32] hover:bg-[#1E8449] text-white px-4 py-2 rounded-[6px] text-sm font-bold transition-all shadow-sm"
       >
         <FileDown className="w-4 h-4" />
         <span>{variante === 'agrupado' ? 'Excel Cobros Agrupado' : 'Excel Jerárquico'}</span>
       </button>
       <button
         onClick={exportToPDF}
-        className="flex items-center space-x-2 bg-[#EB5757] hover:bg-[#C0392B] text-white px-4 py-2 rounded-[6px] text-sm font-bold transition-all shadow-sm"
+        className="flex items-center space-x-2 bg-[#d32f2f] hover:bg-[#C0392B] text-white px-4 py-2 rounded-[6px] text-sm font-bold transition-all shadow-sm"
       >
         <FileText className="w-4 h-4" />
         <span>{variante === 'agrupado' ? 'PDF Cobros Agrupado' : 'PDF Cobros'}</span>

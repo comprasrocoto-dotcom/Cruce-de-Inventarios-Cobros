@@ -136,10 +136,10 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
             key={v.fecha}
             className={`inline-flex items-baseline gap-1 px-2 py-0.5 rounded-md border text-[10px] font-bold ${
               v.variacion < -0.0001
-                ? 'bg-[#2d0f0f]/60 text-status-faltante border-rose-900/60'
+                ? 'bg-[#fdecea]/60 text-status-faltante border-rose-900/60'
                 : v.variacion > 0.0001
-                  ? 'bg-[#0a2d1a]/60 text-status-sobrante border-emerald-900/60'
-                  : 'bg-[#0d1b2a] text-text-secondary border-brand-border'
+                  ? 'bg-[#e8f5e9]/60 text-status-sobrante border-emerald-900/60'
+                  : 'bg-[#f7f8fa] text-text-secondary border-brand-border'
             }`}
             title={`${v.fecha}: ${fmtVar(v.variacion)}${unidad ? ' ' + unidad : ''}`}
           >
@@ -213,8 +213,8 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
   // ── Estado: sin configurar ──
   if (!RECETAS_API_URL) {
     return (
-      <div className="bg-white rounded-2xl border border-brand-border shadow-sm p-8 text-center">
-        <div className="inline-flex bg-[#0a1a2d] p-3 rounded-xl text-[#38BDF8] mb-4">
+      <div className="bg-white rounded-md border border-brand-border shadow-sm p-8 text-center">
+        <div className="inline-flex bg-[#f7f8fa] p-3 rounded-xl text-[#1976d2] mb-4">
           <ChefHat className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-bold text-text-main">Recetas e Ingredientes</h3>
@@ -230,10 +230,10 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
 
   // ── Encabezado común ──
   return (
-    <div className="bg-white rounded-2xl border border-brand-border shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-brand-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#132238]/50">
+    <div className="bg-white rounded-md border border-brand-border shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-brand-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#ffffff]/50">
         <div className="flex items-center gap-3">
-          <div className="bg-[#0a1a2d] p-2 rounded-lg text-[#38BDF8]">
+          <div className="bg-[#f7f8fa] p-2 rounded-lg text-[#1976d2]">
             <ChefHat className="w-5 h-5" />
           </div>
           <div>
@@ -252,12 +252,12 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
               value={filtroReceta}
               onChange={(e) => setFiltroReceta(e.target.value)}
               placeholder="Filtrar recetas (código, nombre, sede o ingrediente)…"
-              className="w-full bg-[#0d1b2a] border border-brand-border rounded-lg pl-3 pr-8 py-2 text-xs text-text-main placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-[#38BDF8]"
+              className="w-full bg-[#f7f8fa] border border-brand-border rounded-lg pl-3 pr-8 py-2 text-xs text-text-main placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-[#1976d2]"
             />
             {filtroReceta && (
               <button
                 onClick={() => setFiltroReceta('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main"
                 title="Limpiar"
               >
                 ×
@@ -276,7 +276,7 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
           <button
             onClick={cargar}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-white border border-brand-border text-text-main hover:bg-[#132238] transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold bg-white border border-brand-border text-text-main hover:bg-[#ffffff] transition-colors disabled:opacity-60"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
@@ -295,12 +295,12 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
       {/* Estados de carga / error */}
       {loading && (
         <div className="p-8 flex items-center justify-center gap-3 text-text-secondary">
-          <Loader2 className="w-5 h-5 animate-spin text-[#38BDF8]" />
+          <Loader2 className="w-5 h-5 animate-spin text-[#1976d2]" />
           <span className="text-sm font-medium">Cargando recetas del proyecto de registro…</span>
         </div>
       )}
       {error && !loading && (
-        <div className="m-6 flex items-center gap-2 px-4 py-3 bg-[#2d0f0f] border border-[#5A2020] rounded-xl text-[#EF4444] text-sm">
+        <div className="m-6 flex items-center gap-2 px-4 py-3 bg-[#fdecea] border border-[#f5c6c2] rounded-xl text-[#d32f2f] text-sm">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
           <button onClick={cargar} className="ml-auto text-xs font-bold underline">
@@ -313,16 +313,16 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
         <>
           {/* Reporte de emparejamiento: el cruce nunca falla en silencio */}
           <div className="px-6 py-3 border-b border-brand-border flex flex-wrap items-center gap-3 text-[11px] font-bold">
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0a1a2d] text-[#38BDF8] border border-blue-900/40">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f7f8fa] text-[#1976d2] border border-blue-200">
               <Link2 className="w-3 h-3" />
               Recetas cruzadas: {cruce.reporte.recetasCruzadas}/{cruce.reporte.recetasTotal}
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0a1a2d] text-[#38BDF8] border border-blue-900/40">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f7f8fa] text-[#1976d2] border border-blue-200">
               <Link2 className="w-3 h-3" />
               Ingredientes cruzados: {cruce.reporte.ingredientesCruzados}/
               {cruce.reporte.ingredientesTotal}
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#2d230f] text-amber-400 border border-amber-700/40">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#fff3e0] text-amber-700 border border-amber-700/40">
               <AlertTriangle className="w-3 h-3" />
               Alertas SIN REGISTRO: {cruce.grupos.filter((g) => g.alertaSinRegistro).length}
             </span>
@@ -354,8 +354,8 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
                     {/* Fila de la receta */}
                     <button
                       onClick={() => toggle(key)}
-                      className={`w-full flex flex-wrap items-center gap-3 px-6 py-4 text-left transition-colors hover:bg-[#132238]/60 ${
-                        g.alertaSinRegistro ? 'bg-[#2d230f]/40' : ''
+                      className={`w-full flex flex-wrap items-center gap-3 px-6 py-4 text-left transition-colors hover:bg-[#ffffff]/60 ${
+                        g.alertaSinRegistro ? 'bg-[#fff3e0]/40' : ''
                       }`}
                     >
                       {abierto ? (
@@ -377,20 +377,20 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
                       {/* Fabricaciones en el horizonte */}
                       {g.fabricacionesEnRango > 0 ? (
                         <span
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0a2d1a] text-emerald-400 border border-emerald-900"
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#e8f5e9] text-emerald-700 border border-emerald-900"
                           title={`Fabricaciones registradas: ${g.fechasFabricacion.join(', ')}`}
                         >
                           <CheckCircle2 className="w-3 h-3" />
                           Registrada: {g.fechasFabricacion.map(fmtFechaCorta).join(' · ')}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0d1b2a] text-text-secondary border border-brand-border">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#f7f8fa] text-text-secondary border border-brand-border">
                           Sin fabricaciones en el rango
                         </span>
                       )}
                       {g.alertaSinRegistro && (
                         <span
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2d230f] text-amber-400 border border-amber-700 cursor-help"
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#fff3e0] text-amber-700 border border-amber-700 cursor-help"
                           title={`${g.ingredientesConSobrante} ingrediente(s) con sobrante fuera de tolerancia y la receta sin fabricaciones registradas en el horizonte: lo más probable es que la producción no se registró.`}
                         >
                           <AlertTriangle className="w-3 h-3" />⚠ SIN REGISTRO
@@ -401,7 +401,7 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
                     {/* Ingredientes */}
                     {abierto && (
                       <div className="px-6 pb-5">
-                        <div className="ml-7 border-l-4 border-[#38BDF8]/30 pl-5 overflow-x-auto">
+                        <div className="ml-7 border-l-4 border-[#1976d2]/30 pl-5 overflow-x-auto">
                           {g.variacionesRecetaPorFecha && (
                             <div className="flex flex-wrap items-center gap-2 py-2 mb-1">
                               <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
@@ -465,11 +465,11 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ articles }) => {
                                     </td>
                                     <td className="py-2 text-center">
                                       {sobrante ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#2d230f] text-amber-400 border border-amber-700">
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#fff3e0] text-amber-700 border border-amber-700">
                                           Sobrante fuera de tolerancia
                                         </span>
                                       ) : i.inv ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#0d1b2a] text-text-secondary border border-brand-border">
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#f7f8fa] text-text-secondary border border-brand-border">
                                           {i.inv.dentroDeTolerancia ? 'OK' : 'Fuera de margen'}
                                         </span>
                                       ) : (

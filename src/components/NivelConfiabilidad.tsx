@@ -25,7 +25,12 @@ const fechaCorta = (f: string) => {
 const colorNivel = (n: number) =>
   n >= 95 ? 'bg-emerald-100 text-emerald-800' : n >= 80 ? 'bg-yellow-100 text-yellow-800' : n >= 60 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
 
-export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?: () => void }> = ({ lineas, onCambio }) => {
+export const NivelConfiabilidad: React.FC<{
+  lineas: LineaInventario[];
+  /** Centro de costo elegido (Cocina o Bar); null = Todos. */
+  cc?: string | null;
+  onCambio?: () => void;
+}> = ({ lineas, cc = null, onCambio }) => {
   const [tol, setTol] = useState<Tolerancias>(TOLERANCIAS_DEFAULT);
   const [borrador, setBorrador] = useState({ pct: '2.5', unidades: '2' });
   const [esAdmin, setEsAdmin] = useState(false);
@@ -78,17 +83,31 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
     }
   };
 
-  const inventarios = useMemo(() => evaluarInventarios(lineas, tol), [lineas, tol]);
+  // Con un centro de costo elegido se evalúan solo sus líneas; con "Todos" se
+  // muestra además el nivel de Cocina y de Bar por separado en cada inventario.
+  const lineasCC = useMemo(() => (cc ? lineas.filter((l) => l.centro_costos === cc) : lineas), [lineas, cc]);
+  const inventarios = useMemo(() => evaluarInventarios(lineasCC, tol), [lineasCC, tol]);
+  const nivelPorCC = useMemo(() => {
+    const m: Record<string, Map<string, number>> = {};
+    for (const c of ['Cocina', 'Bar']) {
+      m[c] = new Map(evaluarInventarios(lineas.filter((l) => l.centro_costos === c), tol).map((i) => [i.clave, i.nivel]));
+    }
+    return m;
+  }, [lineas, tol]);
+  const columnas = 9 + (cc ? 0 : 2) + (puedeBorrar ? 1 : 0);
   const almacenes = useMemo(() => [...new Set(inventarios.map((i) => i.almacen))].sort(), [inventarios]);
   const visibles = inventarios.filter((i) => almacen === 'TODOS' || i.almacen === almacen);
 
   if (!lineas.length) return null;
 
+
   return (
-    <div className="bg-white p-6 rounded-2xl border border-brand-border shadow-sm mb-6">
+    <div className="mb-6 rounded border border-linea bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="font-bold text-text-main uppercase tracking-tight">Nivel de confiabilidad por inventario</h3>
+          <h3 className="text-[17px] font-medium text-tinta">
+            Nivel de confiabilidad por inventario{cc ? ` · ${cc}` : ''}
+          </h3>
           <p className="text-xs text-text-secondary mt-1">
             (Cantidad de referencias − Ref. con diferencia) ÷ Cantidad de referencias × 100. Diferencia = fuera de ±
             {cant(tol.pct * 100)}% en gramos/onzas o fuera de ±{cant(tol.unidades)} en unidades/copas.
@@ -114,7 +133,7 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
                 ± unidades/copas
                 <input value={borrador.unidades} onChange={(e) => setBorrador({ ...borrador, unidades: e.target.value })} className="block mt-1 w-20 border border-brand-border rounded-lg px-2 py-1" />
               </label>
-              <button onClick={guardar} className="flex items-center gap-1 bg-[#132238] text-white rounded-lg px-3 py-1.5 font-bold" title="Guardar tolerancias para todos">
+              <button onClick={guardar} className="flex items-center gap-1 rounded-sm bg-marca px-3 py-1.5 font-medium text-white hover:bg-marca-hover" title="Guardar tolerancias para todos">
                 <Save className="w-3.5 h-3.5" /> Guardar
               </button>
             </>
@@ -134,6 +153,8 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
               <th className="px-3 py-2 text-right">Total ref. con diferencia</th>
               <th className="px-3 py-2 text-right">Cantidad de referencias</th>
               <th className="px-3 py-2 text-center">Nivel de confiabilidad</th>
+              {!cc && <th className="px-3 py-2 text-center">Cocina</th>}
+              {!cc && <th className="px-3 py-2 text-center">Bar</th>}
               <th className="px-3 py-2 text-right">Faltantes (costo)</th>
               <th className="px-3 py-2 text-right">Sobrantes (costo)</th>
               {puedeBorrar && <th className="px-3 py-2"></th>}
@@ -146,12 +167,25 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
                   <td className="px-3 py-2">{abierto === i.clave ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}</td>
                   <td className="px-3 py-2 font-bold">{i.almacen}</td>
                   <td className="px-3 py-2">{fechaCorta(i.fecha)}</td>
-                  <td className="px-3 py-2">{i.serie}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{i.serie}</td>
                   <td className="px-3 py-2 text-right">{i.conDiferencia}</td>
                   <td className="px-3 py-2 text-right">{i.referencias}</td>
                   <td className="px-3 py-2 text-center">
                     <span className={`inline-block min-w-[3rem] rounded-full px-2 py-0.5 font-black ${colorNivel(i.nivel)}`}>{Math.round(i.nivel)}</span>
                   </td>
+                  {!cc &&
+                    ['Cocina', 'Bar'].map((c) => {
+                      const n = nivelPorCC[c].get(i.clave);
+                      return (
+                        <td key={c} className="px-3 py-2 text-center">
+                          {n === undefined ? (
+                            <span className="text-text-muted">—</span>
+                          ) : (
+                            <span className={`inline-block min-w-[2.5rem] rounded-full px-2 py-0.5 text-xs font-bold ${colorNivel(n)}`}>{Math.round(n)}</span>
+                          )}
+                        </td>
+                      );
+                    })}
                   <td className="px-3 py-2 text-right text-red-700">{pesos(i.faltanteValor)}</td>
                   <td className="px-3 py-2 text-right text-emerald-700">{pesos(i.sobranteValor)}</td>
                   {puedeBorrar && (
@@ -176,7 +210,7 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
                 </tr>
                 {abierto === i.clave && (
                   <tr>
-                    <td colSpan={puedeBorrar ? 10 : 9} className="bg-slate-50 px-3 py-3">
+                    <td colSpan={columnas} className="bg-marca-suave/40 px-3 py-3">
                       <p className="text-xs font-bold text-text-main mb-2">
                         Novedades: {i.conDiferencia} referencias fuera de tolerancia (ordenadas por impacto en costo)
                       </p>
@@ -185,6 +219,7 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
                           <tr className="text-text-secondary">
                             <th className="text-left py-1">Artículo</th>
                             <th className="text-left">Subfamilia</th>
+                            <th className="text-left">Centro de costo</th>
                             <th className="text-left">Unidad</th>
                             <th className="text-right">Teórico</th>
                             <th className="text-right">Físico</th>
@@ -201,6 +236,7 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?
                               <tr key={k} className="border-t border-brand-border">
                                 <td className="py-1">{l.articulo}</td>
                                 <td>{l.subfamilia}</td>
+                                <td>{l.centro_costos}</td>
                                 <td>{l.subarticulo}</td>
                                 <td className="text-right">{cant(l.stock_fecha)}</td>
                                 <td className="text-right">{cant(l.stock_inventario)}</td>
