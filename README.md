@@ -19,6 +19,17 @@ sobrantes contra el **registro de recetas** para detectar producción sin regist
 | Datos | **Supabase**: base propia `cruce_*` (inventarios subidos, tolerancias, accesos) + inicio de sesión. Recetas siguen en Google Sheets vía Apps Script |
 | Hosting | Vercel (deploy automático desde GitHub) |
 
+### Diseño y Cocina/Bar — nov 2026
+
+- La app usa el **mismo diseño del Informe de Rentabilidad** (paleta del ERP): riel de íconos negro a
+  la izquierda, barra superior carbón con la pestaña activa en azul, fondo claro, tablas con cabecera
+  azul claro y tarjetas de indicadores con borde superior de color. Tokens en `src/index.css`.
+- **Centro de costo Todos / Cocina / Bar** arriba de los filtros: filtra todas las vistas. Si el
+  inventario no trae la columna Centro de Costos, sale de la subfamilia (tabla
+  `cruce_subfamilia_cc`: LICORES, VINOS, CERVEZAS, INSUMOS BAR, SUB-RECETAS BAR, GASEOSAS Y SODAS y
+  AGUA Y TE = Bar; lo demás = Cocina). El nivel de confiabilidad por inventario muestra además el
+  nivel de Cocina y de Bar por separado.
+
 ### Base de datos propia en Supabase — desde nov 2026
 
 Cada inventario que se hace en HioPOS se **sube a la web** y queda guardado; la app lee siempre
