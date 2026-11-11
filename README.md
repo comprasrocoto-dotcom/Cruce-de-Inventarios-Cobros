@@ -16,10 +16,40 @@ sobrantes contra el **registro de recetas** para detectar producción sin regist
 |---|---|
 | Frontend | React 18 + TypeScript + Vite, Tailwind, Recharts, framer-motion |
 | Reportes | SheetJS (xlsx) · jsPDF + jspdf-autotable v5 |
-| Datos | Google Sheets como base de datos, servida por 2 Web Apps de Google Apps Script |
+| Datos | **Supabase**: base propia `cruce_*` (inventarios subidos, tolerancias, accesos) + inicio de sesión. Recetas siguen en Google Sheets vía Apps Script |
 | Hosting | Vercel (deploy automático desde GitHub) |
 
-### Fuentes de datos (Apps Script)
+### Base de datos propia en Supabase — desde nov 2026
+
+Cada inventario que se hace en HioPOS se **sube a la web** y queda guardado; la app lee siempre
+todo lo guardado y muestra sus novedades y su nivel de confiabilidad.
+
+- **Dónde:** tablas `cruce_*` dentro del proyecto Supabase `informe-rentabilidad-centralizado`
+  (el plan gratis solo permite 2 proyectos). Son tablas propias: no se leen ni se tocan las
+  tablas ni el código del Informe de Rentabilidad.
+  - `cruce_inventarios`: líneas del export de HioPOS (un documento = fecha + serie + almacén).
+  - `cruce_cargas`: cada archivo subido (quién, cuándo, cuántas filas y documentos).
+  - `cruce_configuracion`: tolerancias del nivel de confiabilidad (2,5% y ±2 por defecto).
+  - `cruce_accesos`: quién entra y con qué rol (admin · editor = sube inventarios · lector).
+- **Subir un inventario:** botón "Subir inventario" (CSV o Excel de HioPOS). El CSV puede venir
+  con números colombianos (`4.491` = cuatro mil, `3.728,55`); el formato se detecta y se valida
+  con Stock a Fecha + Variación = Stock Inventario. La fila de totales se ignora. Subir otra
+  vez un documento lo **reemplaza** (función `cruce_subir_inventario`, todo o nada).
+- **Inicio de sesión:** Supabase Auth del mismo proyecto (correo + contraseña). Además del
+  login, el correo debe estar en `cruce_accesos`; si no, la app lo dice y no muestra datos.
+  Las cuentas se crean en el Informe de Rentabilidad (su registro solo admite correos de su
+  lista de accesos).
+- **Nivel de confiabilidad por inventario** (pestaña CONFIABILIDAD, arriba):
+  `(Cantidad de referencias − Total ref con diferencia) / Cantidad de referencias × 100`.
+  Diferencia = fuera de ±2,5% de la cantidad mayor (teórico/físico) en gramos, onzas, ml y
+  kilos, o fuera de ±2 en unidades y copas. Líneas con teórico y físico en cero no cuentan.
+  Cada fila se abre para ver sus novedades ordenadas por costo. El admin edita las tolerancias.
+  Los márgenes de **cobro** siguen siendo los de "Configuración de Cobro" (no cambiaron).
+- Series de inventario reconocidas por el motor de cobro: `a /`, `CONTEO*` y `INV*` (INVAR, INVRC…).
+- URL y clave publicable en `src/config.ts` (o `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`).
+- El Web App de BASE DE DATOS (Apps Script) queda como respaldo y ya no se consulta.
+
+### Fuentes de datos anteriores (Apps Script)
 
 1. **`apps-script/Codigo.gs` — BASE DE DATOS** (`SHEET_API_URL` en `src/config.ts`)
    Sirve la hoja `BASE DE DATOS` como JSON (un objeto por fila, claves = encabezados).
@@ -169,7 +199,9 @@ siempre coinciden.
 
 | Elemento | ¿Sobrevive? | Dónde vive |
 |---|---|---|
-| Data cargada por Excel | ❌ vuelve a Google Sheets (carga automática) | Memoria |
+| Inventarios subidos | ✅ para todos los usuarios | Supabase (`cruce_inventarios`) |
+| Tolerancias de confiabilidad | ✅ para todos | Supabase (`cruce_configuracion`) |
+| Sesión de usuario | ✅ hasta cerrar sesión | Supabase Auth (navegador) |
 | Configuración de Cobro (política + márgenes) | ✅ por navegador | `localStorage` |
 | Filtros Avanzados | ❌ se limpian por sesión | Estado |
 
