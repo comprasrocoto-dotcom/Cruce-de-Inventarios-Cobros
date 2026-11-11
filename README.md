@@ -33,8 +33,11 @@ todo lo guardado y muestra sus novedades y su nivel de confiabilidad.
   - `cruce_accesos`: quién entra y con qué rol (admin · editor = sube inventarios · lector).
 - **Subir un inventario:** botón "Subir inventario" (CSV o Excel de HioPOS). El CSV puede venir
   con números colombianos (`4.491` = cuatro mil, `3.728,55`); el formato se detecta y se valida
-  con Stock a Fecha + Variación = Stock Inventario. La fila de totales se ignora. Subir otra
-  vez un documento lo **reemplaza** (función `cruce_subir_inventario`, todo o nada).
+  con Stock a Fecha + Variación = Stock Inventario. La fila de totales se ignora. Cada subida
+  **suma** a la base (función `cruce_subir_inventario`, todo o nada): agrega las líneas nuevas y
+  actualiza las repetidas (llave: almacén + fecha + serie + código + artículo). Nada se borra.
+- **Borrar:** papelera en cada fila del nivel de confiabilidad (admin/editor, borra ese
+  inventario) y "Borrar toda la base" en el panel de subida (solo admin, hay que escribir BORRAR).
 - **Inicio de sesión:** Supabase Auth del mismo proyecto (correo + contraseña). Además del
   login, el correo debe estar en `cruce_accesos`; si no, la app lo dice y no muestra datos.
   Las cuentas se crean en el Informe de Rentabilidad (su registro solo admite correos de su
