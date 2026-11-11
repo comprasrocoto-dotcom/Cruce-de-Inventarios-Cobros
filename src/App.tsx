@@ -49,12 +49,15 @@ import {
   Settings,
   RotateCcw,
   Loader2,
+  Users,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HistoricalTraceability } from './components/HistoricalTraceability';
 import { AdvancedAnalysis } from './components/AdvancedAnalysis';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { PDFReport } from './components/PDFReport';
+import { UsuariosAdmin } from './components/UsuariosAdmin';
+import { useRol } from './components/AuthGate';
 
 type Tab =
   'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
@@ -178,6 +181,9 @@ export default function App() {
   const [fileName, setFileName] = useState<string>('');
   // Muestra el panel de carga (dropdown) para subir un Excel aunque ya haya datos.
   const [mostrarCargador, setMostrarCargador] = useState(false);
+  // Panel de usuarios (solo administradores).
+  const esAdmin = useRol() === 'admin';
+  const [verUsuarios, setVerUsuarios] = useState(false);
   const [filters, setFilters] = useState<GlobalFilters>({
     sedes: [],
     ccs: [],
@@ -896,6 +902,16 @@ export default function App() {
             </span>
           )}
           <div className="ml-auto flex items-center gap-3 pr-4">
+            {esAdmin && (
+              <button
+                onClick={() => setVerUsuarios(true)}
+                className="flex items-center gap-2 text-[13px] font-medium text-white/90 hover:text-white"
+                title="Crear usuarios y gestionar accesos"
+              >
+                <Users className="h-4 w-4" />
+                Usuarios
+              </button>
+            )}
             {articles.length > 0 && <HelpTip clave="cargar" />}
             {articles.length > 0 && (
               <button
@@ -941,6 +957,7 @@ export default function App() {
           © {new Date().getFullYear()} Cruce de Inventarios y Cobros · Restaurantes Rocoto
         </footer>
       </div>
+      {verUsuarios && <UsuariosAdmin onCerrar={() => setVerUsuarios(false)} />}
     </HelpProvider>
   );
 }
