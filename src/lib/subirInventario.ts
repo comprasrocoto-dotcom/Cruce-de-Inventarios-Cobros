@@ -8,8 +8,9 @@
  * - Excel: se leen los valores reales de las celdas (sin formato de texto).
  * - Filas sin fecha (la fila de totales del final) se descartan.
  *
- * La subida es atómica (función `cruce_subir_inventario`): si el archivo trae un
- * documento (fecha + serie + almacén) que ya estaba en la base, lo reemplaza.
+ * La subida es atómica (función `cruce_subir_inventario`) y SUMA a lo que ya está:
+ * las líneas nuevas se agregan y una línea que ya existía (mismo almacén, fecha,
+ * serie, código y artículo) se actualiza con los valores del archivo. Nada se borra.
  */
 import * as XLSX from 'xlsx';
 import { supabase } from './supabase';
@@ -175,10 +176,11 @@ export interface ResultadoSubida {
   carga_id: number;
   filas: number;
   documentos: number;
-  reemplazadas: number;
+  nuevas: number;
+  actualizadas: number;
 }
 
-/** Guarda las líneas en Supabase (reemplaza los documentos repetidos). */
+/** Guarda las líneas en Supabase: agrega las nuevas y actualiza las repetidas. */
 export async function subirInventario(archivo: string, lineas: LineaInventario[]): Promise<ResultadoSubida> {
   const { data, error } = await supabase.rpc('cruce_subir_inventario', { p_archivo: archivo, p_filas: lineas });
   if (error) {
@@ -188,4 +190,24 @@ export async function subirInventario(archivo: string, lineas: LineaInventario[]
     throw new Error(`No se pudo guardar el inventario: ${error.message}`);
   }
   return data as ResultadoSubida;
+}
+
+/** Borra un inventario (almacén + fecha + serie). Admin o editor. Devuelve las líneas borradas. */
+export async function borrarInventario(almacen: string, fecha: string, serie: string): Promise<number> {
+  const { data, error } = await supabase.rpc('cruce_borrar_inventario', { p_almacen: almacen, p_fecha: fecha, p_serie: serie });
+  if (error) {
+    if (error.message.includes('SIN_PERMISO')) throw new Error('Tu usuario no puede borrar inventarios.');
+    throw new Error(`No se pudo borrar el inventario: ${error.message}`);
+  }
+  return Number(data ?? 0);
+}
+
+/** Borra TODA la base del Cruce (inventarios y cargas). Solo administrador. */
+export async function borrarTodo(): Promise<number> {
+  const { data, error } = await supabase.rpc('cruce_borrar_todo');
+  if (error) {
+    if (error.message.includes('SOLO_ADMIN')) throw new Error('Solo el administrador puede borrar toda la base.');
+    throw new Error(`No se pudo borrar la base: ${error.message}`);
+  }
+  return Number(data ?? 0);
 }
