@@ -24,6 +24,8 @@ import {
   type UnidadMargen,
 } from './utils/confiabilidad';
 import { ReliabilityView } from './components/ReliabilityView';
+import { NivelConfiabilidad } from './components/NivelConfiabilidad';
+import type { LineaInventario } from './lib/inventariosSupabase';
 import { ManagementAnalysis } from './components/ManagementAnalysis';
 import { ExportButtons } from './components/ExportButtons';
 import { StatsCard } from './components/StatsCard';
@@ -60,6 +62,8 @@ type Tab =
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
+  // Líneas tal como están en Supabase (nivel de confiabilidad por inventario).
+  const [lineas, setLineas] = useState<LineaInventario[]>([]);
   // Política de cobro activa (Configuración de Cobro en el RESUMEN).
   // Se persiste en el navegador para sobrevivir recargas.
   const [politicaCobro, setPoliticaCobro] = useState<PoliticaCobro>(() => {
@@ -368,8 +372,8 @@ export default function App() {
           <div>
             <h2 className="text-2xl font-bold text-text-main mb-2">No hay datos cargados</h2>
             <p className="text-text-secondary max-w-md mx-auto">
-              Utiliza el botón <span className="font-bold text-secondary">Cargar Excel</span> en la
-              esquina superior derecha para comenzar el análisis de inventarios.
+              Sube el primer inventario de HioPOS (CSV o Excel) desde el panel de la esquina superior
+              derecha: queda guardado en la base para todos los usuarios.
             </p>
           </div>
         </div>
@@ -736,7 +740,10 @@ export default function App() {
             )}
 
             {activeTab === 'CONFIABILIDAD' && (
-              <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
+              <>
+                <NivelConfiabilidad lineas={lineas} />
+                <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
+              </>
             )}
 
             {activeTab === 'GERENCIAL' && (
@@ -819,10 +826,10 @@ export default function App() {
                     ? 'bg-[#FBC519] text-[#081423]'
                     : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}
-                title="Cargar datos desde un archivo Excel local"
+                title="Subir un inventario de HioPOS a la base"
               >
                 <Upload className="w-4 h-4" />
-                Cargar Excel
+                Subir inventario
               </button>
             )}
             {articles.length > 0 && <HelpTip clave="cargar" />}
@@ -833,10 +840,12 @@ export default function App() {
               }}
               onReset={() => {
                 setArticles([]);
+                setLineas([]);
                 setFileName('');
                 setMostrarCargador(false);
               }}
               onFileNameChange={(name) => setFileName(name)}
+              onLineasCargadas={setLineas}
               hasData={articles.length > 0}
               forzarVisible={mostrarCargador}
             />

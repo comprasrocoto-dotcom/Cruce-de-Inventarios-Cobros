@@ -181,14 +181,13 @@ export const AYUDAS: Record<
     contenido: () => (
       <>
         <P>
-          Al abrir la aplicación, los datos se cargan <b>automáticamente desde Google Sheets</b> (la
-          hoja "BASE DE DATOS" que se alimenta con el export de HioPOS). Es la fuente principal y
-          siempre está al día con lo último que se pegó allí.
+          Al abrir la aplicación, los datos se cargan <b>automáticamente desde Supabase</b>: la base
+          propia del Cruce, donde queda guardado cada inventario que se sube.
         </P>
         <P>
-          El botón <b>"Cargar Excel"</b> es la vía alterna: abre un panel para subir directamente un
-          archivo <b>.xlsx</b> exportado del ERP (mismas 13 columnas). Útil para revisar un corte
-          viejo o probar datos sin tocar la hoja compartida.
+          El botón <b>"Subir inventario"</b> recibe el archivo <b>.csv</b> o <b>.xlsx</b> exportado de
+          HioPOS y lo guarda en la base para todos. Si se sube otra vez el mismo inventario (misma
+          fecha, serie y almacén), se reemplaza en vez de duplicarse.
         </P>
         <P>
           <b>Regla de oro de los números:</b> el proyecto trabaja siempre con{' '}
@@ -196,8 +195,8 @@ export const AYUDAS: Record<
           pesos con veinte). Al descargar el plano del ERP, elige ese formato.
         </P>
         <Tip>
-          Si cargas un Excel y luego quieres volver a la hoja, usa el botón de recarga de Google
-          Sheets del mismo panel: los datos del Excel solo viven mientras dura la sesión.
+          Usa "Recargar desde Supabase" para traer los inventarios que otros usuarios hayan subido
+          mientras tenías la página abierta.
         </Tip>
       </>
     ),
