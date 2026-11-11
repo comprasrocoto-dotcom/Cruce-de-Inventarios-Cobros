@@ -32,8 +32,28 @@ const PAGINA = 1000;
 
 const num = (v: unknown) => (v == null || v === '' ? 0 : Number(v));
 
+/**
+ * Centro de costo normalizado: "Cocina" o "Bar". Si la línea no lo trae (el CSV
+ * de HioPOS a veces no incluye la columna), se toma de la tabla
+ * `cruce_subfamilia_cc`; una subfamilia que no esté allí cuenta como Cocina.
+ */
+export const normalizarCC = (cc: string | null | undefined, subfamilia: string | null, mapa: Map<string, string>) => {
+  const c = (cc || '').trim().toUpperCase();
+  if (c.startsWith('BAR')) return 'Bar';
+  if (c.startsWith('COC')) return 'Cocina';
+  return mapa.get((subfamilia || '').trim().toUpperCase()) ?? 'Cocina';
+};
+
+/** Lee el mapa subfamilia → centro de costo. */
+async function leerMapaCC(): Promise<Map<string, string>> {
+  const { data, error } = await supabase.from('cruce_subfamilia_cc').select('subfamilia, centro_costos');
+  if (error) throw new Error(`Error al leer el centro de costo por subfamilia: ${error.message}`);
+  return new Map((data ?? []).map((r) => [String(r.subfamilia).trim().toUpperCase(), String(r.centro_costos)]));
+}
+
 /** Lee todas las líneas en páginas de 1000 (límite de la API de Supabase). */
 export async function leerLineas(): Promise<LineaInventario[]> {
+  const mapa = await leerMapaCC();
   const filas: LineaInventario[] = [];
   for (let desde = 0; ; desde += PAGINA) {
     const { data, error } = await supabase
@@ -50,7 +70,7 @@ export async function leerLineas(): Promise<LineaInventario[]> {
         almacen: String(r.almacen ?? ''),
         familia: (r.familia as string) ?? null,
         subfamilia: (r.subfamilia as string) ?? null,
-        centro_costos: (r.centro_costos as string) ?? null,
+        centro_costos: normalizarCC(r.centro_costos as string, (r.subfamilia as string) ?? null, mapa),
         proveedor: (r.proveedor as string) ?? null,
         articulo: String(r.articulo ?? ''),
         codigo: (r.codigo as string) ?? null,
