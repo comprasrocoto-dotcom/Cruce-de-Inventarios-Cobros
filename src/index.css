@@ -1,40 +1,55 @@
 @import 'tailwindcss';
 
+/*
+  Sistema visual del Cruce de Inventarios — mismo diseño del Informe de Rentabilidad
+  (paleta del ERP de la empresa):
+  - Negro (#000000): riel de íconos del menú
+  - Carbón (#333333): barra superior
+  - Azul (#1976d2): botones, títulos, pestaña activa y datos principales
+  - Azul claro (#bbdefb / #e3f2fd): cabeceras de tabla y filas destacadas
+  - Rojo (#d32f2f): faltantes y alertas · Verde (#2e7d32): sobrantes y estados sanos
+*/
 @theme {
-  /* ===== NUEVA PALETA PREMIUM DARK - SaaS ENTERPRISE ===== */
+  /* Tokens del ERP */
+  --color-negro: #000000;
+  --color-carbon: #333333;
+  --color-tinta: #1565c0;
+  --color-tinta-2: #0d47a1;
+  --color-fondo: #f7f8fa;
+  --color-linea: #e0e0e0;
+  --color-linea-suave: #eeeeee;
+  --color-marca: #1976d2;
+  --color-marca-hover: #1565c0;
+  --color-marca-suave: #e3f2fd;
+  --color-cabecera: #bbdefb;
 
-  /* Colores principales - Nueva identidad visual */
-  --color-primary: #fbc519;
-  --color-primary-hover: #e6b010;
-  --color-secondary: #38bdf8;
-  --color-secondary-hover: #0ea5e9;
+  /* Tokens que ya usaban los componentes del Cruce, ahora en claro */
+  --color-primary: #1976d2;
+  --color-primary-hover: #1565c0;
+  --color-secondary: #1976d2;
+  --color-secondary-hover: #1565c0;
 
-  /* Estados funcionales */
-  --color-success: #22c55e;
-  --color-warning: #fbc519;
-  --color-danger: #ef4444;
-  --color-risk: #f59e0b;
-  --color-info: #38bdf8;
+  --color-success: #2e7d32;
+  --color-warning: #ef6c00;
+  --color-danger: #d32f2f;
+  --color-risk: #ef6c00;
+  --color-info: #1976d2;
 
-  /* Fondos - Jerarquía oscura premium */
-  --color-background: #081423;
-  --color-surface: #0f1c2e;
-  --color-card: #132238;
-  --color-card-hover: #1a2e4a;
-  --color-border: #243a57;
+  --color-background: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-card-hover: #f1f8fe;
+  --color-border: #e0e0e0;
 
-  /* Texto - Alta legibilidad */
-  --color-text-main: #ffffff;
-  --color-text-secondary: #c9d4e3;
-  --color-text-muted: #8ea3bf;
+  --color-text-main: #212121;
+  --color-text-secondary: #5f6368;
+  --color-text-muted: #8a9099;
 
-  /* ERP Specific Colors */
-  --color-table-header: #0f1c2e;
-  --color-table-header-text: #ffffff;
-  --color-row-alt: #0d1929;
-  --color-row-hover: #1a2e4a;
+  --color-table-header: #bbdefb;
+  --color-table-header-text: #212121;
+  --color-row-alt: #fafafa;
+  --color-row-hover: #f1f8fe;
 
-  /* Compatibilidad con clases de marca existentes */
   --color-brand-primary: var(--color-primary);
   --color-brand-secondary: var(--color-secondary);
   --color-brand-bg: var(--color-background);
@@ -42,119 +57,103 @@
   --color-brand-text: var(--color-text-main);
   --color-brand-text-secondary: var(--color-text-secondary);
 
-  /* Colores de estado */
   --color-status-sobrante: var(--color-success);
   --color-status-faltante: var(--color-danger);
-  --color-status-sin-diferencia: #8ea3bf;
-  --color-status-cobra: #ef4444;
+  --color-status-sin-diferencia: #8a9099;
+  --color-status-cobra: #d32f2f;
   --color-status-sin-cobra: var(--color-text-muted);
 
-  /* Colores de KPI */
-  --color-kpi-revisados: #38bdf8;
-  --color-kpi-faltantes: #f59e0b;
-  --color-kpi-cobrables: #ef4444;
-  --color-kpi-valor: #22c55e;
+  --color-kpi-revisados: #1976d2;
+  --color-kpi-faltantes: #ef6c00;
+  --color-kpi-cobrables: #d32f2f;
+  --color-kpi-valor: #2e7d32;
 
-  /* Colores de filas de tabla */
   --color-brand-table-hover: var(--color-row-hover);
-  --color-brand-table-selected: #1a2e4a;
+  --color-brand-table-selected: #e3f2fd;
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
+  html {
+    font-feature-settings: 'tnum' 1; /* cifras del mismo ancho: columnas alineadas */
+  }
   body {
     @apply bg-background text-text-main font-sans;
-    background-color: #081423 !important;
-    color: #ffffff !important;
+    background-color: #f7f8fa;
+    color: #212121;
+    font-size: 14px;
+    line-height: 1.45;
   }
-
   * {
     box-sizing: border-box;
+  }
+  :focus-visible {
+    outline: 2px solid #1976d2;
+    outline-offset: 2px;
   }
 }
 
 @layer components {
   .table-header {
-    @apply bg-table-header text-table-header-text font-bold;
+    @apply bg-table-header text-table-header-text font-medium;
   }
 
   .btn-primary {
-    background-color: #fbc519 !important;
-    color: #081423 !important;
-    font-weight: 700;
+    background-color: #1976d2 !important;
+    color: #ffffff !important;
+    font-weight: 500;
     transition: background-color 0.2s;
-    border-radius: 8px;
+    border-radius: 4px;
   }
-
   .btn-primary:hover {
-    background-color: #e6b010 !important;
+    background-color: #1565c0 !important;
   }
 
   .btn-secondary {
-    background-color: #1a2e4a !important;
-    color: #ffffff !important;
-    font-weight: 600;
-    border-radius: 8px;
+    background-color: #ffffff !important;
+    color: #1976d2 !important;
+    border: 1px solid #1976d2 !important;
+    font-weight: 500;
+    border-radius: 4px;
   }
-
   .btn-secondary:hover {
-    background-color: #243a57 !important;
+    background-color: #e3f2fd !important;
   }
 
   .btn-danger {
-    background-color: #ef4444 !important;
+    background-color: #d32f2f !important;
     color: #ffffff !important;
-    font-weight: 700;
-    border-radius: 8px;
+    font-weight: 500;
+    border-radius: 4px;
   }
 
   .card {
-    background-color: #132238 !important;
-    border-color: #243a57 !important;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    background-color: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   .status-success {
     @apply text-success;
   }
-
   .status-warning {
     @apply text-warning;
   }
-
   .status-danger {
     @apply text-danger;
   }
 
-  .sidebar {
-    background-color: #081423 !important;
-  }
-
-  .sidebar-icon-active {
-    color: #fbc519 !important;
-  }
-
-  /* ===== DARK THEME FORM ELEMENTS ===== */
-  select {
-    background-color: #132238 !important;
+  .tab-active {
+    background-color: #1976d2 !important;
     color: #ffffff !important;
-    border-color: #243a57 !important;
-    border-radius: 8px !important;
+    border-radius: 4px;
+    font-weight: 500;
   }
 
-  select:focus {
-    border-color: #fbc519 !important;
-    outline: none !important;
-    box-shadow: 0 0 0 2px rgba(251, 197, 25, 0.25) !important;
-  }
-
-  select option {
-    background-color: #0f1c2e;
-    color: #ffffff;
-  }
-
+  /* Campos al estilo del ERP */
+  select,
   input[type='text'],
   input[type='date'],
   input[type='search'],
@@ -162,98 +161,73 @@
   input[type='number'],
   input[type='password'],
   textarea {
-    background-color: #132238 !important;
-    color: #ffffff !important;
-    border-color: #243a57 !important;
-    color-scheme: dark;
-    border-radius: 8px !important;
+    background-color: #ffffff;
+    color: #212121;
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
   }
-
+  select:focus,
   input:focus,
   textarea:focus {
-    border-color: #fbc519 !important;
+    border-color: #1976d2 !important;
     outline: none !important;
-    box-shadow: 0 0 0 2px rgba(251, 197, 25, 0.25) !important;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15) !important;
   }
-
   input::placeholder,
   textarea::placeholder {
-    color: #8ea3bf !important;
+    color: #8a9099;
   }
 
-  .tab-active {
-    background-color: #fbc519 !important;
-    color: #081423 !important;
-    border-radius: 8px;
-    font-weight: 700;
-  }
-
-  /* ===== OVERRIDE RESIDUAL LIGHT COLORS ===== */
-  .bg-white,
-  .bg-gray-50,
-  .bg-slate-50,
-  .bg-gray-100,
-  .bg-slate-100,
-  [class*='bg-white'],
-  [class*='bg-gray-50'],
-  [class*='bg-slate-50'] {
-    background-color: #132238 !important;
-    color: #ffffff !important;
-  }
-
-  /* Recharts chart backgrounds */
+  /* Gráficas */
   .recharts-wrapper,
   .recharts-surface {
     background: transparent !important;
   }
-
   .recharts-cartesian-axis-tick text,
   .recharts-legend-item-text {
-    fill: #c9d4e3 !important;
-    color: #c9d4e3 !important;
+    fill: #5f6368 !important;
+    color: #5f6368 !important;
   }
-
   .recharts-tooltip-wrapper .recharts-default-tooltip {
-    background-color: #0f1c2e !important;
-    border-color: #243a57 !important;
-    color: #ffffff !important;
+    background-color: #ffffff !important;
+    border-color: #e0e0e0 !important;
+    color: #212121 !important;
   }
-
   .recharts-cartesian-grid line {
-    stroke: #243a57 !important;
+    stroke: #e8eaed !important;
   }
 
-  /* Table overrides */
+  /* Tablas al estilo del ERP: cabecera azul claro, filas compactas */
   table {
     border-collapse: collapse;
   }
-
   thead th {
-    background-color: #0f1c2e !important;
-    color: #ffffff !important;
-    font-weight: 700;
+    background-color: #bbdefb !important;
+    color: #212121 !important;
+    font-weight: 500;
   }
-
   tbody tr:hover {
-    background-color: #1a2e4a !important;
+    background-color: #f1f8fe !important;
   }
 
-  /* Scrollbar premium dark */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
-
   ::-webkit-scrollbar-track {
-    background: #081423;
+    background: #f1f1f1;
   }
-
   ::-webkit-scrollbar-thumb {
-    background: #243a57;
-    border-radius: 3px;
+    background: #c1c7cd;
+    border-radius: 4px;
   }
-
   ::-webkit-scrollbar-thumb:hover {
-    background: #fbc519;
+    background: #1976d2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
   }
 }

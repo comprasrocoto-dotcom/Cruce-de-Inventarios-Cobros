@@ -27,8 +27,8 @@ const P: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 /** Caja de EJEMPLO con datos reales del corte. */
 const Ej: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="bg-[#0a1a2d] border border-blue-900/50 rounded-lg px-3 py-2.5 text-[12.5px]">
-    <span className="text-[#38BDF8] font-black text-[10px] uppercase tracking-widest block mb-1">
+  <div className="bg-[#f7f8fa] border border-blue-900/50 rounded-lg px-3 py-2.5 text-[12.5px]">
+    <span className="text-[#1976d2] font-black text-[10px] uppercase tracking-widest block mb-1">
       Ejemplo con tus datos
     </span>
     {children}
@@ -37,13 +37,13 @@ const Ej: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 /** Caja de consejo práctico. */
 const Tip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="bg-[#2d230f]/60 border border-amber-800/50 rounded-lg px-3 py-2.5 text-[12.5px] text-amber-200/90">
+  <div className="bg-[#fff3e0]/60 border border-amber-800/50 rounded-lg px-3 py-2.5 text-[12.5px] text-amber-200/90">
     💡 {children}
   </div>
 );
 
 const SinDatos = () => (
-  <div className="bg-[#0d1b2a] border border-brand-border rounded-lg px-3 py-2.5 text-[12px] italic text-text-secondary">
+  <div className="bg-[#f7f8fa] border border-brand-border rounded-lg px-3 py-2.5 text-[12px] italic text-text-secondary">
     Carga un inventario para ver este ejemplo con tu propia información.
   </div>
 );

@@ -59,6 +59,17 @@ import { PDFReport } from './components/PDFReport';
 type Tab =
   'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
 
+/** Pestañas del riel de íconos (mismo orden de antes). */
+const PESTANAS: { tab: Tab; texto: string; Icono: typeof LayoutDashboard }[] = [
+  { tab: 'RESUMEN', texto: 'Resumen', Icono: LayoutDashboard },
+  { tab: 'ANÁLISIS', texto: 'Análisis', Icono: BarChart2 },
+  { tab: 'COBROS', texto: 'Cobros', Icono: DollarSign },
+  { tab: 'CONFIABILIDAD', texto: 'Confiabilidad', Icono: ShieldCheck },
+  { tab: 'GERENCIAL', texto: 'Gerencial', Icono: BarChart3 },
+  { tab: 'TRAZABILIDAD', texto: 'Trazabilidad', Icono: Activity },
+  { tab: 'EJECUTIVO', texto: 'Ejecutivo', Icono: TrendingUp },
+];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('RESUMEN');
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
@@ -368,7 +379,7 @@ export default function App() {
     if (articles.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-          <div className="bg-[#132238] p-8 rounded-full">
+          <div className="bg-[#ffffff] p-8 rounded-full">
             <Package className="w-16 h-16 text-secondary opacity-30" />
           </div>
           <div>
@@ -383,7 +394,34 @@ export default function App() {
     }
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
+        {/* Centro de costo: Todos / Cocina / Bar (filtra todas las vistas) */}
+        <div className="flex flex-wrap items-end gap-6 border-b-2 border-marca/30 bg-white px-6 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <div>
+            <span className="mb-1 block text-xs text-text-secondary">Centro de costo</span>
+            <div className="inline-flex overflow-hidden rounded-sm border border-linea" role="group">
+              {(['Todos', 'Cocina', 'Bar'] as const).map((op) => {
+                const on = op === 'Todos' ? filters.ccs.length === 0 : filters.ccs.length === 1 && filters.ccs[0] === op;
+                return (
+                  <button
+                    key={op}
+                    onClick={() => setFilters({ ...filters, ccs: op === 'Todos' ? [] : [op] })}
+                    aria-pressed={on}
+                    className={`h-9 px-4 text-sm transition-colors ${
+                      on ? 'bg-marca font-medium text-white' : 'bg-white text-text-secondary hover:bg-marca-suave'
+                    } ${op !== 'Todos' ? 'border-l border-linea' : ''}`}
+                  >
+                    {op}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="pb-2 text-xs text-text-secondary">
+            Cocina y Bar salen del centro de costo del inventario o, si el archivo no lo trae, de la subfamilia.
+          </p>
+        </div>
+
         <Filters
           sedes={uniqueSedes}
           ccs={uniqueCCs}
@@ -417,28 +455,28 @@ export default function App() {
                     title="Artículos Revisados"
                     value={dashboardStats.totalArticulos}
                     icon={Package}
-                    color="bg-[#38BDF8]"
+                    color="bg-[#1976d2]"
                     description="Artículos evaluados en el cruce"
                   />
                   <StatsCard
                     title="Artículos Faltantes"
                     value={dashboardStats.totalFaltantes}
                     icon={AlertTriangle}
-                    color="bg-[#F59E0B]"
+                    color="bg-[#ef6c00]"
                     description="Artículos con diferencia negativa"
                   />
                   <StatsCard
                     title="Artículos Cobrables"
                     value={dashboardStats.totalCobrables}
                     icon={TrendingDown}
-                    color="bg-[#EF4444]"
+                    color="bg-[#d32f2f]"
                     description="Faltantes que superan el margen"
                   />
                   <StatsCard
                     title="Valor Total a Cobrar"
                     value={formatCurrency(dashboardStats.valorTotalCobro)}
                     icon={DollarSign}
-                    color="bg-[#22C55E]"
+                    color="bg-[#2e7d32]"
                     description="Impacto económico total"
                   />
                   <StatsCard
@@ -469,7 +507,7 @@ export default function App() {
                     {dashboardStats.sedes.map((sede) => (
                       <div
                         key={sede.sede}
-                        className="p-5 rounded-[8px] border border-brand-border bg-[#132238]"
+                        className="p-5 rounded-[8px] border border-brand-border bg-[#ffffff]"
                       >
                         <h4 className="font-bold text-brand-text mb-3 uppercase tracking-tight">
                           {sede.sede}
@@ -529,9 +567,9 @@ export default function App() {
                 </div>
 
                 {/* ── CONFIGURACIÓN DE COBRO: reglas visibles + política seleccionable ── */}
-                <div className="bg-white rounded-2xl border border-brand-border shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-brand-border flex items-center gap-3 bg-[#132238]/50">
-                    <div className="bg-[#0a1a2d] p-2 rounded-lg text-[#FBC519]">
+                <div className="bg-white rounded-md border border-brand-border shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-brand-border flex items-center gap-3 bg-[#ffffff]/50">
+                    <div className="bg-[#f7f8fa] p-2 rounded-lg text-[#ef6c00]">
                       <Settings className="w-5 h-5" />
                     </div>
                     <div>
@@ -562,10 +600,10 @@ export default function App() {
                         ).map(([u, porQue]) => (
                           <div
                             key={u}
-                            className={`p-3 rounded-lg border bg-[#132238] ${
+                            className={`p-3 rounded-lg border bg-[#ffffff] ${
                               JSON.stringify(borradorMargenes[u]) !==
                               JSON.stringify(configMargenes[u])
-                                ? 'border-[#FBC519]/60'
+                                ? 'border-[#1976d2]/60'
                                 : 'border-brand-border'
                             }`}
                           >
@@ -578,7 +616,7 @@ export default function App() {
                                 <select
                                   value={borradorMargenes[u].modo}
                                   onChange={(e) => editarMargen(u, 'modo', e.target.value)}
-                                  className="bg-[#0a1a2d] border border-brand-border rounded-lg px-2 py-1.5 text-xs font-bold text-text-main focus:outline-none focus:ring-1 focus:ring-[#FBC519]"
+                                  className="bg-[#f7f8fa] border border-brand-border rounded-lg px-2 py-1.5 text-xs font-bold text-text-main focus:outline-none focus:ring-1 focus:ring-[#1976d2]"
                                 >
                                   <option value="FIJO">± fijo</option>
                                   <option value="PORCENTAJE">% del teórico</option>
@@ -589,7 +627,7 @@ export default function App() {
                                   step={borradorMargenes[u].modo === 'PORCENTAJE' ? 0.1 : 1}
                                   value={borradorMargenes[u].valor}
                                   onChange={(e) => editarMargen(u, 'valor', e.target.value)}
-                                  className="w-20 bg-[#0a1a2d] border border-brand-border rounded-lg px-2 py-1.5 text-sm font-bold text-right text-text-main focus:outline-none focus:ring-1 focus:ring-[#FBC519]"
+                                  className="w-20 bg-[#f7f8fa] border border-brand-border rounded-lg px-2 py-1.5 text-sm font-bold text-right text-text-main focus:outline-none focus:ring-1 focus:ring-[#1976d2]"
                                 />
                                 <span className="text-[10px] font-bold text-text-secondary w-16">
                                   {borradorMargenes[u].modo === 'PORCENTAJE'
@@ -598,11 +636,11 @@ export default function App() {
                                 </span>
                               </div>
                             </div>
-                            <p className="text-[10px] text-[#38BDF8] mt-1 font-bold">
+                            <p className="text-[10px] text-[#1976d2] mt-1 font-bold">
                               Activo: {reglaTexto(configMargenes[u], u)}
                               {JSON.stringify(borradorMargenes[u]) !==
                                 JSON.stringify(configMargenes[u]) && (
-                                <span className="text-[#FBC519]">
+                                <span className="text-[#ef6c00]">
                                   {' '}
                                   → nuevo: {reglaTexto(borradorMargenes[u], u)} (sin aplicar)
                                 </span>
@@ -618,8 +656,8 @@ export default function App() {
                           disabled={!hayCambiosMargenes || recalculando}
                           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
                             hayCambiosMargenes && !recalculando
-                              ? 'bg-[#FBC519] text-[#081423] hover:brightness-110'
-                              : 'bg-[#132238] text-text-secondary border border-brand-border cursor-not-allowed'
+                              ? 'bg-[#1976d2] text-[#ffffff] hover:brightness-110'
+                              : 'bg-[#ffffff] text-text-secondary border border-brand-border cursor-not-allowed'
                           }`}
                         >
                           {recalculando ? (
@@ -634,7 +672,7 @@ export default function App() {
                         <button
                           onClick={() => setBorradorMargenes(CONFIG_MARGENES_DEFAULT)}
                           disabled={recalculando}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-text-secondary border border-brand-border hover:text-text-main hover:bg-[#132238] transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-text-secondary border border-brand-border hover:text-text-main hover:bg-[#ffffff] transition-colors"
                           title="Vuelve el borrador a los valores predeterminados (UNID ±0, COPAS ±0, ONZAS ±3, GRAMOS 2.5%). Recuerda Aplicar."
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
@@ -660,18 +698,18 @@ export default function App() {
                             onClick={() => setPoliticaCobro(pol)}
                             className={`w-full text-left p-3 rounded-lg border transition-all ${
                               politicaCobro === pol
-                                ? 'bg-[#0a1a2d] border-[#FBC519] ring-1 ring-[#FBC519]/40'
-                                : 'bg-[#132238] border-brand-border hover:border-[#38BDF8]/50'
+                                ? 'bg-[#f7f8fa] border-[#1976d2] ring-1 ring-[#1976d2]/40'
+                                : 'bg-[#ffffff] border-brand-border hover:border-[#1976d2]/50'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span
-                                className={`font-bold text-sm ${politicaCobro === pol ? 'text-[#FBC519]' : 'text-text-main'}`}
+                                className={`font-bold text-sm ${politicaCobro === pol ? 'text-[#ef6c00]' : 'text-text-main'}`}
                               >
                                 {POLITICAS_COBRO[pol].etiqueta}
                               </span>
                               {politicaCobro === pol && (
-                                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FBC519] text-[#081423]">
+                                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#1976d2] text-[#ffffff]">
                                   Activa
                                 </span>
                               )}
@@ -701,7 +739,7 @@ export default function App() {
                       Detalle de Cobros <HelpTip clave="cobros" />
                     </h3>
                     <span
-                      className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-[#0a1a2d] text-[#FBC519] border border-[#FBC519]/40"
+                      className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-[#f7f8fa] text-[#ef6c00] border border-[#1976d2]/40"
                       title={POLITICAS_COBRO[politicaCobro].descripcion}
                     >
                       Política: {POLITICAS_COBRO[politicaCobro].etiqueta}
@@ -743,7 +781,7 @@ export default function App() {
 
             {activeTab === 'CONFIABILIDAD' && (
               <>
-                <NivelConfiabilidad lineas={lineas} onCambio={() => setRecargarToken((t) => t + 1)} />
+                <NivelConfiabilidad lineas={lineas} cc={filters.ccs.length === 1 ? filters.ccs[0] : null} onCambio={() => setRecargarToken((t) => t + 1)} />
                 <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
               </>
             )}
@@ -802,119 +840,105 @@ export default function App() {
 
   return (
     <HelpProvider articles={filteredArticles}>
-      <div className="min-h-screen flex flex-col bg-background">
-        {/* Top Bar */}
-        <header className="relative bg-[#081423] text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
-          <div className="flex items-center gap-3">
-            <div className="bg-[#FBC519] p-2 rounded-lg">
-              <ShieldCheck className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight leading-none uppercase">
-                Cruces de Inventario
-              </h1>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9D4E3] font-bold">
-                Auditoría y Cobros por Sede
-              </p>
-            </div>
+      <div className="min-h-screen bg-fondo">
+        {/* Riel de íconos (como el ERP y el Informe de Rentabilidad) */}
+        <aside className="fixed inset-y-0 left-0 z-40 flex w-14 flex-col items-center bg-negro py-2">
+          <div
+            className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-[#42a5f5] to-[#1565c0]"
+            title="Cruce de Inventarios y Cobros"
+          >
+            <ShieldCheck className="h-6 w-6 text-white" />
           </div>
+          <nav className="flex flex-1 flex-col items-center gap-1" aria-label="Menú principal">
+            {articles.length > 0 &&
+              PESTANAS.map(({ tab, texto, Icono }) => {
+                const on = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    aria-label={texto}
+                    aria-current={on ? 'page' : undefined}
+                    className={`group relative flex h-10 w-10 items-center justify-center rounded-sm transition-colors ${
+                      on ? 'bg-marca text-white' : 'text-white/85 hover:bg-carbon hover:text-white'
+                    }`}
+                  >
+                    <Icono className="h-[22px] w-[22px]" strokeWidth={1.7} />
+                    <span className="pointer-events-none fixed left-[60px] z-50 hidden rounded-sm bg-carbon px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white shadow-lg group-hover:block group-focus-visible:block">
+                      {texto}
+                    </span>
+                  </button>
+                );
+              })}
+          </nav>
+          {articles.length > 0 && (
+            <button
+              onClick={() => setMostrarCargador((v) => !v)}
+              aria-label="Subir inventario"
+              className={`group relative mb-1 flex h-10 w-10 items-center justify-center rounded-sm transition-colors ${
+                mostrarCargador ? 'bg-marca text-white' : 'text-white/85 hover:bg-carbon hover:text-white'
+              }`}
+            >
+              <Upload className="h-[22px] w-[22px]" strokeWidth={1.7} />
+              <span className="pointer-events-none fixed left-[60px] z-50 hidden rounded-sm bg-carbon px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white shadow-lg group-hover:block">
+                Subir inventario
+              </span>
+            </button>
+          )}
+        </aside>
 
-          <div className="flex items-center gap-6">
+        {/* Barra superior */}
+        <header className="fixed top-0 right-0 left-14 z-30 flex h-[44px] items-center bg-carbon text-white">
+          <span className="px-6 text-[15px] font-medium whitespace-nowrap">Cruce de Inventarios</span>
+          {articles.length > 0 && (
+            <span className="flex h-full items-center bg-marca px-6 text-[15px] font-medium whitespace-nowrap">
+              {PESTANAS.find((p) => p.tab === activeTab)?.texto}
+            </span>
+          )}
+          <div className="ml-auto flex items-center gap-3 pr-4">
+            {articles.length > 0 && <HelpTip clave="cargar" />}
             {articles.length > 0 && (
               <button
                 onClick={() => setMostrarCargador((v) => !v)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${
-                  mostrarCargador
-                    ? 'bg-[#FBC519] text-[#081423]'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
+                className="flex items-center gap-2 text-[13px] font-medium text-white/90 hover:text-white"
                 title="Subir un inventario de HioPOS a la base"
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="h-4 w-4" />
                 Subir inventario
               </button>
-            )}
-            {articles.length > 0 && <HelpTip clave="cargar" />}
-            <FileUpload
-              onDataLoaded={(data) => {
-                setArticles(data);
-                setMostrarCargador(false);
-              }}
-              onReset={() => {
-                setArticles([]);
-                setLineas([]);
-                setFileName('');
-                setMostrarCargador(false);
-              }}
-              onFileNameChange={(name) => setFileName(name)}
-              onLineasCargadas={setLineas}
-              recargarToken={recargarToken}
-              hasData={articles.length > 0}
-              forzarVisible={mostrarCargador}
-            />
-            {articles.length > 0 && (
-              <>
-                <div className="h-8 w-px bg-white/10"></div>
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-[#38BDF8] uppercase">Estado</p>
-                  <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>{' '}
-                    Sistema Activo
-                  </p>
-                </div>
-              </>
             )}
           </div>
         </header>
 
-        {/* Navigation Tabs */}
-        {articles.length > 0 && (
-          <nav className="bg-[#0F1C2E] border-b border-brand-border px-6 flex items-center gap-8 shadow-sm overflow-x-auto">
-            {(
-              [
-                'RESUMEN',
-                'ANÁLISIS',
-                'COBROS',
-                'CONFIABILIDAD',
-                'GERENCIAL',
-                'TRAZABILIDAD',
-                'EJECUTIVO',
-              ] as Tab[]
-            ).map((tab) => {
-              const Icon = {
-                RESUMEN: LayoutDashboard,
-                ANÁLISIS: BarChart2,
-                COBROS: DollarSign,
-                CONFIABILIDAD: ShieldCheck,
-                GERENCIAL: BarChart3,
-                TRAZABILIDAD: Activity,
-                EJECUTIVO: LayoutDashboard,
-              }[tab];
+        {/* Contenido */}
+        <main className="ml-14 min-w-0 px-4 pt-[60px] pb-8 lg:px-8">
+          <div className="mx-auto max-w-[1440px]">
+            {/* Carga de datos: panel completo sin datos; desplegable al pulsar "Subir inventario". */}
+            <div className={`relative ${articles.length > 0 ? 'flex justify-end' : 'mb-6'}`}>
+              <FileUpload
+                onDataLoaded={(data) => {
+                  setArticles(data);
+                  setMostrarCargador(false);
+                }}
+                onReset={() => {
+                  setArticles([]);
+                  setLineas([]);
+                  setFileName('');
+                  setMostrarCargador(false);
+                }}
+                onFileNameChange={(name) => setFileName(name)}
+                onLineasCargadas={setLineas}
+                recargarToken={recargarToken}
+                hasData={articles.length > 0}
+                forzarVisible={mostrarCargador}
+              />
+            </div>
+            {renderContent()}
+          </div>
+        </main>
 
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-2 py-4 px-2 border-b-2 font-bold text-sm transition-all ${
-                    activeTab === tab
-                      ? 'border-[#FBC519] text-secondary'
-                      : 'border-transparent text-text-secondary hover:text-text-main'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab}
-                </button>
-              );
-            })}
-          </nav>
-        )}
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 max-w-7xl mx-auto w-full">{renderContent()}</main>
-
-        {/* Footer */}
-        <footer className="bg-[#0F1C2E] border-t border-brand-border p-4 text-center text-[10px] text-[#8EA3BF] font-bold uppercase tracking-widest">
-          © {new Date().getFullYear()} PROMPT MAESTRO – SISTEMA DE AUDITORÍA DE INVENTARIOS
+        <footer className="ml-14 border-t border-linea p-4 text-center text-[11px] text-text-secondary">
+          © {new Date().getFullYear()} Cruce de Inventarios y Cobros · Restaurantes Rocoto
         </footer>
       </div>
     </HelpProvider>
