@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, AlertCircle, Loader2, RefreshCw, Cloud } from 'lucide-react';
+import { Upload, AlertCircle, Loader2, RefreshCw, Cloud, Trash2 } from 'lucide-react';
 import { normalizeData } from '../utils/inventory';
 import { ArticleSummary } from '../types';
 import { leerLineas, aFormatoHioPOS, LineaInventario } from '../lib/inventariosSupabase';
-import { leerArchivoInventario, subirInventario } from '../lib/subirInventario';
+import { leerArchivoInventario, subirInventario, borrarTodo } from '../lib/subirInventario';
+import { supabase } from '../lib/supabase';
 
 const NOMBRE_FUENTE = 'Supabase - Inventarios';
 
@@ -32,6 +33,8 @@ interface FileUploadProps {
   forzarVisible?: boolean;
   /** Recibe las líneas tal como están en la base (para el nivel de confiabilidad por inventario). */
   onLineasCargadas?: (lineas: LineaInventario[]) => void;
+  /** Cada vez que cambia, se recargan los datos desde Supabase (p. ej. tras borrar un inventario). */
+  recargarToken?: number;
 }
 
 /**
@@ -54,7 +57,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   hasData,
   forzarVisible = false,
   onLineasCargadas,
+  recargarToken = 0,
 }) => {
+  // Rol en el Cruce: solo el admin ve "Borrar toda la base".
+  const [esAdmin, setEsAdmin] = useState(false);
+  // Confirmación escrita para borrar toda la base.
+  const [confirmarBorrado, setConfirmarBorrado] = useState<string | null>(null);
   // Aviso de éxito tras subir un archivo a la base.
   const [aviso, setAviso] = useState<string | null>(null);
   // Estado de carga (muestra spinner mientras se obtienen / procesan datos).
@@ -101,13 +109,40 @@ export const FileUpload: React.FC<FileUploadProps> = ({
    */
   useEffect(() => {
     loadFromSupabase();
+    supabase.rpc('cruce_mi_rol').then(({ data }) => setEsAdmin(data === 'admin'));
   }, []);
+
+  // Recarga pedida desde afuera (por ejemplo, después de borrar un inventario).
+  useEffect(() => {
+    if (recargarToken > 0) loadFromSupabase();
+  }, [recargarToken]);
+
+  /** Borra toda la base (solo admin) tras escribir BORRAR. */
+  const borrarBase = async () => {
+    setLoading(true);
+    setError(null);
+    setAviso(null);
+    try {
+      const n = await borrarTodo();
+      setConfirmarBorrado(null);
+      setAviso(`Se borró toda la base (${n} líneas).`);
+      setFileInfo(null);
+      onLineasCargadas?.([]);
+      onReset();
+      setLoading(false);
+      await loadFromSupabase();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo borrar la base');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /**
    * Sube un inventario de HioPOS (.csv, .xlsx o .xls) a la base de Supabase y
-   * luego recarga todo desde la base. Si el archivo trae un documento (fecha +
-   * serie + almacén) que ya estaba, lo reemplaza; así subir dos veces el mismo
-   * inventario no duplica nada.
+   * luego recarga todo desde la base. SUMA a lo que ya está: agrega las líneas
+   * nuevas y actualiza las que ya existían (mismo almacén, fecha, serie, código y
+   * artículo); así subir dos veces el mismo archivo no duplica nada.
    */
   const handleFile = async (file: File) => {
     setLoading(true);
@@ -118,8 +153,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       if (lineas.length === 0) throw new Error('El archivo no trae líneas de inventario.');
       const r = await subirInventario(file.name, lineas);
       setAviso(
-        `Se guardaron ${r.filas} líneas de ${r.documentos} inventario(s)` +
-          (r.reemplazadas ? ` (reemplazaron ${r.reemplazadas} líneas que ya estaban).` : '.')
+        `Archivo sumado a la base: ${r.nuevas} líneas nuevas` +
+          (r.actualizadas ? ` y ${r.actualizadas} actualizadas (ya estaban)` : '') +
+          ` en ${r.documentos} inventario(s).`
       );
       setLoading(false);
       await loadFromSupabase();
@@ -230,9 +266,47 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
         <p className="text-xs font-medium text-[#8EA3BF]">Subir inventario de HioPOS a la base</p>
         <p className="text-xs text-gray-400">
-          Arrastra el archivo .csv o .xlsx o haz clic para seleccionar. Queda guardado para todos.
+          Arrastra el archivo .csv o .xlsx o haz clic para seleccionar. Se suma a lo que ya está.
         </p>
       </div>
+
+      {/* Borrar toda la base: solo administrador, con confirmación escrita. */}
+      {esAdmin && (
+        <div className="border border-[#5A2020] rounded-xl p-3 text-xs text-[#8EA3BF]">
+          {confirmarBorrado === null ? (
+            <button
+              onClick={() => setConfirmarBorrado('')}
+              className="flex items-center gap-1 text-[#EF4444] hover:text-red-300 font-medium"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Borrar toda la base de inventarios
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p>
+                Se borran <b>todos</b> los inventarios subidos, para todos los usuarios. No se puede
+                deshacer. Escribe <b>BORRAR</b> para confirmar:
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={confirmarBorrado}
+                  onChange={(e) => setConfirmarBorrado(e.target.value)}
+                  className="flex-1 rounded-lg bg-[#050D18] border border-[#5A2020] px-2 py-1 text-white"
+                />
+                <button
+                  disabled={confirmarBorrado !== 'BORRAR'}
+                  onClick={borrarBase}
+                  className="rounded-lg bg-[#EF4444] disabled:opacity-40 text-white px-3 py-1 font-bold"
+                >
+                  Borrar
+                </button>
+                <button onClick={() => setConfirmarBorrado(null)} className="text-[#8EA3BF] underline">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

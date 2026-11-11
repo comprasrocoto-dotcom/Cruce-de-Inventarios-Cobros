@@ -5,13 +5,15 @@
  *   Nivel = (Cantidad de referencias − Total ref con diferencia) / Cantidad de referencias × 100
  *
  * Las tolerancias se leen de `cruce_configuracion` (compartidas por todos);
- * solo el administrador puede cambiarlas.
+ * solo el administrador puede cambiarlas. Administrador y editor pueden borrar
+ * un inventario (por ejemplo, uno subido por error).
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Save } from 'lucide-react';
+import { ChevronDown, ChevronRight, Save, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { LineaInventario } from '../lib/inventariosSupabase';
 import { evaluarInventarios, Tolerancias, TOLERANCIAS_DEFAULT } from '../lib/nivelConfiabilidad';
+import { borrarInventario } from '../lib/subirInventario';
 
 const pesos = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
@@ -23,10 +25,12 @@ const fechaCorta = (f: string) => {
 const colorNivel = (n: number) =>
   n >= 95 ? 'bg-emerald-100 text-emerald-800' : n >= 80 ? 'bg-yellow-100 text-yellow-800' : n >= 60 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
 
-export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[] }> = ({ lineas }) => {
+export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[]; onCambio?: () => void }> = ({ lineas, onCambio }) => {
   const [tol, setTol] = useState<Tolerancias>(TOLERANCIAS_DEFAULT);
   const [borrador, setBorrador] = useState({ pct: '2.5', unidades: '2' });
   const [esAdmin, setEsAdmin] = useState(false);
+  const [puedeBorrar, setPuedeBorrar] = useState(false);
+  const [porBorrar, setPorBorrar] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [almacen, setAlmacen] = useState('TODOS');
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -43,7 +47,10 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[] }> = ({ li
         setTol(t);
         setBorrador({ pct: String(t.pct * 100), unidades: String(t.unidades) });
       });
-    supabase.rpc('cruce_mi_rol').then(({ data }) => setEsAdmin(data === 'admin'));
+    supabase.rpc('cruce_mi_rol').then(({ data }) => {
+      setEsAdmin(data === 'admin');
+      setPuedeBorrar(data === 'admin' || data === 'editor');
+    });
   }, []);
 
   const guardar = async () => {
@@ -58,6 +65,17 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[] }> = ({ li
     if (error) return setMsg(`No se guardó: ${error.message}`);
     setTol({ pct, unidades });
     setMsg('Tolerancias guardadas para todos los usuarios.');
+  };
+
+  const borrar = async (almacen: string, fecha: string, serie: string) => {
+    try {
+      const n = await borrarInventario(almacen, fecha, serie);
+      setMsg(`Se borró el inventario ${serie} de ${almacen} (${n} líneas).`);
+      setPorBorrar(null);
+      onCambio?.();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'No se pudo borrar.');
+    }
   };
 
   const inventarios = useMemo(() => evaluarInventarios(lineas, tol), [lineas, tol]);
@@ -118,6 +136,7 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[] }> = ({ li
               <th className="px-3 py-2 text-center">Nivel de confiabilidad</th>
               <th className="px-3 py-2 text-right">Faltantes (costo)</th>
               <th className="px-3 py-2 text-right">Sobrantes (costo)</th>
+              {puedeBorrar && <th className="px-3 py-2"></th>}
             </tr>
           </thead>
           <tbody>
@@ -135,10 +154,29 @@ export const NivelConfiabilidad: React.FC<{ lineas: LineaInventario[] }> = ({ li
                   </td>
                   <td className="px-3 py-2 text-right text-red-700">{pesos(i.faltanteValor)}</td>
                   <td className="px-3 py-2 text-right text-emerald-700">{pesos(i.sobranteValor)}</td>
+                  {puedeBorrar && (
+                    <td className="px-3 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      {porBorrar === i.clave ? (
+                        <span className="text-xs">
+                          ¿Borrar este inventario?{' '}
+                          <button onClick={() => borrar(i.almacen, i.fecha, i.serie)} className="font-bold text-red-700 underline">
+                            Sí
+                          </button>{' '}
+                          <button onClick={() => setPorBorrar(null)} className="underline">
+                            No
+                          </button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setPorBorrar(i.clave)} title="Borrar este inventario de la base" className="text-slate-400 hover:text-red-700">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
                 {abierto === i.clave && (
                   <tr>
-                    <td colSpan={9} className="bg-slate-50 px-3 py-3">
+                    <td colSpan={puedeBorrar ? 10 : 9} className="bg-slate-50 px-3 py-3">
                       <p className="text-xs font-bold text-text-main mb-2">
                         Novedades: {i.conDiferencia} referencias fuera de tolerancia (ordenadas por impacto en costo)
                       </p>
