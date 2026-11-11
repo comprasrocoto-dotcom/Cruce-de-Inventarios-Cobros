@@ -19,6 +19,20 @@ sobrantes contra el **registro de recetas** para detectar producción sin regist
 | Datos | **Supabase**: base propia `cruce_*` (inventarios subidos, tolerancias, accesos) + inicio de sesión. Recetas siguen en Google Sheets vía Apps Script |
 | Hosting | Vercel (deploy automático desde GitHub) |
 
+### Panel de usuarios — nov 2026
+
+- Botón **Usuarios** en la barra superior (solo rol admin): crear usuarios, cambiar rol
+  (Administrador / Editor / Lector), quitar acceso y generar enlaces de contraseña.
+- La gestión pasa por la función de Supabase `cruce-usuarios` (código en
+  `supabase/functions/cruce-usuarios`), que verifica que quien llama sea admin del Cruce.
+- Las cuentas son las mismas del Informe de Rentabilidad. Como la base solo crea cuentas para
+  correos de su lista `accesos`, un correo nuevo se agrega allá con rol `marca` y sin marcas
+  (no ve nada en Rentabilidad hasta que se le asignen).
+- Nadie escribe ni ve contraseñas ajenas: el panel genera un enlace de un solo uso
+  (`?token_hash=…&type=invite|recovery`) que el administrador envía por WhatsApp o correo, y la
+  persona crea su propia contraseña al abrirlo. Quitar el acceso solo borra la fila de
+  `cruce_accesos`; la cuenta y Rentabilidad no se tocan.
+
 ### Diseño y Cocina/Bar — nov 2026
 
 - La app usa el **mismo diseño del Informe de Rentabilidad** (paleta del ERP): riel de íconos negro a
