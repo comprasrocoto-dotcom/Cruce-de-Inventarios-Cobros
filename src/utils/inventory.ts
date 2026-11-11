@@ -365,12 +365,16 @@ export function parseNumeroRegional(raw: unknown): number {
  * inventario equivalentes y válidos como base de cobro.
  *   - "CONTEO** / N"  → CONTEO (serie actual)
  *   - "a / NNNN"      → CONTEO (serie histórica de inventario)
+ *   - "INV** / N"     → CONTEO (series actuales: INVAR, INVRC…)
  *   - otro            → OTRO  (documento no reconocido: no genera cobro)
  */
 export function clasificarDocumento(serie: string): 'CONTEO' | 'AJUSTE' | 'OTRO' {
   const s = (serie || '').trim().toUpperCase();
   if (s.startsWith('CONTEO')) return 'CONTEO';
   if (/^A\s*\//.test(s)) return 'CONTEO';
+  // Series de inventario actuales de HioPOS:
+  // INVAR (Arrebatao), INVRC (Rocoto)… — "INV" + letras de la marca.
+  if (/^INV[A-Z]*\s*\//.test(s)) return 'CONTEO';
   return 'OTRO';
 }
 
