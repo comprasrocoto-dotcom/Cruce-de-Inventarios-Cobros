@@ -186,8 +186,10 @@ export const AYUDAS: Record<
         </P>
         <P>
           El botón <b>"Subir inventario"</b> recibe el archivo <b>.csv</b> o <b>.xlsx</b> exportado de
-          HioPOS y lo guarda en la base para todos. Si se sube otra vez el mismo inventario (misma
-          fecha, serie y almacén), se reemplaza en vez de duplicarse.
+          HioPOS y lo <b>suma</b> a la base para todos: agrega las líneas nuevas y actualiza las que ya
+          estaban (mismo almacén, fecha, serie y artículo), así nada se duplica. Un inventario subido
+          por error se borra con la papelera de su fila en CONFIABILIDAD; el administrador también
+          puede borrar toda la base desde este panel.
         </P>
         <P>
           <b>Regla de oro de los números:</b> el proyecto trabaja siempre con{' '}

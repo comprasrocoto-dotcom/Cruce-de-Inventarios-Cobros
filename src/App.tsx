@@ -64,6 +64,8 @@ export default function App() {
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   // Líneas tal como están en Supabase (nivel de confiabilidad por inventario).
   const [lineas, setLineas] = useState<LineaInventario[]>([]);
+  // Al cambiar, FileUpload recarga los datos desde Supabase (p. ej. tras borrar un inventario).
+  const [recargarToken, setRecargarToken] = useState(0);
   // Política de cobro activa (Configuración de Cobro en el RESUMEN).
   // Se persiste en el navegador para sobrevivir recargas.
   const [politicaCobro, setPoliticaCobro] = useState<PoliticaCobro>(() => {
@@ -741,7 +743,7 @@ export default function App() {
 
             {activeTab === 'CONFIABILIDAD' && (
               <>
-                <NivelConfiabilidad lineas={lineas} />
+                <NivelConfiabilidad lineas={lineas} onCambio={() => setRecargarToken((t) => t + 1)} />
                 <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
               </>
             )}
@@ -846,6 +848,7 @@ export default function App() {
               }}
               onFileNameChange={(name) => setFileName(name)}
               onLineasCargadas={setLineas}
+              recargarToken={recargarToken}
               hasData={articles.length > 0}
               forzarVisible={mostrarCargador}
             />
