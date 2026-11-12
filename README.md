@@ -19,6 +19,20 @@ sobrantes contra el **registro de recetas** para detectar producción sin regist
 | Datos | **Supabase**: base propia `cruce_*` (inventarios subidos, tolerancias, accesos) + inicio de sesión. Recetas siguen en Google Sheets vía Apps Script |
 | Hosting | Vercel (deploy automático desde GitHub) |
 
+### Confiabilidad real — nov 2026
+
+- Una sola fórmula en toda la app (tabla por inventario, tarjetas por sede, mapa de calor,
+  Ejecutivo y PDF): **Nivel = (1 − Ref. con diferencia ÷ Cantidad de referencias) × 100**.
+- Cada artículo en cada inventario es una referencia; con varios inventarios en el filtro se
+  suman referencias y diferencias (no se promedian porcentajes).
+- "Con diferencia" = se sale del margen de su unidad, el MISMO que decide el cobro: unidades y
+  copas sin margen, onzas ±2, gramos 2,5% del teórico. Se guarda en
+  `cruce_configuracion.margenes` y aplica para todos.
+- Novedades con "Fuera del margen" (cantidad que excede el margen) y su costo, y marcas para
+  revisar teórico negativo y físico en 0.
+- El cálculo anterior (la menor entre exactitud por artículos y por valor, sin sub-recetas)
+  quedó como `calcularEstadisticasConfiabilidadHorizonte`, sin uso.
+
 ### Panel de usuarios — nov 2026
 
 - Botón **Usuarios** en la barra superior (solo rol admin): crear usuarios, cambiar rol
@@ -54,7 +68,8 @@ todo lo guardado y muestra sus novedades y su nivel de confiabilidad.
   tablas ni el código del Informe de Rentabilidad.
   - `cruce_inventarios`: líneas del export de HioPOS (un documento = fecha + serie + almacén).
   - `cruce_cargas`: cada archivo subido (quién, cuándo, cuántas filas y documentos).
-  - `cruce_configuracion`: tolerancias del nivel de confiabilidad (2,5% y ±2 por defecto).
+  - `cruce_configuracion`: márgenes de error por unidad (`margenes`), los mismos para cobro y
+    confiabilidad. Los guarda un administrador desde Configuración de Cobro.
   - `cruce_accesos`: quién entra y con qué rol (admin · editor = sube inventarios · lector).
 - **Subir un inventario:** botón "Subir inventario" (CSV o Excel de HioPOS). El CSV puede venir
   con números colombianos (`4.491` = cuatro mil, `3.728,55`); el formato se detecta y se valida
@@ -69,8 +84,8 @@ todo lo guardado y muestra sus novedades y su nivel de confiabilidad.
   lista de accesos).
 - **Nivel de confiabilidad por inventario** (pestaña CONFIABILIDAD, arriba):
   `(Cantidad de referencias − Total ref con diferencia) / Cantidad de referencias × 100`.
-  Diferencia = fuera de ±2,5% de la cantidad mayor (teórico/físico) en gramos, onzas, ml y
-  kilos, o fuera de ±2 en unidades y copas. Líneas con teórico y físico en cero no cuentan.
+  Diferencia = fuera del margen de su unidad: unidades y copas sin margen, onzas ±2, gramos
+  2,5% del teórico (piso de 100 g). Líneas con teórico y físico en cero no cuentan.
   Cada fila se abre para ver sus novedades ordenadas por costo. El admin edita las tolerancias.
   Los márgenes de **cobro** siguen siendo los de "Configuración de Cobro" (no cambiaron).
 - Series de inventario reconocidas por el motor de cobro: `a /`, `CONTEO*` y `INV*` (INVAR, INVRC…).
@@ -129,7 +144,7 @@ Predeterminados al abrir:
 |---|---|---|
 | UNIDADES | Sin margen | Lo contable se cuenta con los dedos |
 | COPAS | Sin margen | Ídem |
-| ONZAS | **±3** | Error del jigger (decisión de negocio; antes ±1) |
+| ONZAS | **±2** | Error del jigger (decisión de negocio 11/11/2026; antes ±3) |
 | GRAMOS | **2.5% del teórico** del horizonte, piso 100 g | Mermas de pesaje y porcionado |
 
 Cada unidad admite dos modos: **± fijo** o **% del teórico**. Los cambios se editan como
