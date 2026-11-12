@@ -2,7 +2,7 @@
  * Reglas de tolerancia, confiabilidad y pérdida económica por ítem.
  *
  * Define el margen de error permitido según la unidad de medida (unidades y
- * copas sin margen, onzas ±1, gramos ±2.5% del consumo teórico), evalúa si un
+ * copas sin margen, onzas ±2, gramos 2.5% del teórico), evalúa si un
  * ítem está dentro de tolerancia, calcula su confiabilidad gradual y genera
  * alertas y proyecciones de pérdida. Es la fuente de verdad económica usada
  * por inventory.ts.
@@ -38,15 +38,40 @@ export type ConfigMargenes = Record<UnidadMargen, ReglaMargen>;
  * Márgenes PREDETERMINADOS al abrir la aplicación (editables en la tarjeta
  * Configuración de Cobro; la app puede recalcular todo con otra config):
  *   UNIDADES y COPAS: sin margen (lo contable se cuenta exacto)
- *   ONZAS: ±3 (decisión de negocio 04/07/2026; antes ±1)
- *   GRAMOS: 2.5% del teórico del horizonte, con piso BASE_MINIMA_GRAMOS
+ *   ONZAS: ±2 (decisión de negocio 11/11/2026; antes ±3)
+ *   GRAMOS: 2.5% del teórico, con piso BASE_MINIMA_GRAMOS
+ * La configuración vigente para todos se guarda en Supabase
+ * (`cruce_configuracion.margenes`) y la usan el cobro y la confiabilidad.
  */
 export const CONFIG_MARGENES_DEFAULT: ConfigMargenes = {
   UNIDADES: { modo: 'FIJO', valor: 0 },
   COPAS: { modo: 'FIJO', valor: 0 },
-  ONZAS: { modo: 'FIJO', valor: 3 },
+  ONZAS: { modo: 'FIJO', valor: 2 },
   GRAMOS: { modo: 'PORCENTAJE', valor: 2.5 },
 };
+
+/** Valida una configuración leída de la base o del navegador. */
+export const esConfigMargenes = (c: unknown): c is ConfigMargenes => {
+  const o = c as Record<string, { modo?: string; valor?: unknown }> | null;
+  return (['UNIDADES', 'COPAS', 'ONZAS', 'GRAMOS'] as const).every(
+    (u) =>
+      !!o?.[u] &&
+      (o[u].modo === 'FIJO' || o[u].modo === 'PORCENTAJE') &&
+      typeof o[u].valor === 'number' &&
+      (o[u].valor as number) >= 0
+  );
+};
+
+/**
+ * Márgenes ACTIVOS (los que aplicó la app). Los indicadores de confiabilidad
+ * por sede/centro de costo los leen de aquí para usar exactamente la misma
+ * regla que el cobro, sin pasarla por cada componente.
+ */
+let margenesActivos: ConfigMargenes = CONFIG_MARGENES_DEFAULT;
+export const usarMargenes = (c: ConfigMargenes) => {
+  margenesActivos = c;
+};
+export const margenesVigentes = () => margenesActivos;
 
 /** Resuelve a qué unidad configurable pertenece un subartículo. */
 export const unidadDeMargen = (subarticulo?: string): UnidadMargen => {
@@ -268,14 +293,81 @@ export const cicloDesdeMovimientos = (
   return { variacion, base, fecha: ultimo.fecha, serie: claveSerie };
 };
 
+/** Margen de error de UNA línea de inventario (mismo criterio del cobro). */
+export const margenLinea = (
+  subarticulo: string | null | undefined,
+  teorico: number,
+  config: ConfigMargenes = margenesActivos
+) => calcularMargenError({ subarticulo: subarticulo ?? '', stockEsperado: teorico }, config);
+
 /**
- * Realiza el cálculo global de indicadores de confiabilidad para un conjunto de datos.
- * Ahora calcula el promedio ponderado de confiabilidad de los items.
+ * NIVEL DE CONFIABILIDAD (fórmula del negocio):
+ *
+ *   Nivel = (1 − Ref. con diferencia ÷ Cantidad de referencias) × 100
+ *
+ * Cada referencia es un artículo en un inventario (conteo) de la sede. Tiene
+ * diferencia cuando |físico − teórico| supera el margen de su unidad:
+ * unidades y copas sin margen, onzas ±2, gramos 2.5% del teórico.
+ * Con varios inventarios en el rango se SUMAN referencias y diferencias (un
+ * conteo de 500 referencias pesa más que uno de 20). Líneas con teórico y
+ * físico en cero no cuentan (no hubo nada que contar).
  */
-export const calcularEstadisticasConfiabilidad = (data: ArticleSummary[] = []) => {
-  // Las sub-recetas / producto en proceso se excluyen del indicador: su
-  // variación es operativa (producción/consumo entre inventarios) y no mide
-  // la calidad del conteo de la sede.
+export const calcularEstadisticasConfiabilidad = (
+  data: ArticleSummary[] = [],
+  config: ConfigMargenes = margenesActivos
+) => {
+  let total = 0;
+  let dentro = 0;
+  let valorTeorico = 0;
+  let valorDesviado = 0;
+  for (const i of data) {
+    const costo = i.costeMediano || i.ultimoCoste || i.costePromedio || 0;
+    for (const m of i.movements ?? []) {
+      if (m.tipoDocumento === 'AJUSTE') continue;
+      if (!m.stockFecha && !m.stockInventario) continue;
+      total++;
+      const diferencia = m.stockInventario - m.stockFecha;
+      if (Math.abs(diferencia) <= margenLinea(i.subarticulo, m.stockFecha, config) + 1e-9) dentro++;
+      valorTeorico += Math.abs(m.stockFecha) * costo;
+      valorDesviado += Math.abs(diferencia) * costo;
+    }
+  }
+  if (total === 0) {
+    return {
+      total: 0,
+      dentro: 0,
+      fuera: 0,
+      confiabilidad: 0,
+      porcentajeFuera: 0,
+      excluidosSubReceta: 0,
+      exactitudArticulos: 0,
+      exactitudValor: 0,
+      valorTeorico: 0,
+      valorDesviado: 0,
+    };
+  }
+  const fuera = total - dentro;
+  const nivel = (dentro / total) * 100;
+  const exactitudValor = valorTeorico > 0 ? Math.max(0, (1 - valorDesviado / valorTeorico) * 100) : nivel;
+  return {
+    total,
+    dentro,
+    fuera,
+    excluidosSubReceta: 0,
+    exactitudArticulos: Number(nivel.toFixed(2)),
+    exactitudValor: Number(exactitudValor.toFixed(2)),
+    valorTeorico,
+    valorDesviado,
+    confiabilidad: Number(nivel.toFixed(2)),
+    porcentajeFuera: (fuera / total) * 100,
+  };
+};
+
+/**
+ * Cálculo ANTERIOR (exactitud por artículo y por valor sobre el horizonte).
+ * Se conserva solo como referencia; ya no lo usa ninguna pantalla.
+ */
+export const calcularEstadisticasConfiabilidadHorizonte = (data: ArticleSummary[] = []) => {
   const evaluables = data.filter((i) => !i.esSubReceta);
   const total = evaluables.length;
   if (total === 0) {
