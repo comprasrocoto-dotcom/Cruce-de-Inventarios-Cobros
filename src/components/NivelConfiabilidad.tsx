@@ -2,17 +2,18 @@
  * Nivel de confiabilidad por inventario: una fila por cada inventario subido
  * (almacén + fecha + serie), con su fórmula y sus novedades.
  *
- *   Nivel = (Cantidad de referencias − Total ref con diferencia) / Cantidad de referencias × 100
+ *   Nivel = (1 − Total ref. con diferencia ÷ Cantidad de referencias) × 100
  *
- * Las tolerancias se leen de `cruce_configuracion` (compartidas por todos);
- * solo el administrador puede cambiarlas. Administrador y editor pueden borrar
- * un inventario (por ejemplo, uno subido por error).
+ * Los márgenes de error son los mismos del cobro (Configuración de Cobro en el
+ * Resumen, guardada en `cruce_configuracion.margenes`). Administrador y editor
+ * pueden borrar un inventario (por ejemplo, uno subido por error).
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Save, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { LineaInventario } from '../lib/inventariosSupabase';
-import { evaluarInventarios, Tolerancias, TOLERANCIAS_DEFAULT } from '../lib/nivelConfiabilidad';
+import { evaluarInventarios, type AlertaLinea } from '../lib/nivelConfiabilidad';
+import { reglaTexto, type ConfigMargenes, type UnidadMargen } from '../utils/confiabilidad';
 import { borrarInventario } from '../lib/subirInventario';
 
 const pesos = (n: number) =>
@@ -22,18 +23,21 @@ const fechaCorta = (f: string) => {
   const [a, m, d] = f.split('-');
   return `${d}/${m}/${a}`;
 };
+const ETIQUETA_ALERTA: Record<Exclude<AlertaLinea, null>, { texto: string; ayuda: string }> = {
+  TEORICO_NEGATIVO: { texto: 'Teórico negativo', ayuda: 'El sistema tenía menos de cero: revisar recetas, compras o traslados.' },
+  FISICO_CERO: { texto: 'Físico en 0', ayuda: 'Se acabó o no se contó: confirmar con la sede.' },
+};
 const colorNivel = (n: number) =>
   n >= 95 ? 'bg-emerald-100 text-emerald-800' : n >= 80 ? 'bg-yellow-100 text-yellow-800' : n >= 60 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
 
 export const NivelConfiabilidad: React.FC<{
   lineas: LineaInventario[];
+  /** Márgenes de error vigentes (los mismos del cobro). */
+  margenes: ConfigMargenes;
   /** Centro de costo elegido (Cocina o Bar); null = Todos. */
   cc?: string | null;
   onCambio?: () => void;
-}> = ({ lineas, cc = null, onCambio }) => {
-  const [tol, setTol] = useState<Tolerancias>(TOLERANCIAS_DEFAULT);
-  const [borrador, setBorrador] = useState({ pct: '2.5', unidades: '2' });
-  const [esAdmin, setEsAdmin] = useState(false);
+}> = ({ lineas, margenes, cc = null, onCambio }) => {
   const [puedeBorrar, setPuedeBorrar] = useState(false);
   const [porBorrar, setPorBorrar] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -41,36 +45,8 @@ export const NivelConfiabilidad: React.FC<{
   const [abierto, setAbierto] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from('cruce_configuracion')
-      .select('tolerancia_pct, tolerancia_unidades')
-      .eq('id', 1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!data) return;
-        const t = { pct: Number(data.tolerancia_pct), unidades: Number(data.tolerancia_unidades) };
-        setTol(t);
-        setBorrador({ pct: String(t.pct * 100), unidades: String(t.unidades) });
-      });
-    supabase.rpc('cruce_mi_rol').then(({ data }) => {
-      setEsAdmin(data === 'admin');
-      setPuedeBorrar(data === 'admin' || data === 'editor');
-    });
+    supabase.rpc('cruce_mi_rol').then(({ data }) => setPuedeBorrar(data === 'admin' || data === 'editor'));
   }, []);
-
-  const guardar = async () => {
-    const pct = Number(borrador.pct.replace(',', '.')) / 100;
-    const unidades = Number(borrador.unidades.replace(',', '.'));
-    if (!(pct >= 0) || !(unidades >= 0)) return setMsg('Valores inválidos.');
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from('cruce_configuracion')
-      .update({ tolerancia_pct: pct, tolerancia_unidades: unidades, actualizado_por: u.user?.email, updated_at: new Date().toISOString() })
-      .eq('id', 1);
-    if (error) return setMsg(`No se guardó: ${error.message}`);
-    setTol({ pct, unidades });
-    setMsg('Tolerancias guardadas para todos los usuarios.');
-  };
 
   const borrar = async (almacen: string, fecha: string, serie: string) => {
     try {
@@ -86,14 +62,17 @@ export const NivelConfiabilidad: React.FC<{
   // Con un centro de costo elegido se evalúan solo sus líneas; con "Todos" se
   // muestra además el nivel de Cocina y de Bar por separado en cada inventario.
   const lineasCC = useMemo(() => (cc ? lineas.filter((l) => l.centro_costos === cc) : lineas), [lineas, cc]);
-  const inventarios = useMemo(() => evaluarInventarios(lineasCC, tol), [lineasCC, tol]);
+  const inventarios = useMemo(() => evaluarInventarios(lineasCC, margenes), [lineasCC, margenes]);
   const nivelPorCC = useMemo(() => {
     const m: Record<string, Map<string, number>> = {};
     for (const c of ['Cocina', 'Bar']) {
-      m[c] = new Map(evaluarInventarios(lineas.filter((l) => l.centro_costos === c), tol).map((i) => [i.clave, i.nivel]));
+      m[c] = new Map(evaluarInventarios(lineas.filter((l) => l.centro_costos === c), margenes).map((i) => [i.clave, i.nivel]));
     }
     return m;
-  }, [lineas, tol]);
+  }, [lineas, margenes]);
+  const reglas = (['UNIDADES', 'COPAS', 'ONZAS', 'GRAMOS'] as UnidadMargen[])
+    .map((u) => `${u.toLowerCase()} ${reglaTexto(margenes[u], u).toLowerCase()}`)
+    .join(' · ');
   const columnas = 9 + (cc ? 0 : 2) + (puedeBorrar ? 1 : 0);
   const almacenes = useMemo(() => [...new Set(inventarios.map((i) => i.almacen))].sort(), [inventarios]);
   const visibles = inventarios.filter((i) => almacen === 'TODOS' || i.almacen === almacen);
@@ -109,8 +88,8 @@ export const NivelConfiabilidad: React.FC<{
             Nivel de confiabilidad por inventario{cc ? ` · ${cc}` : ''}
           </h3>
           <p className="text-xs text-text-secondary mt-1">
-            (Cantidad de referencias − Ref. con diferencia) ÷ Cantidad de referencias × 100. Diferencia = fuera de ±
-            {cant(tol.pct * 100)}% en gramos/onzas o fuera de ±{cant(tol.unidades)} en unidades/copas.
+            (1 − Ref. con diferencia ÷ Cantidad de referencias) × 100. Una referencia tiene diferencia cuando se sale del
+            margen de error: {reglas}. Son los mismos márgenes del cobro (se cambian en Configuración de Cobro).
           </p>
         </div>
         <div className="flex items-end gap-2 text-xs">
@@ -123,21 +102,6 @@ export const NivelConfiabilidad: React.FC<{
               ))}
             </select>
           </label>
-          {esAdmin && (
-            <>
-              <label className="text-text-secondary">
-                % gramos/onzas
-                <input value={borrador.pct} onChange={(e) => setBorrador({ ...borrador, pct: e.target.value })} className="block mt-1 w-20 border border-brand-border rounded-lg px-2 py-1" />
-              </label>
-              <label className="text-text-secondary">
-                ± unidades/copas
-                <input value={borrador.unidades} onChange={(e) => setBorrador({ ...borrador, unidades: e.target.value })} className="block mt-1 w-20 border border-brand-border rounded-lg px-2 py-1" />
-              </label>
-              <button onClick={guardar} className="flex items-center gap-1 rounded-sm bg-marca px-3 py-1.5 font-medium text-white hover:bg-marca-hover" title="Guardar tolerancias para todos">
-                <Save className="w-3.5 h-3.5" /> Guardar
-              </button>
-            </>
-          )}
         </div>
       </div>
       {msg && <p className="text-xs text-blue-700 mb-2">{msg}</p>}
@@ -212,7 +176,8 @@ export const NivelConfiabilidad: React.FC<{
                   <tr>
                     <td colSpan={columnas} className="bg-marca-suave/40 px-3 py-3">
                       <p className="text-xs font-bold text-text-main mb-2">
-                        Novedades: {i.conDiferencia} referencias fuera de tolerancia (ordenadas por impacto en costo)
+                        Novedades: {i.conDiferencia} referencias fuera del margen (ordenadas por el costo de lo que se sale
+                        del margen)
                       </p>
                       <table className="w-full text-xs">
                         <thead>
@@ -224,14 +189,16 @@ export const NivelConfiabilidad: React.FC<{
                             <th className="text-right">Teórico</th>
                             <th className="text-right">Físico</th>
                             <th className="text-right">Diferencia</th>
-                            <th className="text-right">Tolerancia</th>
-                            <th className="text-right">Costo diferencia</th>
+                            <th className="text-right">Margen</th>
+                            <th className="text-right">Fuera del margen</th>
+                            <th className="text-right">Costo fuera del margen</th>
+                            <th className="text-left pl-3">Revisar</th>
                           </tr>
                         </thead>
                         <tbody>
                           {i.lineas
                             .filter((l) => l.conDiferencia)
-                            .sort((a, b) => Math.abs(b.valorDiferencia) - Math.abs(a.valorDiferencia))
+                            .sort((a, b) => Math.abs(b.valorFueraMargen) - Math.abs(a.valorFueraMargen) || Math.abs(b.fueraMargen) - Math.abs(a.fueraMargen))
                             .map((l, k) => (
                               <tr key={k} className="border-t border-brand-border">
                                 <td className="py-1">{l.articulo}</td>
@@ -241,8 +208,16 @@ export const NivelConfiabilidad: React.FC<{
                                 <td className="text-right">{cant(l.stock_fecha)}</td>
                                 <td className="text-right">{cant(l.stock_inventario)}</td>
                                 <td className={`text-right font-bold ${l.diferencia < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{cant(l.diferencia)}</td>
-                                <td className="text-right">±{cant(l.tolerancia)}</td>
-                                <td className={`text-right ${l.valorDiferencia < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{pesos(l.valorDiferencia)}</td>
+                                <td className="text-right whitespace-nowrap">{l.tolerancia ? `±${cant(l.tolerancia)}` : 'Sin margen'}</td>
+                                <td className={`text-right font-bold ${l.fueraMargen < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{cant(l.fueraMargen)}</td>
+                                <td className={`text-right ${l.valorFueraMargen < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{pesos(l.valorFueraMargen)}</td>
+                                <td className="pl-3">
+                                  {l.alerta && (
+                                    <span title={ETIQUETA_ALERTA[l.alerta].ayuda} className="whitespace-nowrap rounded-full bg-[#fff3e0] px-2 py-0.5 text-[10px] font-medium text-[#a84300]">
+                                      {ETIQUETA_ALERTA[l.alerta].texto}
+                                    </span>
+                                  )}
+                                </td>
                               </tr>
                             ))}
                         </tbody>
