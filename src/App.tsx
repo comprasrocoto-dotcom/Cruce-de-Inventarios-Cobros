@@ -19,6 +19,8 @@ import type { PoliticaCobro } from './utils/inventory';
 import { fetchRecetas, RecetasPayload } from './utils/recetas';
 import {
   CONFIG_MARGENES_DEFAULT,
+  esConfigMargenes,
+  usarMargenes,
   reglaTexto,
   type ConfigMargenes,
   type UnidadMargen,
@@ -58,6 +60,7 @@ import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { PDFReport } from './components/PDFReport';
 import { UsuariosAdmin } from './components/UsuariosAdmin';
 import { useRol } from './components/AuthGate';
+import { supabase } from './lib/supabase';
 
 type Tab =
   'RESUMEN' | 'ANÁLISIS' | 'COBROS' | 'CONFIABILIDAD' | 'GERENCIAL' | 'TRAZABILIDAD' | 'EJECUTIVO';
@@ -105,18 +108,7 @@ export default function App() {
       const raw = window.localStorage.getItem('configMargenes');
       if (raw) {
         const parsed = JSON.parse(raw);
-        const unidades: UnidadMargen[] = ['UNIDADES', 'COPAS', 'ONZAS', 'GRAMOS'];
-        if (
-          unidades.every(
-            (u) =>
-              parsed?.[u] &&
-              (parsed[u].modo === 'FIJO' || parsed[u].modo === 'PORCENTAJE') &&
-              typeof parsed[u].valor === 'number' &&
-              parsed[u].valor >= 0
-          )
-        ) {
-          return parsed as ConfigMargenes;
-        }
+        if (esConfigMargenes(parsed)) return parsed;
       }
     } catch {
       /* almacenamiento no disponible */
@@ -124,6 +116,25 @@ export default function App() {
     return CONFIG_MARGENES_DEFAULT;
   });
   const [borradorMargenes, setBorradorMargenes] = useState<ConfigMargenes>(configMargenes);
+  // La misma regla alimenta el cobro y la confiabilidad de toda la app.
+  usarMargenes(configMargenes);
+  const [avisoMargenes, setAvisoMargenes] = useState<string | null>(null);
+
+  // Márgenes vigentes para todos: los guarda el administrador en Supabase y
+  // mandan sobre lo que haya quedado en este navegador.
+  useEffect(() => {
+    supabase
+      .from('cruce_configuracion')
+      .select('margenes')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && esConfigMargenes(data.margenes)) {
+          setConfigMargenes(data.margenes);
+          setBorradorMargenes(data.margenes);
+        }
+      });
+  }, []);
 
   // Catálogo de recetas para el reporte AGRUPADO del Detalle de Cobros.
   const [recetasPayload, setRecetasPayload] = useState<RecetasPayload | null>(null);
@@ -145,6 +156,23 @@ export default function App() {
 
   /** Aplica el borrador con recálculo VISIBLE: el usuario ve que está pasando. */
   const aplicarConfiguracion = () => {
+    setAvisoMargenes(null);
+    // El administrador los deja vigentes para todos; los demás solo simulan aquí.
+    if (esAdmin) {
+      supabase.auth.getUser().then(({ data: u }) =>
+        supabase
+          .from('cruce_configuracion')
+          .update({ margenes: borradorMargenes, actualizado_por: u.user?.email, updated_at: new Date().toISOString() })
+          .eq('id', 1)
+          .then(({ error }) =>
+            setAvisoMargenes(
+              error ? `No se guardaron para todos: ${error.message}` : 'Márgenes guardados para todos los usuarios.'
+            )
+          )
+      );
+    } else {
+      setAvisoMargenes('Simulación solo en este navegador: los márgenes para todos los cambia un administrador.');
+    }
     setRecalculando(true);
     // pequeño respiro para que el estado "Recalculando…" alcance a pintarse
     window.setTimeout(() => {
@@ -679,17 +707,19 @@ export default function App() {
                           onClick={() => setBorradorMargenes(CONFIG_MARGENES_DEFAULT)}
                           disabled={recalculando}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-text-secondary border border-brand-border hover:text-text-main hover:bg-[#ffffff] transition-colors"
-                          title="Vuelve el borrador a los valores predeterminados (UNID ±0, COPAS ±0, ONZAS ±3, GRAMOS 2.5%). Recuerda Aplicar."
+                          title="Vuelve el borrador a los valores predeterminados (UNID sin margen, COPAS sin margen, ONZAS ±2, GRAMOS 2.5%). Recuerda Aplicar."
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           Predeterminados
                         </button>
                       </div>
                       <p className="text-[10px] text-text-secondary mt-2 italic">
-                        Los cambios NO actúan hasta pulsar Aplicar. Editar los márgenes cambia el
-                        estándar técnico: también recalcula tolerancias, confiabilidad y alertas de
-                        recetas — y queda impreso en PDF y Excel.
+                        Los cambios NO actúan hasta pulsar Aplicar. Estos márgenes deciden qué sale
+                        en cobro y también el nivel de confiabilidad de toda la app (una referencia
+                        fuera del margen cuenta como "con diferencia"). Cuando los aplica un
+                        administrador quedan para todos los usuarios.
                       </p>
+                      {avisoMargenes && <p className="text-[11px] text-tinta-2 mt-1">{avisoMargenes}</p>}
                     </div>
 
                     {/* Política de cobro (seleccionable, recalcula en vivo) */}
@@ -787,7 +817,7 @@ export default function App() {
 
             {activeTab === 'CONFIABILIDAD' && (
               <>
-                <NivelConfiabilidad lineas={lineas} cc={filters.ccs.length === 1 ? filters.ccs[0] : null} onCambio={() => setRecargarToken((t) => t + 1)} />
+                <NivelConfiabilidad lineas={lineas} margenes={configMargenes} cc={filters.ccs.length === 1 ? filters.ccs[0] : null} onCambio={() => setRecargarToken((t) => t + 1)} />
                 <ReliabilityView data={filteredArticles} filters={filters} setFilters={setFilters} />
               </>
             )}

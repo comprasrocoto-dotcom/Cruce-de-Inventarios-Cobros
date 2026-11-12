@@ -486,12 +486,9 @@ export const AYUDAS: Record<
         if (peor) {
           ejemplo = (
             <Ej>
-              En tu corte: la sede más débil es <b>{peor.sede}</b> (artículos{' '}
-              <b>{peor.exactitudArticulos}%</b> · valor <b>{peor.exactitudValor}%</b> → nota{' '}
-              <b>{peor.confiabilidad}%</b>, {peor.nivel}). Su lado flojo es{' '}
-              {(peor.exactitudArticulos ?? 0) < (peor.exactitudValor ?? 0)
-                ? 'el CONTEO: muchos artículos quedan fuera de su margen, aunque la plata desviada no sea tanta. Plan: disciplina de conteo (dobles conteos, básculas calibradas, cierre de cocina antes de contar).'
-                : 'la PLATA: cuenta bien la mayoría de artículos, pero los pocos que fallan son caros. Plan: conteo dedicado a los 20 productos de mayor valor (proteínas, licores premium).'}
+              En tu corte: la sede más baja es <b>{peor.sede}</b>: de {peor.articulosEvaluados}{' '}
+              referencias contadas, <b>{peor.articulosConDiferencia}</b> quedaron fuera del margen →
+              nivel <b>{peor.confiabilidad}%</b> ({peor.nivel}).
               {mejor && mejor.sede !== peor.sede && (
                 <>
                   {' '}
@@ -514,34 +511,27 @@ export const AYUDAS: Record<
             cualquier cobro.
           </P>
           <P>
-            <b>Cómo se construye la nota (paso a paso):</b> a cada artículo se le compara su conteo
-            físico contra el teórico del ERP, con su margen de tolerancia (ver Configuración de
-            Cobro). Con eso se calculan DOS exactitudes por sede:
+            <b>La fórmula:</b> Nivel de confiabilidad = (1 − Referencias con diferencia ÷ Cantidad de
+            referencias) × 100. Ejemplo: 15 referencias contadas y 3 con diferencia → (1 − 3 ÷ 15) ×
+            100 = <b>80</b>.
           </P>
           <P>
-            <b>① Exactitud por Artículos</b> = de cada 100 artículos contados, cuántos quedaron
-            dentro de su margen. Mide la <b>disciplina de conteo</b> del equipo: si está baja, el
-            problema es humano/proceso (conteos apurados, unidades confundidas, cocina operando
-            mientras se cuenta).
+            <b>¿Cuándo una referencia tiene diferencia?</b> Cuando la diferencia entre el físico y el
+            teórico se sale del margen de error de su unidad — el mismo que decide el cobro:{' '}
+            <b>unidades y copas sin margen</b>, <b>onzas ±2</b> y <b>gramos 2,5% del teórico</b>.
+            Una referencia dentro del margen cuenta como sin diferencia.
           </P>
           <P>
-            <b>② Exactitud por Valor</b> = de cada $100 de inventario teórico, cuántos NO se
-            desviaron. Aquí los faltantes NO se tapan con sobrantes: se suman ambos en valor
-            absoluto (estándar IRA de la industria — un inventario que "sobra" es tan poco confiable
-            como uno que falta). Mide el <b>cuidado de la plata</b>.
+            <b>Cómo se suma:</b> cada artículo en cada inventario es una referencia. Si el filtro
+            incluye varios inventarios de la sede (por ejemplo, todo el mes), se suman todas las
+            referencias y todas las diferencias antes de dividir: un conteo de 500 referencias pesa
+            más que uno de 20. Las líneas con teórico y físico en cero no cuentan.
           </P>
           <P>
-            <b>③ La nota final es la MENOR de las dos.</b> ¿Por qué la menor y no el promedio?
-            Porque el promedio esconde: una sede puede contar perfecto 400 artículos baratos (①=95%)
-            y fugar millones en 5 caros (②=60%) — promediando saldría "aceptable" y el hueco
-            seguiría abierto. Tomando la menor, la dimensión enferma siempre queda a la vista, y el
-            plan de acción es distinto según cuál sea (ver ejemplo abajo).
-          </P>
-          <P>
-            <b>Qué NO entra a la nota:</b> las sub-recetas (SUB.) — su variación es producción
-            normal, no error de conteo. Y qué SÍ la afecta sin ser culpa de la sede: los cobros con
-            ⚠ Revisar (costos dañados del ERP) inflan la desviación en valor — resuélvelos primero y
-            la nota real puede ser mejor.
+            <b>Ojo con dos casos</b> que bajan el nivel aunque no siempre son error de conteo: el{' '}
+            <b>teórico negativo</b> (el sistema tenía menos de cero: recetas, compras o traslados
+            mal cargados) y el <b>físico en 0</b> con teórico positivo (se acabó o no se contó). En
+            la tabla por inventario salen marcados para revisarlos.
           </P>
           <P>
             <b>El resto de la pantalla:</b> las tarjetas de arriba (mejor/peor sede, mayor impacto),
@@ -552,9 +542,9 @@ export const AYUDAS: Record<
           </P>
           {ejemplo}
           <Tip>
-            Regla de oro del analista: la nota NO se compara entre cortes con configuraciones de
-            margen distintas (relajar márgenes sube la nota sin que nadie cuente mejor). Compara
-            siempre con la misma vara.
+            Regla de oro del analista: el nivel NO se compara entre cortes con márgenes distintos
+            (relajar márgenes sube el nivel sin que nadie cuente mejor). Compara siempre con la
+            misma vara.
           </Tip>
         </>
       );
@@ -617,7 +607,7 @@ export const AYUDAS: Record<
           Es la <b>vista de defensa de la auditoría</b>: artículo por artículo, muestra el
           inventario inicial (teórico), la variación, el inventario final (contado), el{' '}
           <b>margen de tolerancia EXACTO en números</b> que se le aplicó, y la regla que lo generó
-          ("±3 onza(s)", "±2.5% del teórico", "Sin margen").
+          ("±2 onza(s)", "±2.5% del teórico", "Sin margen").
         </P>
         <P>
           <b>¿Cuándo la usa un analista?</b> Cada vez que llega LA pregunta: "¿por qué a este
@@ -887,11 +877,11 @@ export const AYUDAS: Record<
           </P>
           <P>
             <b>1. Los márgenes de tolerancia — ahora EDITABLES.</b> Cada unidad tiene su regla, con
-            dos modos: <b>± fijo</b> (un número de perdón en esa unidad, ej. ±3 onzas) o{' '}
+            dos modos: <b>± fijo</b> (un número de perdón en esa unidad, ej. ±2 onzas) o{' '}
             <b>% del teórico</b> (proporcional a cuánto se manejó en el horizonte; con piso de 100 g
             para que teóricos diminutos no colapsen el margen). Los predeterminados al abrir:{' '}
             <b>UNIDADES ±0</b> y <b>COPAS ±0</b> (lo contable se cuenta con los dedos),{' '}
-            <b>ONZAS ±3</b> (el error del jigger) y <b>GRAMOS 2.5%</b> (mermas de pesaje). Puedes
+            <b>ONZAS ±2</b> (el error del jigger) y <b>GRAMOS 2.5%</b> (mermas de pesaje). Puedes
             jugar: unidades con ±1, gramos fijo en 500 g, onzas al 2% — lo que tu operación decida.
           </P>
           <P>
