@@ -1,44 +1,47 @@
 /**
  * Nivel de confiabilidad por inventario (documento = almacén + fecha + serie).
  *
- *   Nivel = (Cantidad de referencias − Referencias con diferencia) / Cantidad de referencias × 100
+ *   Nivel = (1 − Referencias con diferencia ÷ Cantidad de referencias) × 100
  *
- * Una referencia tiene diferencia cuando |físico − teórico| supera la tolerancia:
- *   - Gramos, onzas, ml y kilos: tolerancia_pct (2,5%) de la cantidad mayor entre teórico y físico.
- *   - Unidades, copas y presentaciones: ± tolerancia_unidades (2).
+ * Una referencia tiene diferencia cuando |físico − teórico| supera el margen de
+ * error de su unidad — el MISMO del cobro (cruce_configuracion.margenes):
+ *   - Unidades y copas: sin margen.
+ *   - Onzas: ±2.
+ *   - Gramos: 2.5% del teórico (piso de 100 g para teóricos en cero o negativos).
  * Las líneas con teórico y físico en cero no cuentan (no se contó nada).
- * Las tolerancias viven en la tabla `cruce_configuracion` (las edita el administrador).
  */
 import type { LineaInventario } from './inventariosSupabase';
+import { margenLinea, type ConfigMargenes } from '../utils/confiabilidad';
 
-export interface Tolerancias {
-  pct: number; // 0.025 = 2,5%
-  unidades: number; // 2
-}
-
-export const TOLERANCIAS_DEFAULT: Tolerancias = { pct: 0.025, unidades: 2 };
-
-export const esPesoVolumen = (subarticulo?: string | null) =>
-  /GRAM|ONZ|KILO|\bML\b|X ML|LITRO/i.test(subarticulo || '');
+/** Casos que bajan el nivel pero suelen venir del sistema, no del conteo. */
+export type AlertaLinea = 'TEORICO_NEGATIVO' | 'FISICO_CERO' | null;
 
 export interface LineaEvaluada extends LineaInventario {
   diferencia: number;
   tolerancia: number;
   conDiferencia: boolean;
   valorDiferencia: number;
+  /** Cantidad que se sale del margen (con signo): −40 g con margen 25 g → −15 g. */
+  fueraMargen: number;
+  valorFueraMargen: number;
+  alerta: AlertaLinea;
 }
 
-export const evaluarLinea = (l: LineaInventario, t: Tolerancias): LineaEvaluada => {
+export const evaluarLinea = (l: LineaInventario, margenes: ConfigMargenes): LineaEvaluada => {
   const diferencia = l.stock_inventario - l.stock_fecha;
-  const tolerancia = esPesoVolumen(l.subarticulo)
-    ? Math.max(Math.abs(l.stock_fecha), Math.abs(l.stock_inventario)) * t.pct
-    : t.unidades;
+  const tolerancia = margenLinea(l.subarticulo, l.stock_fecha, margenes);
+  const exceso = Math.max(0, Math.abs(diferencia) - tolerancia);
+  const fueraMargen = exceso > 1e-9 ? Math.sign(diferencia) * exceso : 0;
+  const costo = l.costo_unitario || 0;
   return {
     ...l,
     diferencia,
     tolerancia,
-    conDiferencia: Math.abs(diferencia) > tolerancia + 1e-9,
-    valorDiferencia: diferencia * (l.costo_unitario || 0),
+    conDiferencia: exceso > 1e-9,
+    valorDiferencia: diferencia * costo,
+    fueraMargen,
+    valorFueraMargen: fueraMargen * costo,
+    alerta: l.stock_fecha < 0 ? 'TEORICO_NEGATIVO' : l.stock_fecha > 0 && l.stock_inventario === 0 ? 'FISICO_CERO' : null,
   };
 };
 
@@ -50,12 +53,12 @@ export interface InventarioEvaluado {
   referencias: number;
   conDiferencia: number;
   nivel: number; // 0–100
-  faltanteValor: number; // suma de diferencias negativas valorizadas (≤ 0)
-  sobranteValor: number; // suma de diferencias positivas valorizadas (≥ 0)
+  faltanteValor: number; // suma de diferencias negativas valorizadas (≤ 0), solo referencias con diferencia
+  sobranteValor: number; // suma de diferencias positivas valorizadas (≥ 0), solo referencias con diferencia
   lineas: LineaEvaluada[]; // solo las contadas
 }
 
-export function evaluarInventarios(lineas: LineaInventario[], t: Tolerancias): InventarioEvaluado[] {
+export function evaluarInventarios(lineas: LineaInventario[], margenes: ConfigMargenes): InventarioEvaluado[] {
   const docs = new Map<string, InventarioEvaluado>();
   for (const l of lineas) {
     if (l.stock_fecha === 0 && l.stock_inventario === 0) continue;
@@ -65,7 +68,7 @@ export function evaluarInventarios(lineas: LineaInventario[], t: Tolerancias): I
       d = { clave, almacen: l.almacen, fecha: l.fecha, serie: l.serie, referencias: 0, conDiferencia: 0, nivel: 0, faltanteValor: 0, sobranteValor: 0, lineas: [] };
       docs.set(clave, d);
     }
-    const e = evaluarLinea(l, t);
+    const e = evaluarLinea(l, margenes);
     d.lineas.push(e);
     d.referencias++;
     if (e.conDiferencia) {
@@ -75,6 +78,6 @@ export function evaluarInventarios(lineas: LineaInventario[], t: Tolerancias): I
     }
   }
   const lista = [...docs.values()];
-  for (const d of lista) d.nivel = d.referencias ? ((d.referencias - d.conDiferencia) / d.referencias) * 100 : 0;
+  for (const d of lista) d.nivel = d.referencias ? (1 - d.conDiferencia / d.referencias) * 100 : 0;
   return lista.sort((a, b) => (a.fecha === b.fecha ? a.almacen.localeCompare(b.almacen) : b.fecha.localeCompare(a.fecha)));
 }
