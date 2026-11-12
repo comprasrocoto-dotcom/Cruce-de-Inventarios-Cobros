@@ -60,6 +60,7 @@ import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { PDFReport } from './components/PDFReport';
 import { UsuariosAdmin } from './components/UsuariosAdmin';
 import { Logo } from './components/Logo';
+import { ResumenConfiabilidad } from './components/ResumenConfiabilidad';
 import { useRol } from './components/AuthGate';
 import { supabase } from './lib/supabase';
 
@@ -522,6 +523,8 @@ export default function App() {
                     description={`≈ $${Math.round(dashboardStats.valorSobrante).toLocaleString('es-CO')} a costo · no cobran, pero son síntoma de proceso`}
                   />
                 </div>
+
+                <ResumenConfiabilidad data={filteredArticles} />
 
                 <div className="bg-card p-8 rounded-[12px] shadow-sm border border-brand-border">
                   <div className="flex items-center justify-between mb-6">
