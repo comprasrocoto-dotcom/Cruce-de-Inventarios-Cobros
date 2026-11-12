@@ -59,6 +59,7 @@ import { AdvancedAnalysis } from './components/AdvancedAnalysis';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { PDFReport } from './components/PDFReport';
 import { UsuariosAdmin } from './components/UsuariosAdmin';
+import { Logo } from './components/Logo';
 import { useRol } from './components/AuthGate';
 import { supabase } from './lib/supabase';
 
@@ -879,12 +880,7 @@ export default function App() {
       <div className="min-h-screen bg-fondo">
         {/* Riel de íconos (como el ERP y el Informe de Rentabilidad) */}
         <aside className="fixed inset-y-0 left-0 z-40 flex w-14 flex-col items-center bg-negro py-2">
-          <div
-            className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-[#42a5f5] to-[#1565c0]"
-            title="Cruce de Inventarios y Cobros"
-          >
-            <ShieldCheck className="h-6 w-6 text-white" />
-          </div>
+          <Logo size={40} className="mb-3 shrink-0" />
           <nav className="flex flex-1 flex-col items-center gap-1" aria-label="Menú principal">
             {articles.length > 0 &&
               PESTANAS.map(({ tab, texto, Icono }) => {
