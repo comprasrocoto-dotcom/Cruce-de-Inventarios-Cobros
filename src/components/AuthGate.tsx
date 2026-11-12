@@ -11,8 +11,9 @@
  */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Loader2, LogOut, Lock } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Logo } from './Logo';
 import { URL_RENTABILIDAD } from '../config';
 
 /** Rol del usuario en el Cruce, para que la app muestre opciones de administrador. */
@@ -62,7 +63,7 @@ const CrearClave: React.FC<{ email: string; nueva: boolean; onListo: () => void 
   return (
     <Tarjeta onSubmit={guardar}>
       <div className="flex items-center gap-2 text-text-main">
-        <Lock className="w-5 h-5 text-[#1976d2]" />
+        <Logo size={36} className="shrink-0" />
         <h1 className="text-lg font-medium text-tinta">{nueva ? 'Crea tu contraseña' : 'Cambia tu contraseña'}</h1>
       </div>
       <p className="text-sm text-text-secondary">
@@ -123,9 +124,9 @@ const Login: React.FC<{ aviso?: string | null }> = ({ aviso }) => {
         onSubmit={entrar}
         className="w-full max-w-sm space-y-4 rounded border border-linea bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]" style={{ borderTop: '4px solid #1976d2' }}
       >
-        <div className="flex items-center gap-2 text-text-main">
-          <Lock className="w-5 h-5 text-[#1976d2]" />
-          <h1 className="text-lg font-medium text-tinta">Cruce de Inventarios y Cobros</h1>
+        <div className="flex items-center gap-3 text-text-main">
+          <Logo size={44} className="shrink-0" />
+          <h1 className="text-lg font-medium leading-tight text-tinta">Cruce de Inventarios y Cobros</h1>
         </div>
         <p className="text-sm text-text-secondary">
           Entra con el mismo correo y contraseña del Informe de Rentabilidad.
